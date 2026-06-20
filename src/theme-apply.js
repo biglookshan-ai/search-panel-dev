@@ -40,7 +40,7 @@ function injectBlock(content, blockLines, anchorAfter) {
   return { content: lines.join('\n'), mode: 'inserted' };
 }
 
-export async function applyToTheme(themeId, { dryRun = false } = {}) {
+export async function applyToTheme(ctx, themeId, { dryRun = false } = {}) {
   const cfg = await loadInjections();
   const log = [];
 
@@ -49,18 +49,18 @@ export async function applyToTheme(themeId, { dryRun = false } = {}) {
     for (const name of await listModuleFiles(dir)) {
       const key = `${dir}/${name}`;
       const value = await fs.readFile(path.join(MODULE_DIR, dir, name), 'utf8');
-      if (!dryRun) await putAsset(themeId, key, value);
+      if (!dryRun) await putAsset(ctx, themeId, key, value);
       log.push(`copy  ${key}`);
     }
   }
 
   // 2) inject marker blocks into shared theme files
   for (const inj of cfg.injections) {
-    const current = await getAsset(themeId, inj.file);
+    const current = await getAsset(ctx, themeId, inj.file);
     if (current == null) { log.push(`SKIP  ${inj.file} (not found in theme)`); continue; }
     if (current.includes('CGP-SEARCH START') || (inj.anchorAfter && current.includes(inj.anchorAfter))) {
       const { content, mode } = injectBlock(current, inj.block, inj.anchorAfter);
-      if (!dryRun && content !== current) await putAsset(themeId, inj.file, content);
+      if (!dryRun && content !== current) await putAsset(ctx, themeId, inj.file, content);
       log.push(`inject ${inj.file} (${mode})`);
     } else {
       log.push(`SKIP  ${inj.file} (anchor & markers missing)`);
@@ -71,7 +71,7 @@ export async function applyToTheme(themeId, { dryRun = false } = {}) {
   if (cfg.settingsSchema) {
     const { file, groupsFile, replaceGroupNames } = cfg.settingsSchema;
     const ours = JSON.parse(await fs.readFile(path.join(MODULE_DIR, groupsFile), 'utf8'));
-    const current = await getAsset(themeId, file);
+    const current = await getAsset(ctx, themeId, file);
     if (current == null) {
       log.push(`SKIP  ${file} (not found in theme)`);
     } else {
@@ -79,7 +79,7 @@ export async function applyToTheme(themeId, { dryRun = false } = {}) {
       const drop = new Set(replaceGroupNames);
       const merged = arr.filter((g) => !drop.has(g && g.name)).concat(ours);
       const out = JSON.stringify(merged, null, 2);
-      if (!dryRun && out !== current) await putAsset(themeId, file, out);
+      if (!dryRun && out !== current) await putAsset(ctx, themeId, file, out);
       log.push(`merge  ${file} (${ours.length} groups, ${ours.reduce((n, g) => n + (g.settings || []).length, 0)} settings)`);
     }
   }

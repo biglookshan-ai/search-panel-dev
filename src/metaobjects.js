@@ -1,9 +1,9 @@
-// Generic metaobject management — works for any type by reading its definition,
-// so cgp_badge / cgp_sort_rule / search_panel are all handled the same way.
+// Generic metaobject management — works for any type by reading its definition.
+// Every function takes ctx = { shop, token }.
 import { graphql } from './shopify.js';
 
-export async function getDefinition(type) {
-  const data = await graphql(
+export async function getDefinition(ctx, type) {
+  const data = await graphql(ctx,
     `query($type:String!){
       metaobjectDefinitionByType(type:$type){
         id name type
@@ -15,8 +15,8 @@ export async function getDefinition(type) {
   return data.metaobjectDefinitionByType;
 }
 
-export async function listEntries(type) {
-  const data = await graphql(
+export async function listEntries(ctx, type) {
+  const data = await graphql(ctx,
     `query($type:String!){
       metaobjects(type:$type, first:100){
         nodes{ id handle displayName fields{ key value } }
@@ -32,10 +32,9 @@ export async function listEntries(type) {
   }));
 }
 
-// fields: { key: value, ... } (values must be strings; list fields = JSON string).
-export async function createEntry(type, fields) {
+export async function createEntry(ctx, type, fields) {
   const input = { type, fields: toFieldArray(fields) };
-  const data = await graphql(
+  const data = await graphql(ctx,
     `mutation($input:MetaobjectCreateInput!){
       metaobjectCreate(metaobject:$input){ metaobject{ id handle } userErrors{ field message } }
     }`,
@@ -45,9 +44,9 @@ export async function createEntry(type, fields) {
   return data.metaobjectCreate.metaobject;
 }
 
-export async function updateEntry(id, fields) {
+export async function updateEntry(ctx, id, fields) {
   const input = { fields: toFieldArray(fields) };
-  const data = await graphql(
+  const data = await graphql(ctx,
     `mutation($id:ID!,$input:MetaobjectUpdateInput!){
       metaobjectUpdate(id:$id, metaobject:$input){ metaobject{ id } userErrors{ field message } }
     }`,
@@ -57,8 +56,8 @@ export async function updateEntry(id, fields) {
   return data.metaobjectUpdate.metaobject;
 }
 
-export async function deleteEntry(id) {
-  const data = await graphql(
+export async function deleteEntry(ctx, id) {
+  const data = await graphql(ctx,
     `mutation($id:ID!){ metaobjectDelete(id:$id){ deletedId userErrors{ field message } } }`,
     { id }
   );
@@ -71,7 +70,6 @@ function toFieldArray(fields) {
     .filter(([, v]) => v !== undefined && v !== null)
     .map(([key, value]) => ({ key, value: String(value) }));
 }
-
 function throwUserErrors(payload) {
   const errs = payload?.userErrors || [];
   if (errs.length) throw new Error(errs.map((e) => `${e.field}: ${e.message}`).join('; '));

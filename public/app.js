@@ -2,15 +2,25 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let STORE = '';
 
+async function sessionToken() {
+  if (!window.shopify || !window.shopify.idToken) throw new Error('请在 Shopify 后台里打开此 app(嵌入式)');
+  return await window.shopify.idToken();
+}
 async function api(method, path, body) {
+  const t = await sessionToken();
   const res = await fetch(path, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
     body: body ? JSON.stringify(body) : undefined,
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error || res.statusText);
   return json;
+}
+function decodeJwtPayload(t) {
+  let s = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+  s += '='.repeat((4 - (s.length % 4)) % 4);
+  return JSON.parse(atob(s));
 }
 
 function toast(msg, ok = true) {
@@ -160,16 +170,15 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
 // ---- init ----
 (async () => {
   try {
-    const c = await api('GET', '/api/config');
-    STORE = c.store || '';
-    const handle = (STORE || '').replace('.myshopify.com', '');
+    const t = await sessionToken();
+    STORE = (decodeJwtPayload(t).dest || '').replace(/^https?:\/\//, '');
+    const handle = STORE.replace('.myshopify.com', '');
     $('#boosts-link').href = handle ? `https://admin.shopify.com/store/${handle}/apps` : '#';
-    if (c.connected) {
-      $('#store').textContent = (STORE || '已连接') + ' ✓';
-      loadType('cgp_badge');
-    } else {
-      $('#store').innerHTML = (STORE || '未连接') + ' — <a href="/auth" class="connect">连接店铺 (OAuth)</a>';
-      $('#meta-body').innerHTML = '<p class="muted">还没连接店铺。点右上角 <b>「连接店铺」</b> 用 OAuth 授权后即可管理 Metaobject 与写入主题。</p>';
-    }
-  } catch (e) { $('#store').textContent = String(e.message || e); }
+    $('#store').textContent = STORE + ' ✓';
+    loadType('cgp_badge');
+  } catch (e) {
+    $('#store').textContent = String(e.message || e);
+    $('#meta-body').innerHTML = '<p class="err">' + esc(String(e.message || e)) + '</p>' +
+      '<p class="muted">此 app 是嵌入式的,需在 <b>Shopify 后台 → Apps → Search Panel Dev</b> 里打开,不要直接开 Railway 网址。</p>';
+  }
 })();
