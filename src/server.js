@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { listThemes } from './shopify.js';
-import { getDefinition, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
+import { getAllDefinitions, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
 import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 
@@ -56,11 +56,10 @@ const okType = (t) => TYPES.includes(t);
 
 api.get('/metaobjects/:type', wrap(async (req) => {
   if (!okType(req.params.type)) throw new Error('Unknown type');
-  const [definition, entries] = await Promise.all([
-    getDefinition(req.ctx, req.params.type),
-    listEntries(req.ctx, req.params.type),
-  ]);
-  return { definition, entries };
+  const all = await getAllDefinitions(req.ctx);
+  const definition = all.find((d) => d.type === req.params.type) || null;
+  const entries = definition ? await listEntries(req.ctx, req.params.type) : [];
+  return { definition, entries, availableTypes: all.map((d) => d.type) };
 }));
 api.post('/metaobjects/:type', wrap(async (req) => {
   if (!okType(req.params.type)) throw new Error('Unknown type');

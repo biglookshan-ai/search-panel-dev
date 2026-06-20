@@ -90,9 +90,14 @@ async function loadType(type) {
   const body = $('#meta-body');
   body.innerHTML = '<p class="muted">加载中…</p>';
   try {
-    const { definition, entries } = await api('GET', '/api/metaobjects/' + type);
+    const { definition, entries, availableTypes } = await api('GET', '/api/metaobjects/' + type);
     DEF = definition;
-    if (!definition) { body.innerHTML = '<p class="err">找不到该 Metaobject 定义。</p>'; return; }
+    if (!definition) {
+      body.innerHTML = `<p class="err">找不到类型 "${esc(type)}" 的 Metaobject 定义。</p>` +
+        `<p class="muted">这个店铺现有的 Metaobject 类型:<br>${(availableTypes || []).map((t) => '<code>' + esc(t) + '</code>').join('、') || '(无)'}</p>` +
+        `<p class="muted">如果你的角标/排序/面板用的是上面别的 handle,告诉我实际名字,我改一下映射。</p>`;
+      return;
+    }
     const fds = definition.fieldDefinitions || [];
     let html = `<div class="rows">`;
     entries.forEach((e) => { html += entryCard(fds, e); });
@@ -173,7 +178,10 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
     const t = await sessionToken();
     STORE = (decodeJwtPayload(t).dest || '').replace(/^https?:\/\//, '');
     const handle = STORE.replace('.myshopify.com', '');
-    $('#boosts-link').href = handle ? `https://admin.shopify.com/store/${handle}/apps` : '#';
+    const sd = `https://admin.shopify.com/store/${handle}/apps/search-and-discovery`;
+    $('#sd-link').href = sd;
+    $('#boosts-link').href = sd + '/search/product-boosts';
+    $('#synonyms-link').href = sd + '/search/synonyms';
     $('#store').textContent = STORE + ' ✓';
     loadType('cgp_badge');
   } catch (e) {

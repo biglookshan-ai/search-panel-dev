@@ -2,17 +2,21 @@
 // Every function takes ctx = { shop, token }.
 import { graphql } from './shopify.js';
 
-export async function getDefinition(ctx, type) {
+// List ALL definitions and match by type — more reliable than
+// metaobjectDefinitionByType (which can return null) and lets us surface the
+// store's actual type handles for debugging.
+export async function getAllDefinitions(ctx) {
   const data = await graphql(ctx,
-    `query($type:String!){
-      metaobjectDefinitionByType(type:$type){
-        id name type
-        fieldDefinitions{ key name required type{ name } }
-      }
-    }`,
-    { type }
+    `query{ metaobjectDefinitions(first:50){ nodes{
+      id type name fieldDefinitions{ key name required type{ name } }
+    } } }`
   );
-  return data.metaobjectDefinitionByType;
+  return data.metaobjectDefinitions?.nodes || [];
+}
+
+export async function getDefinition(ctx, type) {
+  const all = await getAllDefinitions(ctx);
+  return all.find((d) => d.type === type) || null;
 }
 
 export async function listEntries(ctx, type) {
