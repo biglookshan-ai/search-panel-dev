@@ -1,0 +1,416 @@
+/* ============================================================
+   search-drawer.css — 自研搜索弹窗样式（P0）
+   设计参照 Searchanise 截图：左栏词/分类 + 右栏产品网格，
+   白底、深色文字、促销价红、库存徽章深底白字。
+   所有颜色读取 section 注入的 --sd-* 变量，可在 Theme Editor 调。
+   仅用变量做主题适配，无硬编码品牌色，避免与主题冲突。
+   ============================================================ */
+
+/* Positioned by JS (fixed, top = search box bottom) so it connects to the
+   search box with no gap and sits above the nav/mega-menu. */
+search-drawer {
+  display: block;
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  background: var(--sd-bg, #fff);
+  color: var(--sd-text, #333);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  border-top: 1px solid var(--sd-hover-bg, #f6f6f6);
+}
+search-drawer[hidden] { display: none; }
+/* The store's navbar app injects global state rules (e.g. a generic .is-loading
+   that sets position:relative + opacity). Now that the drawer lives at <body>
+   level, guard its core positioning so no third-party rule can drop it into the
+   document flow or dim it while results load. */
+search-drawer:not([hidden]) {
+  position: fixed !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Backdrop blocks hover/click on the nav (so its dropdowns can't open and
+   cover the results) and dims the page. Created by search-drawer.js.
+   Very high z-index so it sits above the header mega-menu. */
+.search-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(0, 0, 0, 0.35);
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+.search-drawer__backdrop[hidden] { display: none; }
+
+/* Lock the page behind the open drawer so it can't scroll. */
+body.search-drawer-open { overflow: hidden; }
+
+.search-drawer__panel {
+  max-height: var(--sd-max-height, 560px);
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+}
+
+.search-drawer__columns {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---------- 区块标题（带细下划线，对齐截图） ---------- */
+.search-drawer__heading {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--sd-heading, #333);
+  padding-bottom: 8px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid var(--sd-hover-bg, #f6f6f6);
+}
+.search-drawer__col--right .search-drawer__heading { margin-bottom: 16px; }
+.search-drawer__col > * + .search-drawer__heading { margin-top: 24px; }
+
+/* ---------- 左栏：联想词 / 分类 / 页面 ---------- */
+.search-drawer__suggestions,
+.search-drawer__collections,
+.search-drawer__pages,
+[data-recent-list] {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+}
+.search-drawer__suggestions a,
+.search-drawer__collections a,
+.search-drawer__pages a,
+[data-recent-list] a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  margin: 0 -8px;
+  border-radius: 4px;
+  color: var(--sd-text, #333);
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.search-drawer__suggestions a:hover,
+.search-drawer__suggestions a:focus-visible,
+.search-drawer__suggestions a[aria-selected="true"],
+.search-drawer__collections a:hover,
+.search-drawer__collections a:focus-visible,
+.search-drawer__collections a[aria-selected="true"],
+.search-drawer__pages a:hover,
+.search-drawer__pages a:focus-visible,
+.search-drawer__pages a[aria-selected="true"],
+[data-recent-list] a:hover,
+[data-recent-list] a:focus-visible,
+[data-recent-list] a[aria-selected="true"] {
+  background: var(--sd-hover-bg, #f6f6f6);
+  outline: 2px solid var(--sd-heading, #333);
+  outline-offset: -2px;
+}
+.search-drawer__suggestions .icon-search { flex: 0 0 auto; opacity: .5; }
+/* styled_text 自带的匹配高亮：补全部分加粗 */
+.search-drawer__suggestions b,
+.search-drawer__collections b { font-weight: 700; }
+
+/* ---------- View all 按钮 ---------- */
+.search-drawer__view-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--sd-viewall-bg, #333);
+  color: var(--sd-viewall-text, #fff);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 2px;
+}
+.search-drawer__view-all:hover { opacity: .9; }
+
+/* ---------- 最近搜索:tag 行(置顶,输入框下方) ---------- */
+.search-drawer__recent--tags {
+  max-width: 1200px;
+  margin: 0 auto 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--sd-hover-bg, #f6f6f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.search-drawer__recent--tags .search-drawer__heading {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  /* Subtle: lighter grey, normal weight — a quiet label, not a bold heading. */
+  font-weight: 400;
+  color: var(--sd-card-desc, #9d9d9d);
+}
+.search-drawer__recent--tags .search-drawer__recent-tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.search-drawer__recent--tags .search-drawer__recent-tags a {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--sd-hover-bg, #f6f6f6);
+  color: var(--sd-text, #333);
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  outline: none;
+}
+.search-drawer__recent--tags .search-drawer__recent-tags a:hover,
+.search-drawer__recent--tags .search-drawer__recent-tags a[aria-selected="true"] {
+  background: var(--sd-heading, #333);
+  color: #fff;
+}
+
+/* ---------- 右栏：产品网格 ---------- */
+.search-drawer__products {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--sd-product-cols, 4), 1fr);
+  gap: 14px 12px;
+}
+.search-drawer__products > li { min-width: 0; }
+
+/* ---------- 产品卡（紧凑，对齐主卡片） ---------- */
+.sd-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--sd-bg, #fff);
+  transition: border-color .15s ease;
+}
+.sd-card:hover,
+.sd-card:focus-visible,
+.sd-card[aria-selected="true"] {
+  border-color: rgba(0, 0, 0, 0.28);
+  outline: none;
+}
+.sd-card__media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  /* Same as the card background so mix-blend-mode: multiply makes the product's
+     white photo background blend seamlessly (no grey box behind the image). */
+  background: var(--sd-bg, #fff);
+}
+.sd-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+  /* Extra top spacing so the Sale / stock badges don't cover the product
+     (shared with the results-page cards via --cgp-card-img-top). */
+  padding-top: var(--cgp-card-img-top, 8px);
+  box-sizing: border-box;
+  mix-blend-mode: multiply;
+}
+
+/* ---------- Custom tag badges in the drawer (window.CGP_BADGES) ----------
+   Same markup/classes as the results-page cards; that CSS only loads on the
+   search/collection templates, so it's repeated here for the global drawer. */
+.sd-card__media .cgp-cbadges {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 80%;
+}
+.sd-card__media .cgp-cbadges--top-left     { top: 8px;    left: 8px;  align-items: flex-start; }
+.sd-card__media .cgp-cbadges--top-right    { top: 8px;    right: 8px; align-items: flex-end; }
+.sd-card__media .cgp-cbadges--bottom-left  { bottom: 8px; left: 8px;  align-items: flex-start; }
+.sd-card__media .cgp-cbadges--bottom-right { bottom: 8px; right: 8px; align-items: flex-end; }
+.sd-card__media .cgp-cbadge {
+  font-size: var(--cgp-cbadge-size, 10px);
+  font-weight: var(--cgp-cbadge-weight, 400);
+  line-height: 1;
+  padding: var(--cgp-cbadge-pad, 2px 4px);
+  border-radius: var(--cgp-cbadge-radius, 2px);
+  white-space: nowrap;
+}
+.sd-card__media .cgp-cbadge--img { padding: 0; background: none !important; }
+.sd-card__media .cgp-cbadge--img img { display: block; width: auto; max-width: 56px; height: auto; }
+.sd-card__body {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+.sd-card__title {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0 0 4px;
+  color: var(--sd-card-title, #545556);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sd-card__vendor {
+  font-size: 10px;
+  color: var(--sd-card-desc, #9d9d9d);
+  margin: 0 0 2px;
+}
+.sd-card__desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--sd-card-desc, #9d9d9d);
+  margin: 0 0 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--lines, 2);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- 价格 ---------- */
+.sd-card__price {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: auto;
+}
+.sd-card__price-row { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
+.sd-card__from {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--sd-card-desc, #9d9d9d);
+}
+.sd-card__price-current {
+  font-size: 15px;
+  font-weight: 700;
+  /* All prices red (unified with the main result cards), not only sale prices. */
+  color: var(--sd-price-sale, #da5959);
+  line-height: 1.1;
+}
+.sd-card__price-compare {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--sd-price-compare, #999999);
+  line-height: 1.1;
+}
+.sd-card__vat {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--sd-card-desc, #9d9d9d);
+}
+
+/* ---------- 徽章（图片上，柔和色，对齐主卡片） ---------- */
+.sd-badge {
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 400;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.sd-badge--discount { left: 8px; background: #a84c4c; color: #fff; }
+.sd-badge--status   { right: 8px; }
+.sd-badge--in-stock     { background: #cdeadb; color: #008c46; }
+.sd-badge--pre-order    { background: #fff1d6; color: #a06400; }
+.sd-badge--out-of-stock { background: #ededed; color: #999999; }
+
+/* ---------- 列表布局（list 模式） ---------- */
+.search-drawer__products--list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.search-drawer__products--list .sd-card {
+  flex-direction: row;
+  align-items: center;
+}
+.search-drawer__products--list .sd-card__media {
+  flex: 0 0 96px;
+  width: 96px;
+  aspect-ratio: 1 / 1;
+  align-self: stretch;
+}
+.search-drawer__products--list .sd-card__body {
+  justify-content: center;
+  padding: 12px 16px;
+  gap: 2px;
+}
+.search-drawer__products--list .sd-card__title {
+  -webkit-line-clamp: 2;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+.search-drawer__products--list .sd-card__price { flex-direction: row; align-items: baseline; gap: 8px; }
+/* In list rows the badges crowd a small thumbnail — show only the discount one. */
+.search-drawer__products--list .sd-badge--status { display: none; }
+
+/* ---------- Banner / 空状态 ---------- */
+.search-drawer__banner { display: block; margin-top: 16px; }
+.search-drawer__banner img { width: 100%; height: auto; border-radius: 4px; }
+.search-drawer__empty { font-size: 14px; color: var(--sd-card-desc, #9d9d9d); }
+
+/* ---------- 加载态 ----------
+   No spinner/bar (the fetch is very brief). Keep a stable min-height so the
+   drawer doesn't shrink and reveal the page below during the swap. */
+search-drawer.cgp-sd-loading .search-drawer__panel {
+  min-height: 320px;
+}
+
+/* ---------- 移动端：全屏弹层、单栏、产品两列 ---------- */
+@media (max-width: 749px) {
+  search-drawer {
+    position: fixed;
+    inset: 0 !important;
+    top: 0 !important;
+    z-index: 1003;
+    border-top: 0;
+    box-shadow: none;
+  }
+  /* Full-screen on mobile, so the backdrop isn't needed. */
+  .search-drawer__backdrop { display: none !important; }
+  body.search-drawer-open { overflow: hidden; }
+  .search-drawer__panel {
+    min-height: 100vh;
+    max-height: 100vh;
+    padding: 72px 16px 24px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .search-drawer__columns { grid-template-columns: 1fr; gap: 20px; }
+  .search-drawer__products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .search-drawer__products--list { display: flex; }
+}

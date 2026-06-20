@@ -1,0 +1,82 @@
+{% layout none %}{% paginate search.results by 50 %}{
+"page": {{ paginate.current_page }},
+"pages": {{ paginate.pages }},
+"total": {{ search.results_count }},
+"products": [
+{%- for product in search.results -%}
+{%- liquid
+  assign p = product
+  assign best = 0
+  for v in p.variants
+    if v.compare_at_price > v.price
+      assign d = v.compare_at_price | minus: v.price | times: 100.0 | divided_by: v.compare_at_price | round
+      if d > best
+        assign best = d
+      endif
+    endif
+  endfor
+  assign sel = blank
+  for v in p.variants
+    if sel == blank
+      assign vuk = v.metafields.custom.uk_inventory.value | default: 0
+      assign vew = v.metafields.custom.es_inventory.value | default: 0
+      if vuk > 0 or vew > 0
+        assign sel = v
+      endif
+    endif
+  endfor
+  if sel == blank
+    assign sel = p.selected_or_first_available_variant
+  endif
+  assign sel_uk = sel.metafields.custom.uk_inventory.value | default: 0
+  assign sel_ew = sel.metafields.custom.es_inventory.value | default: 0
+  assign status = 'oos'
+  if sel_uk > 0 or sel_ew > 0
+    assign status = 'instock'
+  elsif sel.inventory_policy == 'continue'
+    assign status = 'preorder'
+  endif
+-%}
+{%- unless forloop.first %},{% endunless -%}
+{
+"id": {{ p.id }},
+"title": {{ p.title | json }},
+"url": {{ p.url | json }},
+"vendor": {{ p.vendor | json }},
+"type": {{ p.type | default: '' | json }},
+"tags": {{ p.tags | json }},
+"image": {{ p.featured_image | image_url: width: 600 | json }},
+"image2": {% if p.media[1] %}{{ p.media[1] | image_url: width: 600 | json }}{% else %}null{% endif %},
+"price": {{ sel.price | default: 0 }},
+"compare": {{ sel.compare_at_price | default: 0 }},
+"discount": {{ best }},
+"status": {{ status | json }},
+"sel": {{ sel.id }},
+"multi": {% if p.has_only_default_variant %}false{% else %}true{% endif %},
+"option_name": {{ p.options.first | default: '' | json }},
+"promos": [
+{%- assign promo_i = 0 -%}
+{%- for promo in p.metafields.custom.promotion_tag.value -%}
+{%- assign sip = promo.show_in_search_page.value | downcase -%}
+{%- unless sip == 'false' -%}
+{%- if promo_i > 0 %},{% endif -%}
+{%- assign promo_i = promo_i | plus: 1 -%}
+{%- capture pbody %}{{ promo.description | metafield_tag }}{% endcapture -%}
+{%- capture pcta %}{{ promo.cta | metafield_tag }}{% endcapture -%}
+{%- assign plabel = promo.short_description.value -%}
+{%- if plabel == blank %}{%- assign plabel = promo.title.value -%}{%- endif -%}
+{%- if plabel == blank %}{%- assign plabel = pbody | strip_html | truncate: 80 -%}{%- endif -%}
+{"label":{{ plabel | json }},"title":{{ promo.title.value | json }},"body":{{ pbody | json }},"cta":{{ pcta | json }}}
+{%- endunless -%}
+{%- endfor -%}
+],
+"variants": [
+{%- for v in p.variants -%}
+{%- unless forloop.first %},{% endunless -%}
+{"id":{{ v.id }},"title":{{ v.title | json }},"price":{{ v.price }},"compare":{{ v.compare_at_price | default: 0 }},"available":{{ v.available }},"image":{% if v.featured_image %}{{ v.featured_image | image_url: width: 600 | json }}{% else %}null{% endif %},"policy":{{ v.inventory_policy | json }},"uk":{{ v.metafields.custom.uk_inventory.value | default: 0 }},"ew":{{ v.metafields.custom.es_inventory.value | default: 0 }}}
+{%- endfor -%}
+]
+}
+{%- endfor -%}
+]
+}{% endpaginate %}

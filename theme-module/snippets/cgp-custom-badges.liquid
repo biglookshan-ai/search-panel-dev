@@ -1,0 +1,41 @@
+{%- comment -%}
+  Renders tag-triggered custom badges over the product image.
+  Data source: Metaobject "cgp_badge" (unlimited entries), read via
+  metaobjects.cgp_badge.values. Each entry:
+    - tag         (single line text)  trigger product tag (case-sensitive)
+    - position    (single line text)  top-left | top-right | bottom-left | bottom-right
+    - label       (single line text)  badge text (optional)
+    - image       (file: image)       optional, overrides text
+    - background  (color)             text-badge background
+    - text_color  (color)             text-badge colour
+    - enabled     (boolean)           optional; false hides the rule
+  If the metaobject definition does not exist yet, this renders nothing.
+  Accepts: product
+{%- endcomment -%}
+{%- liquid
+  assign badge_defs = metaobjects.cgp_badge.values
+  assign corners = 'top-left,top-right,bottom-left,bottom-right' | split: ','
+-%}
+{%- if badge_defs.size > 0 -%}
+  {%- for corner in corners -%}
+    {%- capture corner_html -%}
+      {%- for b in badge_defs -%}
+        {%- if b.enabled.value == false -%}{%- continue -%}{%- endif -%}
+        {%- assign btag = b.tag.value -%}
+        {%- assign bpos = b.position.value | default: 'bottom-left' | strip -%}
+        {%- if btag != blank and bpos == corner and product.tags contains btag -%}
+          {%- assign bimg = b.image.value -%}
+          {%- if bimg != blank -%}
+            <span class="cgp-cbadge cgp-cbadge--img"><img src="{{ bimg | image_url: width: 240 }}" alt="{{ b.label.value | escape }}" loading="lazy"></span>
+          {%- else -%}
+            <span class="cgp-cbadge" style="background:{{ b.background.value | default: '#1c222d' }};color:{{ b.text_color.value | default: '#ffffff' }};">{{ b.label.value }}</span>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endcapture -%}
+    {%- assign corner_stripped = corner_html | strip -%}
+    {%- if corner_stripped != blank -%}
+      <div class="cgp-cbadges cgp-cbadges--{{ corner }}">{{ corner_html }}</div>
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}

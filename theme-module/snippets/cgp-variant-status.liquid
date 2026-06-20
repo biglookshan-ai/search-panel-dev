@@ -1,0 +1,21 @@
+{%- comment -%}
+  Outputs the stock status of a variant: instock | preorder | oos
+  Logic mirrors computeStatus() in assets/cgp-card.js and the JSON templates:
+    instock  = UK Inventory or EW Inventory metafield > 0 (real or buffer warehouse)
+    preorder = both 0 but the variant allows overselling (inventory_policy = continue)
+    oos      = both 0 and inventory_policy = deny
+  UK Inventory = custom.uk_inventory (real UK/Shop warehouse available, integer)
+  EW Inventory = custom.es_inventory (External "virtual" warehouse available, integer)
+  Accepts: variant
+{%- endcomment -%}
+{%- liquid
+  assign uk = variant.metafields.custom.uk_inventory.value | default: 0
+  assign ew = variant.metafields.custom.es_inventory.value | default: 0
+  assign st = 'oos'
+  if uk > 0 or ew > 0
+    assign st = 'instock'
+  elsif variant.inventory_policy == 'continue'
+    assign st = 'preorder'
+  endif
+  echo st
+-%}

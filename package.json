@@ -1,0 +1,17 @@
+{
+  "name": "search-panel-dev",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CineGearPro search engine admin: manage Metaobjects (badge / sort rule / search panel) and push the search-engine module into a Shopify theme via the Admin API.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

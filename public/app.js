@@ -1,0 +1,170 @@
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let STORE = '';
+
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || res.statusText);
+  return json;
+}
+
+function toast(msg, ok = true) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (ok ? 'ok' : 'err');
+  t.hidden = false;
+  setTimeout(() => { t.hidden = true; }, 3200);
+}
+
+// ---- tabs ----
+document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('is-active', x === b));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + b.dataset.tab));
+  if (b.dataset.tab === 'apply') loadThemes();
+}));
+document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.subtab').forEach((x) => x.classList.toggle('is-active', x === b));
+  loadType(b.dataset.type);
+}));
+
+// ---- field rendering ----
+function fieldInput(fd, value) {
+  const t = fd.type?.name || 'single_line_text_field';
+  const id = 'f_' + fd.key;
+  if (t === 'boolean') {
+    return `<label class="inline"><input type="checkbox" data-key="${fd.key}" data-kind="bool" ${value === 'true' ? 'checked' : ''}/> ${esc(fd.name)}</label>`;
+  }
+  if (t.startsWith('list.')) {
+    let lines = '';
+    try { lines = (JSON.parse(value || '[]') || []).join('\n'); } catch { lines = value || ''; }
+    return `<label>${esc(fd.name)} <span class="hint">(每行一个)</span>
+      <textarea data-key="${fd.key}" data-kind="list" rows="3">${esc(lines)}</textarea></label>`;
+  }
+  if (t === 'color') {
+    const v = value || '#000000';
+    return `<label>${esc(fd.name)}
+      <span class="colorrow"><input type="color" value="${esc(v)}" oninput="this.nextElementSibling.value=this.value"/>
+      <input type="text" data-key="${fd.key}" data-kind="text" value="${esc(v)}"/></span></label>`;
+  }
+  if (t.includes('file_reference') || t.includes('image')) {
+    return `<label>${esc(fd.name)} <span class="hint">(图片请在 Shopify 后台该 Metaobject 里设置)</span>
+      <input type="text" data-key="${fd.key}" data-kind="text" value="${esc(value || '')}" placeholder="gid://... 或留空"/></label>`;
+  }
+  const rows = (t.includes('multi_line') || t.includes('rich_text')) ? 4 : 1;
+  if (rows > 1) return `<label>${esc(fd.name)}<textarea data-key="${fd.key}" data-kind="text" rows="${rows}">${esc(value || '')}</textarea></label>`;
+  return `<label>${esc(fd.name)}<input type="text" data-key="${fd.key}" data-kind="text" value="${esc(value || '')}"/></label>`;
+}
+
+function collectFields(formEl) {
+  const fields = {};
+  formEl.querySelectorAll('[data-key]').forEach((el) => {
+    const kind = el.dataset.kind;
+    if (kind === 'bool') fields[el.dataset.key] = el.checked ? 'true' : 'false';
+    else if (kind === 'list') {
+      const arr = el.value.split('\n').map((x) => x.trim()).filter(Boolean);
+      fields[el.dataset.key] = JSON.stringify(arr);
+    } else fields[el.dataset.key] = el.value;
+  });
+  return fields;
+}
+
+let DEF = null, TYPE = '';
+
+async function loadType(type) {
+  TYPE = type;
+  const body = $('#meta-body');
+  body.innerHTML = '<p class="muted">加载中…</p>';
+  try {
+    const { definition, entries } = await api('GET', '/api/metaobjects/' + type);
+    DEF = definition;
+    if (!definition) { body.innerHTML = '<p class="err">找不到该 Metaobject 定义。</p>'; return; }
+    const fds = definition.fieldDefinitions || [];
+    let html = `<div class="rows">`;
+    entries.forEach((e) => { html += entryCard(fds, e); });
+    html += `</div><button class="btn btn-primary" id="add-entry">+ 新增</button>`;
+    body.innerHTML = html;
+    body.querySelectorAll('[data-entry]').forEach(bindEntry);
+    $('#add-entry').addEventListener('click', () => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = entryCard(fds, { id: '', handle: '', fields: {} }, true);
+      $('.rows').appendChild(wrap.firstElementChild);
+      bindEntry($('.rows').lastElementChild);
+    });
+  } catch (e) { body.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+
+function entryCard(fds, entry, isNew = false) {
+  const inner = fds.map((fd) => fieldInput(fd, entry.fields[fd.key])).join('');
+  const title = isNew ? '新条目' : esc(entry.displayName || entry.handle || entry.id);
+  return `<form class="entry" data-entry data-id="${esc(entry.id)}">
+    <div class="entry-head"><b>${title}</b></div>
+    ${inner}
+    <div class="entry-actions">
+      <button type="button" class="btn btn-primary" data-act="save">${isNew ? '创建' : '保存'}</button>
+      ${entry.id ? '<button type="button" class="btn btn-danger" data-act="del">删除</button>' : ''}
+    </div>
+  </form>`;
+}
+
+function bindEntry(form) {
+  form.querySelector('[data-act="save"]').addEventListener('click', async () => {
+    try {
+      const fields = collectFields(form);
+      const id = form.dataset.id;
+      if (id) await api('PUT', '/api/metaobjects/' + TYPE, { id, fields });
+      else await api('POST', '/api/metaobjects/' + TYPE, { fields });
+      toast('已保存 ✓');
+      loadType(TYPE);
+    } catch (e) { toast(e.message, false); }
+  });
+  const del = form.querySelector('[data-act="del"]');
+  if (del) del.addEventListener('click', async () => {
+    if (!confirm('确定删除这个条目?')) return;
+    try { await api('DELETE', '/api/metaobjects/' + TYPE, { id: form.dataset.id }); toast('已删除 ✓'); loadType(TYPE); }
+    catch (e) { toast(e.message, false); }
+  });
+}
+
+// ---- themes / apply ----
+async function loadThemes() {
+  const sel = $('#theme-select');
+  sel.innerHTML = '<option>加载中…</option>';
+  try {
+    const { themes } = await api('GET', '/api/themes');
+    sel.innerHTML = themes.map((t) => `<option value="${t.id}">${esc(t.name)} ${t.role === 'main' ? '(线上)' : '(' + t.role + ')'}</option>`).join('');
+  } catch (e) { sel.innerHTML = `<option>${esc(e.message)}</option>`; }
+}
+$('#theme-refresh').addEventListener('click', loadThemes);
+
+async function runApply(dryRun) {
+  const id = $('#theme-select').value;
+  const opt = $('#theme-select').selectedOptions[0];
+  if (!id) return;
+  if (!dryRun && /线上|main/.test(opt.textContent) && !confirm('这是线上主题!确定要直接写入线上吗?建议改用草稿主题。仍要继续?')) return;
+  const log = $('#apply-log');
+  log.textContent = '运行中…';
+  try {
+    const r = await api('POST', `/api/themes/${id}/apply`, { dryRun });
+    log.textContent = (dryRun ? '【试运行,未实际写入】\n' : '【已写入】\n') + r.log.join('\n');
+    toast(dryRun ? '试运行完成' : '写入完成 ✓');
+  } catch (e) { log.textContent = e.message; toast(e.message, false); }
+}
+$('#btn-dryrun').addEventListener('click', () => runApply(true));
+$('#btn-apply').addEventListener('click', () => runApply(false));
+
+// ---- init ----
+(async () => {
+  try {
+    const c = await api('GET', '/api/config');
+    STORE = c.store || '';
+    $('#store').textContent = STORE + (c.hasToken ? '' : ' ⚠️ 未配置 token');
+    const handle = STORE.replace('.myshopify.com', '');
+    $('#boosts-link').href = `https://admin.shopify.com/store/${handle}/apps`;
+  } catch (e) { $('#store').textContent = e.message; }
+  loadType('cgp_badge');
+})();

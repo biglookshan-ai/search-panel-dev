@@ -1,0 +1,92 @@
+/* ============================================================
+   cgp-promo.css — promotion pills on product cards + the shared popup.
+   Pills sit above the card title; one line, ellipsis if too long.
+   ============================================================ */
+
+.cgp-promos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 6px;
+}
+.cgp-promo {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 500;
+  color: var(--cgp-promo-text, #1d4ed8);
+  background: var(--cgp-promo-bg, #eef3ff);
+  border: 0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.cgp-promo:hover { filter: brightness(0.96); }
+.cgp-promo__label {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cgp-promo__data { display: none; }
+
+/* ---------- Popup ---------- */
+.cgp-promo-pop[hidden] { display: none; }
+.cgp-promo-pop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cgp-promo-pop__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+.cgp-promo-pop__box {
+  position: relative;
+  background: #fff;
+  max-width: 560px;
+  width: calc(100% - 40px);
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 28px 28px 24px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+.cgp-promo-pop__close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: 0;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: #555;
+}
+.cgp-promo-pop__close:hover { color: #000; }
+.cgp-promo-pop__title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  padding-right: 24px;
+}
+.cgp-promo-pop__body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #333;
+}
+.cgp-promo-pop__body p { margin: 0 0 8px; }
+.cgp-promo-pop__body a { color: #1d4ed8; text-decoration: underline; }
+.cgp-promo-pop__cta { margin-top: 16px; }
+.cgp-promo-pop__cta a { color: #1d4ed8; font-weight: 600; }
+
+body.cgp-promo-open { overflow: hidden; }

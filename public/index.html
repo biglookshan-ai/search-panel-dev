@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CineGearPro Search Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>🔎 Search Admin</h1>
+    <span id="store" class="store"></span>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab is-active" data-tab="meta">Metaobjects</button>
+    <button class="tab" data-tab="apply">写入主题</button>
+    <button class="tab" data-tab="links">Boosts / 设置</button>
+  </nav>
+
+  <main>
+    <!-- Metaobjects -->
+    <section id="tab-meta" class="panel is-active">
+      <div class="subtabs">
+        <button class="subtab is-active" data-type="cgp_badge">自定义角标 (cgp_badge)</button>
+        <button class="subtab" data-type="cgp_sort_rule">优先级排序 (cgp_sort_rule)</button>
+        <button class="subtab" data-type="search_panel">搜索面板 (search_panel)</button>
+      </div>
+      <div id="meta-body"><p class="muted">加载中…</p></div>
+    </section>
+
+    <!-- Apply to theme -->
+    <section id="tab-apply" class="panel">
+      <p class="muted">把搜索引擎模块写入选定主题(<b>建议只选草稿/未发布主题</b>)。先「试运行」看清单,确认无误再「正式写入」。</p>
+      <label>主题:
+        <select id="theme-select"></select>
+        <button id="theme-refresh" class="btn-sm">刷新</button>
+      </label>
+      <div class="apply-actions">
+        <button id="btn-dryrun" class="btn">试运行 (dry run)</button>
+        <button id="btn-apply" class="btn btn-primary">正式写入</button>
+      </div>
+      <pre id="apply-log" class="log"></pre>
+    </section>
+
+    <!-- Links -->
+    <section id="tab-links" class="panel">
+      <p>搜索结果的 Boosts / 同义词 / 筛选器在官方 <b>Search &amp; Discovery</b> app 里设置。</p>
+      <a id="boosts-link" class="btn" target="_blank" rel="noopener">打开 Search &amp; Discovery (Boosts)</a>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>

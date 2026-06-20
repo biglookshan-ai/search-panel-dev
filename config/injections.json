@@ -1,0 +1,17 @@
+{
+  "_comment": "How the search-engine module is merged into a theme. copyDirs: every file under theme-module/<dir> is written as asset <dir>/<file>. injections: blocks inserted into the theme's own shared files (replaced between CGP-SEARCH markers if present, else inserted after the anchor line).",
+  "copyDirs": ["assets", "snippets", "sections", "templates"],
+  "injections": [
+    {
+      "file": "layout/theme.liquid",
+      "anchorAfter": "{% sections 'header-group' %}",
+      "block": [
+        "    {%- comment -%} ===== CGP-SEARCH START — search engine module; re-applied by the admin app. Keep the markers. ===== {%- endcomment -%}",
+        "    {% section 'search-drawer' %}",
+        "    {% render 'cgp-search-head' %}",
+        "    {%- comment -%} ===== CGP-SEARCH END ===== {%- endcomment -%}"
+      ]
+    }
+  ],
+  "_todo": "main-search.liquid / main-collection-product-grid.liquid / card-product.liquid / settings_schema.json injections are added once those files are marked in the theme."
+}

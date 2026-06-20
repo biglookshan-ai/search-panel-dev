@@ -1,0 +1,137 @@
+{%- comment -%}
+  CGP-SEARCH head injection — CSS vars (settings) + window.CGP_CONFIG / CGP_BADGES
+  (metaobjects) + promo assets. Extracted from theme.liquid so the only touch-point
+  in the layout is a single {% render %} between the CGP-SEARCH markers.
+{%- endcomment -%}
+{%- comment -%} CineGearPro: CSS variables for custom product card (Search & Collection pages) {%- endcomment -%}
+{%- liquid
+  assign cgp_ratio = '1 / 1'
+  case settings.cgp_image_ratio
+    when 'portrait'
+      assign cgp_ratio = '3 / 4'
+    when 'landscape'
+      assign cgp_ratio = '4 / 3'
+  endcase
+-%}
+<style>
+  :root {
+    /* Layout */
+    --cgp-card-gap: {{ settings.cgp_card_gap }}px;
+    --cgp-image-ratio: {{ cgp_ratio }};
+    --cgp-promo-bg: {{ settings.cgp_promo_bg_color }};
+    --cgp-promo-text: {{ settings.cgp_promo_text_color }};
+    /* Custom tag badges (cgp_badge metaobject) — own vars so the stock-status
+       badge sizing below can't override them (both used to share --cgp-badge-*). */
+    --cgp-cbadge-size: {{ settings.cgp_cbadge_font_size | default: 10 }}px;
+    --cgp-cbadge-weight: {{ settings.cgp_cbadge_weight | default: 400 }};
+    --cgp-cbadge-pad: {{ settings.cgp_cbadge_padding_y | default: 2 }}px {{ settings.cgp_cbadge_padding_x | default: 4 }}px;
+    --cgp-cbadge-radius: {{ settings.cgp_cbadge_radius | default: 2 }}px;
+    /* Card */
+    --cgp-card-bg: {{ settings.cgp_card_bg }};
+    --cgp-card-border-width: {% if settings.cgp_card_show_border %}{{ settings.cgp_card_border_width }}px{% else %}0px{% endif %};
+    --cgp-card-border-color: {{ settings.cgp_card_border_color }};
+    --cgp-card-radius: {{ settings.cgp_card_border_radius }}px;
+    --cgp-card-padding: {{ settings.cgp_card_padding }}px;
+    --cgp-card-hover-lift: {% if settings.cgp_card_hover_lift %}-4px{% else %}0px{% endif %};
+    /* Image */
+    --cgp-image-blend: {{ settings.cgp_image_blend }};
+    --cgp-image-padding: {{ settings.cgp_image_padding }}px;
+    --cgp-card-img-top: {{ settings.cgp_card_image_top | default: 8 }}px;
+    /* Title */
+    --cgp-title-size: {{ settings.cgp_title_size }}px;
+    --cgp-title-weight: {{ settings.cgp_title_weight }};
+    --cgp-title-color: {{ settings.cgp_title_color }};
+    --cgp-title-lines: {{ settings.cgp_title_lines }};
+    /* Variant select */
+    --cgp-select-size: {{ settings.cgp_select_size }}px;
+    --cgp-select-weight: {{ settings.cgp_select_weight }};
+    --cgp-select-text: {{ settings.cgp_select_text }};
+    --cgp-select-bg: {{ settings.cgp_select_bg }};
+    --cgp-select-border: {{ settings.cgp_select_border }};
+    /* Price */
+    --cgp-price-cur-size: {{ settings.cgp_price_current_size }}px;
+    --cgp-price-cur-weight: {{ settings.cgp_price_current_weight }};
+    --cgp-price-cur-color: {{ settings.cgp_price_current_color }};
+    --cgp-price-cmp-size: {{ settings.cgp_price_compare_size }}px;
+    --cgp-price-cmp-weight: {{ settings.cgp_price_compare_weight }};
+    --cgp-price-cmp-color: {{ settings.cgp_price_compare_color }};
+    --cgp-vat-size: {{ settings.cgp_vat_size }}px;
+    --cgp-vat-color: {{ settings.cgp_vat_color }};
+    /* Badges shared */
+    --cgp-badge-size: {{ settings.cgp_badge_size }}px;
+    --cgp-badge-weight: {{ settings.cgp_badge_weight }};
+    --cgp-badge-radius: {{ settings.cgp_badge_radius }}px;
+    --cgp-badge-pad: {{ settings.cgp_badge_pad_y }}px {{ settings.cgp_badge_pad_x }}px;
+    /* Discount badge */
+    --cgp-badge-disc-bg: {{ settings.cgp_badge_disc_bg }};
+    --cgp-badge-disc-text: {{ settings.cgp_badge_disc_text }};
+    /* Stock badges */
+    --cgp-badge-instock-bg: {{ settings.cgp_badge_instock_bg }};
+    --cgp-badge-instock-text: {{ settings.cgp_badge_instock_text }};
+    --cgp-badge-preorder-bg: {{ settings.cgp_badge_preorder_bg }};
+    --cgp-badge-preorder-text: {{ settings.cgp_badge_preorder_text }};
+    --cgp-badge-oos-bg: {{ settings.cgp_badge_oos_bg }};
+    --cgp-badge-oos-text: {{ settings.cgp_badge_oos_text }};
+    /* Action buttons */
+    --cgp-action-size: {{ settings.cgp_action_size }}px;
+    --cgp-action-bg: {{ settings.cgp_action_bg }};
+    --cgp-action-icon: {{ settings.cgp_action_icon }};
+    --cgp-action-border: {{ settings.cgp_action_border }};
+    --cgp-action-hover-bg: {{ settings.cgp_action_hover_bg }};
+    --cgp-action-hover-icon: {{ settings.cgp_action_hover_icon }};
+    /* Filters */
+    --cgp-filter-width: {{ settings.cgp_filter_width }}px;
+    --cgp-filter-title-size: {{ settings.cgp_filter_title_size }}px;
+    --cgp-filter-group-size: {{ settings.cgp_filter_group_size }}px;
+    --cgp-filter-item-size: {{ settings.cgp_filter_item_size }}px;
+    --cgp-filter-item-gap: {{ settings.cgp_filter_item_gap }}px;
+    --cgp-filter-text: {{ settings.cgp_filter_text_color }};
+    --cgp-filter-accent: {{ settings.cgp_filter_accent_color }};
+    --cgp-filter-checkbox-size: {{ settings.cgp_filter_checkbox_size }}px;
+    --cgp-filter-checkbox-color: {{ settings.cgp_filter_checkbox_color }};
+    --cgp-filter-gap: {{ settings.cgp_filter_gap }}px;
+    /* Discount filter pills */
+    --cgp-pill-bg: {{ settings.cgp_discount_pill_bg }};
+    --cgp-pill-text: {{ settings.cgp_discount_pill_text }};
+    --cgp-pill-border: {{ settings.cgp_discount_pill_border }};
+    --cgp-pill-active-bg: {{ settings.cgp_discount_pill_active_bg }};
+    --cgp-pill-active-text: {{ settings.cgp_discount_pill_active_text }};
+  }
+</style>
+<script>
+  window.CGP_CONFIG = {
+    imageFollowsVariant: {{ settings.cgp_image_follows_variant | json }},
+    showInstock: {{ settings.cgp_show_instock_badge | json }},
+    showDiscountBadge: {{ settings.cgp_show_discount_badge | json }},
+    discountSuffix: {{ settings.cgp_badge_disc_suffix | json }},
+    paginationType: {{ settings.cgp_pagination_type | json }},
+    perPage: {{ settings.cgp_products_per_page | json }},
+    columnsDesktop: {{ settings.cgp_columns_desktop | json }},
+    columnsMobile: {{ settings.cgp_columns_mobile | json }},
+    showSidebar: {{ settings.cgp_show_sidebar | json }},
+    stickyBar: {{ settings.cgp_sticky_filter_bar | json }},
+    showOptionLabel: {{ settings.cgp_show_option_label | json }},
+    showWishlist: {{ settings.cgp_show_wishlist | json }},
+    showAddCart: {{ settings.cgp_show_add_cart | json }},
+    vatLabel: {{ settings.cgp_vat_label | json }},
+    priorityTypes: {{ settings.cgp_search_priority_types | default: '' | json }},
+    sortRules: [{%- for r in metaobjects.cgp_sort_rule.values -%}{%- unless forloop.first %},{% endunless -%}{"keywords": {{ r.keywords.value | json }}, "types": {{ r.priority_types.value | json }}}{%- endfor -%}],
+    labels: {
+      instock: {{ settings.cgp_badge_instock_label | json }},
+      preorder: {{ settings.cgp_badge_preorder_label | json }},
+      oos: {{ settings.cgp_badge_oos_label | json }}
+    }
+  };
+  window.CGP_BADGES = [
+    {%- for b in metaobjects.cgp_badge.values -%}
+      {%- unless forloop.first %},{% endunless -%}
+      {%- assign b_img = '' -%}
+      {%- if b.image.value != blank -%}{%- assign b_img = b.image.value | image_url: width: 240 -%}{%- endif -%}
+      {%- capture b_bg -%}{{ b.background }}{%- endcapture -%}
+      {%- capture b_text -%}{{ b.text_color }}{%- endcapture -%}
+      {"tag": {{ b.tag.value | json }}, "position": {{ b.position.value | default: 'bottom-left' | json }}, "label": {{ b.label.value | default: '' | json }}, "image": {{ b_img | json }}, "bg": {{ b_bg | strip | default: '#1c222d' | json }}, "text": {{ b_text | strip | default: '#ffffff' | json }}, "enabled": {% if b.enabled.value == false %}false{% else %}true{% endif %}}
+    {%- endfor -%}
+  ];
+</script>
+{{ 'cgp-promo.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'cgp-promo.js' | asset_url }}" defer></script>

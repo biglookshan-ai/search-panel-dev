@@ -1,0 +1,632 @@
+/* ============================================================
+   cgp-search-overrides.css
+   Custom product card + filter styling for the search results
+   and collection pages. Values come from CSS variables injected
+   in layout/theme.liquid (Theme Settings → "Search & Collections")
+   — every var() has a hard-coded fallback so the card still
+   renders correctly even if the variable injection is missing.
+   Card markup: snippets/cgp-card-product.liquid.
+   ============================================================ */
+
+
+/* ---------- Grid gap ---------- */
+.product-grid {
+  gap: var(--cgp-card-gap, 16px) !important;
+  margin: 0;
+}
+
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.cgp-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--cgp-card-bg, #f5f6f8);
+  border: var(--cgp-card-border-width, 1px) solid var(--cgp-card-border-color, #e3e6ea);
+  border-radius: var(--cgp-card-radius, 8px);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.cgp-card:hover {
+  transform: translateY(var(--cgp-card-hover-lift, -4px));
+}
+
+/* Utility: hide a badge without removing it (so JS can re-show on variant change) */
+.cgp-hidden { display: none !important; }
+
+/* ---------- Image ---------- */
+.cgp-card__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--cgp-image-ratio, 1 / 1);
+  background: var(--cgp-card-bg, #f5f6f8);
+  overflow: hidden;
+}
+.cgp-card__media-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.cgp-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: var(--cgp-image-padding, 8px);
+  /* Extra top spacing so the Sale / stock badges don't cover the product. */
+  padding-top: var(--cgp-card-img-top, 8px);
+  box-sizing: border-box;
+  mix-blend-mode: var(--cgp-image-blend, multiply);
+}
+
+/* ---------- Badges (over image) ---------- */
+.cgp-badge {
+  position: absolute;
+  top: 10px;
+  z-index: 2;
+  font-size: var(--cgp-badge-size, 11px);
+  font-weight: var(--cgp-badge-weight, 600);
+  line-height: 1;
+  padding: var(--cgp-badge-pad, 4px 8px);
+  border-radius: var(--cgp-badge-radius, 4px);
+  white-space: nowrap;
+}
+.cgp-badge--discount {
+  left: 10px;
+  background: var(--cgp-badge-disc-bg, #d91818);
+  color: var(--cgp-badge-disc-text, #ffffff);
+}
+.cgp-badge--status {
+  right: 10px;
+}
+.cgp-badge--instock   { background: var(--cgp-badge-instock-bg, #1a7f37);  color: var(--cgp-badge-instock-text, #ffffff); }
+.cgp-badge--preorder  { background: var(--cgp-badge-preorder-bg, #ea621f); color: var(--cgp-badge-preorder-text, #ffffff); }
+.cgp-badge--oos       { background: var(--cgp-badge-oos-bg, #6b7280);      color: var(--cgp-badge-oos-text, #ffffff); }
+
+/* ---------- Custom tag badges (4 corners, stackable) ---------- */
+.cgp-cbadges {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 70%;
+}
+.cgp-cbadges--top-left     { top: 10px;    left: 10px;  align-items: flex-start; }
+.cgp-cbadges--top-right    { top: 10px;    right: 10px; align-items: flex-end; }
+.cgp-cbadges--bottom-left  { bottom: 10px; left: 10px;  align-items: flex-start; }
+.cgp-cbadges--bottom-right { bottom: 10px; right: 10px; align-items: flex-end; }
+.cgp-cbadge {
+  font-size: var(--cgp-cbadge-size, 10px);
+  font-weight: var(--cgp-cbadge-weight, 400);
+  line-height: 1;
+  padding: var(--cgp-cbadge-pad, 2px 4px);
+  border-radius: var(--cgp-cbadge-radius, 2px);
+  white-space: nowrap;
+}
+.cgp-cbadge--img { padding: 0; background: none !important; }
+.cgp-cbadge--img img { display: block; width: auto; max-width: 72px; height: auto; }
+
+/* ---------- Info ---------- */
+.cgp-card__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding: var(--cgp-card-padding, 14px);
+  background: var(--cgp-card-bg, #f5f6f8);
+}
+
+/* ---------- Title ---------- */
+.cgp-card__title-link {
+  text-decoration: none;
+}
+.cgp-card__title {
+  margin: 0 0 8px;
+  font-size: var(--cgp-title-size, 13px);
+  font-weight: var(--cgp-title-weight, 600);
+  color: var(--cgp-title-color, #1c222d);
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--cgp-title-lines, 2);
+}
+.cgp-card__title-link,
+.cgp-card__title-link:visited { color: var(--cgp-title-color, #1c222d); }
+.cgp-card:hover .cgp-card__title { opacity: 0.82; }
+
+/* ---------- Variant dropdown ---------- */
+.cgp-card__options {
+  margin-bottom: 10px;
+}
+.cgp-card__option-label {
+  display: block;
+  font-size: var(--cgp-select-size, 12px);
+  color: var(--cgp-select-text, #1c222d);
+  margin-bottom: 3px;
+  opacity: 0.7;
+}
+.cgp-card__variant {
+  width: 100%;
+  font-size: var(--cgp-select-size, 12px);
+  font-weight: var(--cgp-select-weight, 400);
+  color: var(--cgp-select-text, #1c222d);
+  background-color: var(--cgp-select-bg, #ffffff);
+  border: 1px solid var(--cgp-select-border, #e3e6ea);
+  border-radius: 4px;
+  padding: 6px 28px 6px 8px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231c222d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+}
+
+/* ---------- Price + actions ---------- */
+.cgp-card__price-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: auto;
+}
+.cgp-card__price {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cgp-card__price-compare {
+  font-size: var(--cgp-price-cmp-size, 12px);
+  font-weight: var(--cgp-price-cmp-weight, 400);
+  color: var(--cgp-price-cmp-color, #9aa0a8);
+  text-decoration: line-through;
+  line-height: 1.1;
+}
+.cgp-card__price-current {
+  font-size: var(--cgp-price-cur-size, 18px);
+  font-weight: var(--cgp-price-cur-weight, 700);
+  color: var(--cgp-price-cur-color, #d10000);
+  line-height: 1.1;
+  letter-spacing: -0.3px;
+}
+.cgp-card__price-vat {
+  font-size: var(--cgp-vat-size, 10px);
+  color: var(--cgp-vat-color, #9aa0a8);
+  line-height: 1.1;
+}
+
+/* ---------- Action buttons ---------- */
+.cgp-card__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: center;
+}
+.cgp-action-btn {
+  width: var(--cgp-action-size, 36px);
+  height: var(--cgp-action-size, 36px);
+  border-radius: 50%;
+  border: 1px solid var(--cgp-action-border, #e3e6ea);
+  background: var(--cgp-action-bg, #ffffff);
+  color: var(--cgp-action-icon, #1c222d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.18s ease, color 0.18s ease;
+  padding: 0;
+}
+.cgp-action-btn:hover {
+  background: var(--cgp-action-hover-bg, #1c222d);
+  color: var(--cgp-action-hover-icon, #ffffff);
+}
+.cgp-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.cgp-action-btn.cgp-is-loading svg { opacity: 0; }
+
+/* "Added to cart" state — stays coloured so the shopper sees it's in the cart. */
+/* "Added to cart" and "wishlisted" both use the hover style (filled dark) so the
+   shopper sees the action registered — matches the button's hover look. */
+.cgp-action-btn--added,
+.cgp-action-btn--added:hover,
+.cgp-action-btn--active,
+.cgp-action-btn--active:hover {
+  background: var(--cgp-action-hover-bg, #1c222d);
+  border-color: var(--cgp-action-hover-bg, #1c222d);
+  color: var(--cgp-action-hover-icon, #ffffff);
+}
+
+/* Wishlist: keep add/remove/loading stacked in one slot. Default shows the
+   "add" heart only. The wishlist app reveals "remove" by setting an inline
+   display when a product is wishlisted — :not([style*="display"]) lets that
+   inline style win so the heart never vanishes after clicking. */
+.xb-wishlist__btn-custom { position: relative; display: inline-flex; }
+/* Inside OUR cards (.cgp-card) we control the heart's visibility ourselves so
+   it can never vanish when the wishlist app fails to update our injected DOM.
+   The app still records the wishlist (its delegated click handler runs); we
+   only flip which heart shows via .cgp-wl-on (toggled in cgp-card.js). The
+   !important beats whatever inline display the app sets. Scoped to .cgp-card so
+   the theme's own cards keep the app's native behaviour. */
+.cgp-card .xb-wishlist__loading { display: none !important; }
+/* Force the correct heart with !important — the app's own CSS hides BOTH by
+   default and only reveals one via JS that never touches our injected cards
+   (and it transiently flips inline display while processing). Owning both
+   states here means the heart can never end up hidden. */
+.cgp-card .xb-wishlist__btn-custom > .xb-wishlist__add { display: inline-flex !important; }
+.cgp-card .xb-wishlist__btn-custom > .xb-wishlist__remove { display: none !important; }
+.cgp-card .xb-wishlist__btn-custom.cgp-wl-on > .xb-wishlist__add { display: none !important; }
+.cgp-card .xb-wishlist__btn-custom.cgp-wl-on > .xb-wishlist__remove { display: inline-flex !important; }
+
+/* Spinner */
+.cgp-spinner {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 15px; height: 15px;
+  margin: -7.5px 0 0 -7.5px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: cgpSpin 0.7s linear infinite;
+}
+@keyframes cgpSpin { to { transform: rotate(360deg); } }
+
+
+/* ============================================================
+   TOP FILTER TOOLBAR (native horizontal facets + discount pills)
+   ============================================================ */
+/* One cohesive panel wrapping the native facets bar + the pill rows. */
+.cgp-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 0.1rem solid rgba(var(--color-foreground, 0 0 0), 0.1);
+  border-radius: var(--product-card-corner-radius, 12px);
+  background: rgb(var(--color-background, 255 255 255));
+}
+/* Kill the native facets' own box so it flows inside the single panel. */
+.cgp-toolbar .facets__form,
+.cgp-toolbar .facets {
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  grid-column-start: auto;
+}
+.cgp-toolbar--sticky {
+  position: sticky;
+  top: var(--cgp-sticky-top, 0px);
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+}
+/* Native facet dropdown popups must float above the grid below. */
+.cgp-toolbar .facets__display,
+.cgp-toolbar .facets__display-vertical { z-index: 25; }
+
+/* Divider between the native filter row and the pill rows (only when the
+   native facets are present above the pills). */
+.cgp-toolbar .cgp-pillrows:not(:first-child) {
+  padding-top: 12px;
+  border-top: 0.1rem solid rgba(var(--color-foreground, 0 0 0), 0.08);
+}
+
+.cgp-pillrows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cgp-pillgroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.cgp-pillgroup__label {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--cgp-filter-text, #1c222d);
+  margin-right: 4px;
+  min-width: 86px;
+}
+.cgp-pill {
+  font-size: 1.3rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 40px;
+  border: 1px solid var(--cgp-pill-border, #e3e6ea);
+  background: var(--cgp-pill-bg, #ffffff);
+  color: var(--cgp-pill-text, #1c222d);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+.cgp-pill:hover { border-color: var(--cgp-pill-active-bg, #1c222d); }
+.cgp-pill.is-active {
+  background: var(--cgp-pill-active-bg, #1c222d);
+  color: var(--cgp-pill-active-text, #ffffff);
+  border-color: var(--cgp-pill-active-bg, #1c222d);
+}
+.cgp-filter-empty {
+  display: none;
+  color: var(--cgp-filter-text, #1c222d);
+  font-size: 1.3rem;
+  opacity: 0.7;
+  margin-left: 6px;
+}
+
+
+/* ============================================================
+   FILTERS SIDEBAR
+   ============================================================ */
+/* Sidebar width — the real width-controlling element in this theme is
+   .facets__form-vertical (a flex child of .facets-vertical, default 29rem).
+   Scoped to the VERTICAL layout only so horizontal/drawer filters are
+   untouched. The product grid (.product-grid-container, width:100%) flexes
+   to fill the rest. */
+@media screen and (min-width: 750px) {
+  .facets-vertical .facets__form-vertical {
+    width: var(--cgp-filter-width, 290px) !important;
+    flex: 0 0 var(--cgp-filter-width, 290px) !important;
+  }
+}
+
+/* "Filter:" heading */
+.facets__heading,
+.facets-vertical .facets__heading {
+  font-size: var(--cgp-filter-title-size, 14px) !important;
+  color: var(--cgp-filter-text, #1c222d) !important;
+}
+
+/* Group labels (Availability, Price, Brand…) */
+.facets__summary,
+.facets__disclosure .facets__summary,
+.facet-filters__label {
+  font-size: var(--cgp-filter-group-size, 12px) !important;
+  color: var(--cgp-filter-text, #1c222d) !important;
+}
+
+/* Filter items (rows) */
+.facets__label,
+.facets__item .facet-checkbox,
+.facet-checkbox {
+  font-size: var(--cgp-filter-item-size, 12px) !important;
+  color: var(--cgp-filter-text, #1c222d) !important;
+}
+
+/* Tighten the per-row padding (was too large + not adjustable) */
+.facets__item,
+.facets-vertical .facets__item,
+.list-menu__item .facet-checkbox,
+.facets__list li {
+  padding-top: var(--cgp-filter-item-gap, 4px) !important;
+  padding-bottom: var(--cgp-filter-item-gap, 4px) !important;
+}
+.facet-checkbox {
+  padding: var(--cgp-filter-item-gap, 4px) 0 !important;
+}
+
+/* Spacing between filter groups */
+.facets__disclosure,
+.facets-vertical .facets__disclosure-vertical {
+  margin-bottom: var(--cgp-filter-gap, 10px) !important;
+  padding-bottom: var(--cgp-filter-gap, 10px) !important;
+}
+
+/* Checkbox size + tick colour */
+.facet-checkbox input[type="checkbox"] {
+  width: var(--cgp-filter-checkbox-size, 18px) !important;
+  height: var(--cgp-filter-checkbox-size, 18px) !important;
+  accent-color: var(--cgp-filter-checkbox-color, #1c222d) !important;
+}
+.facet-checkbox > svg {
+  width: var(--cgp-filter-checkbox-size, 18px) !important;
+  height: var(--cgp-filter-checkbox-size, 18px) !important;
+}
+
+/* Active-filter count chip */
+.facets__summary .count {
+  border-radius: 40px;
+  background: var(--cgp-filter-accent, #1c222d);
+  color: #fff;
+  padding: 1px 7px;
+  font-size: 1.1rem;
+  margin-left: 4px;
+}
+
+/* Results count bar */
+.product-count__text,
+.product-count-vertical .product-count__text {
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--cgp-filter-text, #1c222d);
+}
+.product-count__text strong { font-weight: 700; }
+
+/* Sort dropdown */
+.facet-filters__sort.select__select {
+  font-size: 1.3rem;
+  border-radius: 6px;
+}
+
+
+/* ============================================================
+   CLIENT-SIDE SEARCH APP (Option A) — search results page
+   ============================================================ */
+/* FOUC: the hide rule (html.js .cgp-server-results{display:none}) is rendered
+   per-section ONLY when the app is enabled, so a disabled app still shows the
+   server results. If the app fails it adds .cgp-app-failed to reveal them. */
+html.cgp-app-failed .cgp-server-results { display: block !important; }
+
+/* Loading placeholder shown in the mount until the app paints. */
+.cgp-app-loading {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cgp-app-loading::after {
+  content: "";
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(0, 0, 0, 0.15);
+  border-top-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  animation: cgpSpin 0.7s linear infinite;
+}
+
+.cgp-app { display: block; }
+
+/* Top bar (count + sort) and dropdown filters — clean, border divider, no shadow */
+.cgp-app__top {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 0.1rem solid rgba(var(--color-foreground, 0 0 0), 0.12);
+}
+.cgp-app__top--sticky {
+  position: sticky;
+  top: var(--cgp-sticky-top, 0px);
+  z-index: 20;
+  background: rgb(var(--color-background, 255 255 255));
+  padding-top: 12px;
+}
+.cgp-app__dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+/* Sort control lives on the filter row, pushed to the far right. */
+.cgp-app__dd .cgp-app__sortwrap { margin-left: auto; }
+.cgp-dd { position: relative; }
+.cgp-dd__btn {
+  list-style: none;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: 8px 16px;
+  border: 1px solid var(--cgp-pill-border, #e3e6ea);
+  border-radius: 40px;
+  background: var(--cgp-pill-bg, #fff);
+  color: var(--cgp-pill-text, #1c222d);
+  white-space: nowrap;
+  user-select: none;
+}
+.cgp-dd__btn::-webkit-details-marker { display: none; }
+.cgp-dd__btn::after { content: " ▾"; opacity: 0.6; }
+.cgp-dd[open] .cgp-dd__btn { background: var(--cgp-pill-active-bg, #1c222d); color: var(--cgp-pill-active-text, #fff); border-color: var(--cgp-pill-active-bg, #1c222d); }
+.cgp-dd__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 240px;
+  max-height: 340px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--cgp-pill-border, #e3e6ea);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cgp-filter-item-gap, 4px);
+}
+
+/* Body: optional sidebar + main grid */
+.cgp-app__body { display: block; }
+.cgp-app--sidebar .cgp-app__body {
+  display: grid;
+  grid-template-columns: var(--cgp-filter-width, 290px) 1fr;
+  gap: 28px;
+  align-items: start;
+}
+@media screen and (max-width: 989px) {
+  .cgp-app--sidebar .cgp-app__body { grid-template-columns: 1fr; }
+  .cgp-app__facets { display: none; }
+}
+
+/* Facets sidebar */
+.cgp-app__facets { min-width: 0; }
+.cgp-facet { border-bottom: 0.1rem solid rgba(var(--color-foreground, 0 0 0), 0.1); padding: 14px 0; }
+.cgp-facet:first-child { padding-top: 0; }
+.cgp-facet__title {
+  font-size: var(--cgp-filter-group-size, 14px);
+  font-weight: 600;
+  color: var(--cgp-filter-text, #1c222d);
+  margin-bottom: 10px;
+}
+.cgp-facet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cgp-filter-item-gap, 4px);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.cgp-facet__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--cgp-filter-item-size, 13px);
+  color: var(--cgp-filter-text, #1c222d);
+  cursor: pointer;
+  line-height: 1.4;
+}
+.cgp-facet__row input[type="checkbox"] {
+  width: var(--cgp-filter-checkbox-size, 18px);
+  height: var(--cgp-filter-checkbox-size, 18px);
+  accent-color: var(--cgp-filter-checkbox-color, #1c222d);
+  flex: 0 0 auto;
+  margin: 0;
+}
+.cgp-facet__row span { flex: 1 1 auto; min-width: 0; }
+.cgp-facet__row em { font-style: normal; opacity: 0.55; }
+.cgp-facet__price { display: flex; flex-direction: row; align-items: center; gap: 8px; flex-wrap: nowrap; }
+.cgp-facet__price input { flex: 1 1 0; min-width: 0; width: auto; padding: 8px 10px; border: 1px solid var(--cgp-select-border, #e3e6ea); border-radius: 6px; }
+.cgp-facet__price > span { flex: 0 0 auto; opacity: 0.6; }
+.cgp-price-apply { flex: 0 0 auto; padding: 8px 14px; border: 0; border-radius: 6px; background: var(--cgp-pill-active-bg, #1c222d); color: #fff; cursor: pointer; }
+.cgp-price-clear { flex: 0 0 auto; width: 30px; height: 30px; border: 1px solid var(--cgp-select-border, #e3e6ea); border-radius: 50%; background: #fff; color: #1c222d; cursor: pointer; font-size: 16px; line-height: 1; }
+.cgp-price-clear:hover { background: #f2f3f5; }
+/* Give the price dropdown panel more breathing room */
+.cgp-dd__panel[data-panel="price"] { min-width: 320px; }
+
+/* Numbered pagination */
+.cgp-pagenav { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; padding: 8px 0; }
+.cgp-pagebtn {
+  min-width: 38px; height: 38px; padding: 0 10px;
+  border: 1px solid var(--cgp-pill-border, #e3e6ea); border-radius: 50%;
+  background: #fff; color: var(--cgp-pill-text, #1c222d); cursor: pointer; font-size: 1.3rem;
+}
+.cgp-pagebtn:hover { border-color: var(--cgp-pill-active-bg, #1c222d); }
+.cgp-pagebtn.is-active { background: var(--cgp-pill-active-bg, #1c222d); color: var(--cgp-pill-active-text, #fff); border-color: var(--cgp-pill-active-bg, #1c222d); }
+.cgp-pagedots { padding: 0 4px; opacity: 0.6; }
+
+/* Main column */
+.cgp-app__main { min-width: 0; }
+.cgp-app__bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.cgp-app__count { font-size: 1.4rem; font-weight: 600; color: var(--cgp-filter-text, #1c222d); }
+.cgp-app__sortwrap { font-size: 1.3rem; color: var(--cgp-filter-text, #1c222d); }
+.cgp-app__sort { font-size: 1.3rem; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--cgp-select-border, #e3e6ea); }
+.cgp-app__more { text-align: center; padding: 24px 0; }
+.cgp-app__more-btn {
+  padding: 10px 26px;
+  border: 1px solid var(--cgp-pill-active-bg, #1c222d);
+  border-radius: 40px;
+  background: #fff;
+  color: var(--cgp-pill-active-bg, #1c222d);
+  cursor: pointer;
+  font-size: 1.3rem;
+}
+.cgp-app__more-btn:hover { background: var(--cgp-pill-active-bg, #1c222d); color: #fff; }

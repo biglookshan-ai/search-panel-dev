@@ -1,0 +1,260 @@
+{%- comment -%}
+  search-drawer.liquid — 自研即时搜索弹窗（P0 骨架）
+  渲染两种状态：
+  1. 默认面板（未输入）：热门搜索词 + 推荐产品 + 可选 Banner，数据来自 Metaobject search_panel.main
+  2. 联想结果（已输入）：由 Predictive Search 渲染（JS 通过 ?q=...&section_id=search-drawer 请求本 section）
+  依赖：assets/search-drawer.js、snippets/search-drawer-product-card.liquid
+{%- endcomment -%}
+
+{%- liquid
+  assign panel = blank
+  for sp_entry in metaobjects.search_panel.values
+    assign panel = sp_entry
+    break
+  endfor
+  assign popular_terms = panel.popular_terms.value
+  assign featured_products = panel.featured_products.value
+  assign featured_collections = panel.featured_collections.value
+  assign s = settings
+  assign sd_products_class = 'search-drawer__products'
+  if s.cgp_sd_layout == 'list'
+    assign sd_products_class = 'search-drawer__products search-drawer__products--list'
+  endif
+-%}
+
+{%- comment -%} 颜色/样式由设置注入为 CSS 变量，作用域限定本 section（对齐 Searchanise Style 标签页） {%- endcomment -%}
+{%- style -%}
+  /* :root (not the section wrapper) so the vars still apply after search-drawer.js
+     re-parents the drawer to <body> to escape transformed ancestors. */
+  :root {
+    --sd-bg: {{ s.cgp_sd_color_bg }};
+    --sd-hover-bg: {{ s.cgp_sd_color_hover_bg }};
+    --sd-text: {{ s.cgp_sd_color_text }};
+    --sd-heading: {{ s.cgp_sd_color_heading }};
+    --sd-card-title: {{ s.cgp_sd_color_card_title }};
+    --sd-card-desc: {{ s.cgp_sd_color_card_desc }};
+    --sd-price: {{ s.cgp_sd_color_price }};
+    --sd-price-sale: {{ s.cgp_sd_color_price_sale }};
+    --sd-price-compare: {{ s.cgp_sd_color_price_compare }};
+    --sd-viewall-bg: {{ s.cgp_sd_color_viewall_bg }};
+    --sd-viewall-text: {{ s.cgp_sd_color_viewall_text }};
+    --sd-badge-instock-bg: {{ s.cgp_sd_color_badge_instock }};
+    --sd-badge-preorder-bg: {{ s.cgp_sd_color_badge_preorder }};
+    --sd-badge-oos-bg: {{ s.cgp_sd_color_badge_oos }};
+    --sd-badge-discount-bg: {{ s.cgp_sd_color_badge_discount }};
+    --sd-product-cols: {{ s.cgp_sd_product_columns }};
+    --sd-max-height: {{ s.cgp_sd_max_height }}px;
+  }
+{%- endstyle -%}
+
+<search-drawer
+  id="SearchDrawer"
+  class="search-drawer"
+  data-input-selector="{{ s.cgp_sd_input_selector | escape }}"
+  data-section-id="{{ section.id }}"
+  data-debounce="{{ s.cgp_sd_debounce_ms }}"
+  data-recent-limit="{{ s.cgp_sd_recent_qty }}"
+  data-product-qty="{{ s.cgp_sd_product_qty }}"
+  hidden
+>
+  <div class="search-drawer__panel" id="search-drawer-results" role="listbox" aria-label="{{ 'templates.search.title' | t }}">
+
+    {%- if predictive_search.performed -%}
+      {%- comment -%} ============ 状态 2：联想结果 ============ {%- endcomment -%}
+      <div class="search-drawer__columns">
+
+        <div class="search-drawer__col search-drawer__col--left">
+          {%- if predictive_search.resources.queries.size > 0 -%}
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_suggestions | default: 'Popular Suggestions' }}</h3>
+            <ul class="search-drawer__suggestions">
+              {%- for suggestion in predictive_search.resources.queries limit: s.cgp_sd_suggestion_qty -%}
+                <li>
+                  <a href="{{ routes.search_url }}?q={{ suggestion.text | url_encode }}" data-track="suggestion">
+                    <svg class="icon-search" aria-hidden="true" width="14" height="14"><use href="#icon-search"/></svg>
+                    {{ suggestion.styled_text }}{%- comment -%} styled_text 自带匹配高亮 {%- endcomment -%}
+                  </a>
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+
+          {%- if s.cgp_sd_show_collections and predictive_search.resources.collections.size > 0 -%}
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Categories' }}</h3>
+            {%- comment -%}
+              Order categories by closeness to the typed term: exact title match
+              first, then titles that contain the term, then the rest. Relevance
+              order is kept within each tier; total capped at cgp_sd_collection_qty.
+            {%- endcomment -%}
+            {%- assign cq = predictive_search.terms | downcase -%}
+            {%- assign clim = s.cgp_sd_collection_qty -%}
+            {%- assign cshown = 0 -%}
+            <ul class="search-drawer__collections">
+              {%- for collection in predictive_search.resources.collections -%}
+                {%- assign ct = collection.title | downcase -%}
+                {%- if ct == cq and cshown < clim -%}
+                  <li><a href="{{ collection.url }}" data-track="collection">{{ collection.title }}</a></li>
+                  {%- assign cshown = cshown | plus: 1 -%}
+                {%- endif -%}
+              {%- endfor -%}
+              {%- for collection in predictive_search.resources.collections -%}
+                {%- assign ct = collection.title | downcase -%}
+                {%- if ct != cq and ct contains cq and cshown < clim -%}
+                  <li><a href="{{ collection.url }}" data-track="collection">{{ collection.title }}</a></li>
+                  {%- assign cshown = cshown | plus: 1 -%}
+                {%- endif -%}
+              {%- endfor -%}
+              {%- for collection in predictive_search.resources.collections -%}
+                {%- assign ct = collection.title | downcase -%}
+                {%- unless ct contains cq -%}
+                  {%- if cshown < clim -%}
+                    <li><a href="{{ collection.url }}" data-track="collection">{{ collection.title }}</a></li>
+                    {%- assign cshown = cshown | plus: 1 -%}
+                  {%- endif -%}
+                {%- endunless -%}
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+
+          {%- if s.cgp_sd_show_pages and predictive_search.resources.pages.size > 0 -%}
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_pages | default: 'Pages' }}</h3>
+            <ul class="search-drawer__pages">
+              {%- for page in predictive_search.resources.pages limit: s.cgp_sd_page_qty -%}
+                <li><a href="{{ page.url }}">{{ page.title }}</a></li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+
+          <a class="search-drawer__view-all button"
+             href="{{ routes.search_url }}?q={{ predictive_search.terms | url_encode }}">
+            {{ s.cgp_sd_view_all_label | default: 'VIEW ALL ITEMS' }} &rarr;
+          </a>
+        </div>
+
+        <div class="search-drawer__col search-drawer__col--right">
+          <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_products | default: 'Products' }}</h3>
+          {%- if predictive_search.resources.products.size > 0 -%}
+            {%- comment -%} Priority types (e.g. Cine Lens) first, accessories after,
+              capped at cgp_sd_product_qty — same ordering as the results page. {%- endcomment -%}
+            {%- assign pq = s.cgp_sd_product_qty -%}
+            {%- assign pshown = 0 -%}
+            {%- assign ptypes = settings.cgp_search_priority_types | default: '' | downcase -%}
+            <ul class="{{ sd_products_class }}">
+              {%- for product in predictive_search.resources.products -%}
+                {%- assign pt = product.type | downcase -%}
+                {%- if pt != blank and ptypes contains pt and pshown < pq -%}
+                  <li>
+                    {%- render 'search-drawer-product-card', product: product, show_vendor: s.cgp_sd_show_vendor, show_compare_at: s.cgp_sd_show_compare_at, show_desc_lines: s.cgp_sd_desc_lines, show_vat_note: s.cgp_sd_show_vat_note -%}
+                  </li>
+                  {%- assign pshown = pshown | plus: 1 -%}
+                {%- endif -%}
+              {%- endfor -%}
+              {%- for product in predictive_search.resources.products -%}
+                {%- assign pt = product.type | downcase -%}
+                {%- unless pt != blank and ptypes contains pt -%}
+                  {%- if pshown < pq -%}
+                    <li>
+                      {%- render 'search-drawer-product-card', product: product, show_vendor: s.cgp_sd_show_vendor, show_compare_at: s.cgp_sd_show_compare_at, show_desc_lines: s.cgp_sd_desc_lines, show_vat_note: s.cgp_sd_show_vat_note -%}
+                    </li>
+                    {%- assign pshown = pshown | plus: 1 -%}
+                  {%- endif -%}
+                {%- endunless -%}
+              {%- endfor -%}
+            </ul>
+          {%- else -%}
+            <p class="search-drawer__empty">{{ 'templates.search.no_results' | t: terms: predictive_search.terms }}</p>
+            {%- if featured_products.size > 0 -%}
+              <ul class="{{ sd_products_class }}">
+                {%- for product in featured_products limit: s.cgp_sd_product_qty -%}
+                  <li>
+                    {%- render 'search-drawer-product-card',
+                      product: product,
+                      show_vendor: s.cgp_sd_show_vendor,
+                      show_compare_at: s.cgp_sd_show_compare_at,
+                      show_desc_lines: s.cgp_sd_desc_lines,
+                      show_vat_note: s.cgp_sd_show_vat_note
+                    -%}
+                  </li>
+                {%- endfor -%}
+              </ul>
+            {%- endif -%}
+          {%- endif -%}
+        </div>
+
+      </div>
+
+    {%- else -%}
+      {%- comment -%} ============ 状态 1：默认面板（打开即推荐） ============ {%- endcomment -%}
+
+      {%- comment -%} 最近搜索：tag 行,置顶(输入框下方),容器由 JS 从 localStorage 注入 {%- endcomment -%}
+      <div class="search-drawer__recent search-drawer__recent--tags" data-recent-searches hidden>
+        <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_recent | default: 'Recent Searches' }}</h3>
+        <ul class="search-drawer__recent-tags" data-recent-list></ul>
+      </div>
+
+      {%- comment -%} 三个热门列表渲染全部条目 + data-cgp-shuffle;JS 每次打开随机抽 N 个(N=弹窗设置) {%- endcomment -%}
+      <div class="search-drawer__columns">
+
+        <div class="search-drawer__col search-drawer__col--left">
+          {%- if popular_terms.size > 0 -%}
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_popular | default: 'Popular Searches' }}</h3>
+            <ul class="search-drawer__suggestions" data-cgp-shuffle="{{ s.cgp_sd_suggestion_qty }}">
+              {%- for term in popular_terms -%}
+                <li>
+                  <a href="{{ routes.search_url }}?q={{ term | url_encode }}" data-track="popular-term">
+                    <svg class="icon-search" aria-hidden="true" width="14" height="14"><use href="#icon-search"/></svg>
+                    {{ term }}
+                  </a>
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+
+          {%- if s.cgp_sd_show_featured_collections and featured_collections.size > 0 -%}
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Categories' }}</h3>
+            <ul class="search-drawer__collections" data-cgp-shuffle="{{ s.cgp_sd_featured_collection_qty }}">
+              {%- for collection in featured_collections -%}
+                <li><a href="{{ collection.url }}" data-track="collection">{{ collection.title }}</a></li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+        </div>
+
+        <div class="search-drawer__col search-drawer__col--right">
+          {%- if featured_products.size > 0 -%}
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_featured | default: 'Recommended For You' }}</h3>
+            <ul class="{{ sd_products_class }}" data-cgp-shuffle="{{ s.cgp_sd_product_qty }}">
+              {%- for product in featured_products -%}
+                <li>
+                  {%- render 'search-drawer-product-card',
+                    product: product,
+                    show_vendor: s.cgp_sd_show_vendor,
+                    show_compare_at: s.cgp_sd_show_compare_at,
+                    show_desc_lines: s.cgp_sd_desc_lines,
+                    show_vat_note: s.cgp_sd_show_vat_note
+                  -%}
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+
+          {%- if panel.banner_image.value and s.cgp_sd_show_banner -%}
+            <a class="search-drawer__banner" href="{{ panel.banner_link.value | default: '#' }}" data-track="drawer-banner">
+              {{ panel.banner_image.value | image_url: width: 800 | image_tag: loading: 'lazy', alt: panel.banner_alt.value | default: '' }}
+            </a>
+          {%- endif -%}
+        </div>
+
+      </div>
+    {%- endif -%}
+
+  </div>
+</search-drawer>
+
+{{ 'search-drawer.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'search-drawer.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Search Drawer"
+}
+{% endschema %}

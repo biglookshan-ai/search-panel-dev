@@ -1,0 +1,21 @@
+{% comment %}
+  Discount-band filter row for the SERVER-RENDERED fallback (.cgp-server-results),
+  shown only when the client-side search app is off / fails. The app itself
+  renders its own Availability + Sale + Brand + Type + Price facets.
+  Client-side over the current page's products (driven by cgp-card.js).
+{% endcomment %}
+{%- if settings.cgp_enable_discount_filter -%}
+  <div class="cgp-pillrows">
+    <div class="cgp-pillgroup" data-cgp-discount-bar role="group" aria-label="Filter by discount">
+      <span class="cgp-pillgroup__label">Sale</span>
+      <button type="button" class="cgp-pill is-active" data-cgp-min="-1" data-cgp-max="">{{ settings.cgp_discount_filter_label }}</button>
+      <button type="button" class="cgp-pill" data-cgp-min="0"  data-cgp-max="10">&le;10%</button>
+      <button type="button" class="cgp-pill" data-cgp-min="10" data-cgp-max="20">10&ndash;20%</button>
+      <button type="button" class="cgp-pill" data-cgp-min="20" data-cgp-max="30">20&ndash;30%</button>
+      <button type="button" class="cgp-pill" data-cgp-min="30" data-cgp-max="40">30&ndash;40%</button>
+      <button type="button" class="cgp-pill" data-cgp-min="40" data-cgp-max="50">40&ndash;50%</button>
+      <button type="button" class="cgp-pill" data-cgp-min="50" data-cgp-max="">50%+</button>
+      <span class="cgp-filter-empty" data-cgp-filter-empty>No products match on this page.</span>
+    </div>
+  </div>
+{%- endif -%}
