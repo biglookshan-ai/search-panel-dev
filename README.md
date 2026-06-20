@@ -34,7 +34,7 @@ override — set it to skip OAuth.)
    - `SHOPIFY_API_SECRET` = Client secret
    - `SHOPIFY_SCOPES` = `read_metaobjects,write_metaobjects,read_themes,write_themes`
    - `APP_URL` = the Railway URL (no trailing slash)
-   - `SHOPIFY_API_VERSION` = `2025-01`
+   - `SHOPIFY_API_VERSION` = `2026-04`
    - `DATA_DIR` = `/data` (if you mounted a volume)
    - `ADMIN_UI_PASSWORD` = a password
 5. Deploy. Open the Railway URL → it'll prompt to **连接店铺 (Connect)** → that runs

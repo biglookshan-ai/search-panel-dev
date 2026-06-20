@@ -2,7 +2,7 @@
 // Token comes from token-store (OAuth offline token, or SHOPIFY_ADMIN_TOKEN override).
 import { getStoredToken, getStoredShop } from './token-store.js';
 
-const VERSION = process.env.SHOPIFY_API_VERSION || '2025-01';
+const VERSION = process.env.SHOPIFY_API_VERSION || '2026-04';
 
 function creds() {
   const store = getStoredShop();
