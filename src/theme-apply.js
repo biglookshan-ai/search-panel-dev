@@ -54,7 +54,7 @@ export async function applyToTheme(themeId, { dryRun = false } = {}) {
     }
   }
 
-  // 2) inject into shared theme files
+  // 2) inject marker blocks into shared theme files
   for (const inj of cfg.injections) {
     const current = await getAsset(themeId, inj.file);
     if (current == null) { log.push(`SKIP  ${inj.file} (not found in theme)`); continue; }
@@ -64,6 +64,23 @@ export async function applyToTheme(themeId, { dryRun = false } = {}) {
       log.push(`inject ${inj.file} (${mode})`);
     } else {
       log.push(`SKIP  ${inj.file} (anchor & markers missing)`);
+    }
+  }
+
+  // 3) JSON-merge our settings groups into config/settings_schema.json
+  if (cfg.settingsSchema) {
+    const { file, groupsFile, replaceGroupNames } = cfg.settingsSchema;
+    const ours = JSON.parse(await fs.readFile(path.join(MODULE_DIR, groupsFile), 'utf8'));
+    const current = await getAsset(themeId, file);
+    if (current == null) {
+      log.push(`SKIP  ${file} (not found in theme)`);
+    } else {
+      const arr = JSON.parse(current);
+      const drop = new Set(replaceGroupNames);
+      const merged = arr.filter((g) => !drop.has(g && g.name)).concat(ours);
+      const out = JSON.stringify(merged, null, 2);
+      if (!dryRun && out !== current) await putAsset(themeId, file, out);
+      log.push(`merge  ${file} (${ours.length} groups, ${ours.reduce((n, g) => n + (g.settings || []).length, 0)} settings)`);
     }
   }
 

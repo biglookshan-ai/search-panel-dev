@@ -1,0 +1,1256 @@
+[
+  {
+    "name": "Search & Collections",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "All styling for the search results page and every collection page. Cards use a fully custom layout (independent of the default theme card)."
+      },
+      {
+        "type": "header",
+        "content": "Layout"
+      },
+      {
+        "type": "range",
+        "id": "cgp_columns_desktop",
+        "label": "Columns (desktop)",
+        "min": 2,
+        "max": 5,
+        "step": 1,
+        "default": 4
+      },
+      {
+        "type": "select",
+        "id": "cgp_columns_mobile",
+        "label": "Columns (mobile)",
+        "options": [
+          {
+            "value": "1",
+            "label": "1 column"
+          },
+          {
+            "value": "2",
+            "label": "2 columns"
+          }
+        ],
+        "default": "2"
+      },
+      {
+        "type": "range",
+        "id": "cgp_card_gap",
+        "label": "Gap between cards",
+        "min": 0,
+        "max": 40,
+        "step": 2,
+        "default": 16,
+        "unit": "px"
+      },
+      {
+        "type": "select",
+        "id": "cgp_image_ratio",
+        "label": "Image ratio",
+        "options": [
+          {
+            "value": "square",
+            "label": "Square (1:1)"
+          },
+          {
+            "value": "portrait",
+            "label": "Portrait (3:4)"
+          },
+          {
+            "value": "landscape",
+            "label": "Landscape (4:3)"
+          },
+          {
+            "value": "adapt",
+            "label": "Adapt to image"
+          }
+        ],
+        "default": "square"
+      },
+      {
+        "type": "header",
+        "content": "Pagination"
+      },
+      {
+        "type": "select",
+        "id": "cgp_pagination_type",
+        "label": "Pagination style",
+        "options": [
+          {
+            "value": "paginate",
+            "label": "Numbered pages"
+          },
+          {
+            "value": "infinite",
+            "label": "Infinite scroll"
+          }
+        ],
+        "default": "infinite"
+      },
+      {
+        "type": "range",
+        "id": "cgp_products_per_page",
+        "label": "Products per page",
+        "min": 8,
+        "max": 48,
+        "step": 4,
+        "default": 24
+      },
+      {
+        "type": "header",
+        "content": "Search result ordering"
+      },
+      {
+        "type": "text",
+        "id": "cgp_search_priority_types",
+        "label": "Priority product types (search)",
+        "default": "Cine Lens",
+        "info": "Comma-separated product types shown first in SEARCH results & drawer (e.g. Cine Lens). Accessories/other types keep their relevance order after. Your S&D boosts still stay at the very top. Only affects the default sort; doesn't touch collection pages."
+      },
+      {
+        "type": "header",
+        "content": "Search engine (beta)"
+      },
+      {
+        "type": "paragraph",
+        "content": "When on, the search results page loads the full matched set and builds accurate facet filters client-side (Brands / Availability / Product type / On sale / Price). Turn off to use the standard server-rendered results."
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_use_search_app",
+        "label": "Use client-side faceted search on the results page",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Card"
+      },
+      {
+        "type": "color",
+        "id": "cgp_card_bg",
+        "label": "Background colour",
+        "default": "#ffffff"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_card_show_border",
+        "label": "Show border",
+        "default": true
+      },
+      {
+        "type": "color",
+        "id": "cgp_card_border_color",
+        "label": "Border colour",
+        "default": "#e3e6ea"
+      },
+      {
+        "type": "range",
+        "id": "cgp_card_border_width",
+        "label": "Border width",
+        "min": 0,
+        "max": 4,
+        "step": 1,
+        "default": 1,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_card_border_radius",
+        "label": "Corner radius",
+        "min": 0,
+        "max": 24,
+        "step": 1,
+        "default": 6,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_card_padding",
+        "label": "Inner padding",
+        "min": 6,
+        "max": 24,
+        "step": 1,
+        "default": 8,
+        "unit": "px"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_card_hover_lift",
+        "label": "Lift on hover",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Product image"
+      },
+      {
+        "type": "select",
+        "id": "cgp_image_blend",
+        "label": "Blend mode",
+        "options": [
+          {
+            "value": "normal",
+            "label": "Normal"
+          },
+          {
+            "value": "multiply",
+            "label": "Multiply (hide white background)"
+          }
+        ],
+        "default": "multiply"
+      },
+      {
+        "type": "range",
+        "id": "cgp_image_padding",
+        "label": "Image padding",
+        "min": 0,
+        "max": 24,
+        "step": 1,
+        "default": 8,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_card_image_top",
+        "label": "Image top spacing",
+        "info": "Pushes the product image down so the Sale / stock badges don't cover it (results page + search drawer cards).",
+        "min": 0,
+        "max": 60,
+        "step": 1,
+        "default": 22,
+        "unit": "px"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_image_follows_variant",
+        "label": "Image follows selected variant",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Product title"
+      },
+      {
+        "type": "range",
+        "id": "cgp_title_size",
+        "label": "Font size",
+        "min": 10,
+        "max": 20,
+        "step": 1,
+        "default": 12,
+        "unit": "px"
+      },
+      {
+        "type": "select",
+        "id": "cgp_title_weight",
+        "label": "Font weight",
+        "options": [
+          {
+            "value": "400",
+            "label": "Regular (400)"
+          },
+          {
+            "value": "500",
+            "label": "Medium (500)"
+          },
+          {
+            "value": "600",
+            "label": "Semibold (600)"
+          },
+          {
+            "value": "700",
+            "label": "Bold (700)"
+          }
+        ],
+        "default": "400"
+      },
+      {
+        "type": "color",
+        "id": "cgp_title_color",
+        "label": "Colour",
+        "default": "#545556"
+      },
+      {
+        "type": "range",
+        "id": "cgp_title_lines",
+        "label": "Max lines",
+        "min": 1,
+        "max": 4,
+        "step": 1,
+        "default": 3
+      },
+      {
+        "type": "header",
+        "content": "Variant behaviour"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_default_first_available",
+        "label": "Default to first in-stock variant",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Variant dropdown"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_show_option_label",
+        "label": "Show option label (e.g. \"Lens:\")",
+        "default": false
+      },
+      {
+        "type": "range",
+        "id": "cgp_select_size",
+        "label": "Font size",
+        "min": 9,
+        "max": 15,
+        "step": 1,
+        "default": 10,
+        "unit": "px"
+      },
+      {
+        "type": "select",
+        "id": "cgp_select_weight",
+        "label": "Font weight",
+        "options": [
+          {
+            "value": "400",
+            "label": "Regular (400)"
+          },
+          {
+            "value": "500",
+            "label": "Medium (500)"
+          },
+          {
+            "value": "600",
+            "label": "Semibold (600)"
+          },
+          {
+            "value": "700",
+            "label": "Bold (700)"
+          }
+        ],
+        "default": "400"
+      },
+      {
+        "type": "color",
+        "id": "cgp_select_text",
+        "label": "Text colour",
+        "default": "#1c222d"
+      },
+      {
+        "type": "color",
+        "id": "cgp_select_bg",
+        "label": "Background",
+        "default": "#ffffff"
+      },
+      {
+        "type": "color",
+        "id": "cgp_select_border",
+        "label": "Border colour",
+        "default": "#e3e6ea"
+      },
+      {
+        "type": "header",
+        "content": "Price — current (sale)"
+      },
+      {
+        "type": "range",
+        "id": "cgp_price_current_size",
+        "label": "Font size",
+        "min": 12,
+        "max": 28,
+        "step": 1,
+        "default": 16,
+        "unit": "px"
+      },
+      {
+        "type": "select",
+        "id": "cgp_price_current_weight",
+        "label": "Font weight",
+        "options": [
+          {
+            "value": "400",
+            "label": "Regular (400)"
+          },
+          {
+            "value": "500",
+            "label": "Medium (500)"
+          },
+          {
+            "value": "600",
+            "label": "Semibold (600)"
+          },
+          {
+            "value": "700",
+            "label": "Bold (700)"
+          }
+        ],
+        "default": "700"
+      },
+      {
+        "type": "color",
+        "id": "cgp_price_current_color",
+        "label": "Colour",
+        "default": "#da5959"
+      },
+      {
+        "type": "header",
+        "content": "Price — compare-at (was)"
+      },
+      {
+        "type": "range",
+        "id": "cgp_price_compare_size",
+        "label": "Font size",
+        "min": 9,
+        "max": 18,
+        "step": 1,
+        "default": 12,
+        "unit": "px"
+      },
+      {
+        "type": "select",
+        "id": "cgp_price_compare_weight",
+        "label": "Font weight",
+        "options": [
+          {
+            "value": "400",
+            "label": "Regular (400)"
+          },
+          {
+            "value": "500",
+            "label": "Medium (500)"
+          },
+          {
+            "value": "600",
+            "label": "Semibold (600)"
+          },
+          {
+            "value": "700",
+            "label": "Bold (700)"
+          }
+        ],
+        "default": "400"
+      },
+      {
+        "type": "color",
+        "id": "cgp_price_compare_color",
+        "label": "Colour",
+        "default": "#999999"
+      },
+      {
+        "type": "header",
+        "content": "Price — VAT note"
+      },
+      {
+        "type": "text",
+        "id": "cgp_vat_label",
+        "label": "Label text",
+        "default": "ex.VAT"
+      },
+      {
+        "type": "range",
+        "id": "cgp_vat_size",
+        "label": "Font size",
+        "min": 8,
+        "max": 14,
+        "step": 1,
+        "default": 10,
+        "unit": "px"
+      },
+      {
+        "type": "color",
+        "id": "cgp_vat_color",
+        "label": "Colour",
+        "default": "#999999"
+      },
+      {
+        "type": "header",
+        "content": "Badges — shared shape"
+      },
+      {
+        "type": "paragraph",
+        "content": "Geometry shared by the discount badge and the stock-status badge."
+      },
+      {
+        "type": "range",
+        "id": "cgp_badge_size",
+        "label": "Font size",
+        "min": 8,
+        "max": 15,
+        "step": 1,
+        "default": 10,
+        "unit": "px"
+      },
+      {
+        "type": "select",
+        "id": "cgp_badge_weight",
+        "label": "Font weight",
+        "options": [
+          {
+            "value": "400",
+            "label": "Regular (400)"
+          },
+          {
+            "value": "500",
+            "label": "Medium (500)"
+          },
+          {
+            "value": "600",
+            "label": "Semibold (600)"
+          },
+          {
+            "value": "700",
+            "label": "Bold (700)"
+          }
+        ],
+        "default": "400"
+      },
+      {
+        "type": "range",
+        "id": "cgp_badge_radius",
+        "label": "Corner radius",
+        "min": 0,
+        "max": 20,
+        "step": 1,
+        "default": 4,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_badge_pad_y",
+        "label": "Padding (vertical)",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 3,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_badge_pad_x",
+        "label": "Padding (horizontal)",
+        "min": 2,
+        "max": 16,
+        "step": 1,
+        "default": 7,
+        "unit": "px"
+      },
+      {
+        "type": "header",
+        "content": "Discount badge (top-left)"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_show_discount_badge",
+        "label": "Show discount badge",
+        "default": true
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_disc_bg",
+        "label": "Background",
+        "default": "#a84c4c"
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_disc_text",
+        "label": "Text colour",
+        "default": "#ffffff"
+      },
+      {
+        "type": "text",
+        "id": "cgp_badge_disc_suffix",
+        "label": "Text suffix",
+        "default": "% OFF"
+      },
+      {
+        "type": "header",
+        "content": "Stock badge (top-right)"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_show_instock_badge",
+        "label": "Show \"In Stock\" badge",
+        "default": true
+      },
+      {
+        "type": "text",
+        "id": "cgp_badge_instock_label",
+        "label": "In Stock — label",
+        "default": "In Stock"
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_instock_bg",
+        "label": "In Stock — background",
+        "default": "#cdeadb"
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_instock_text",
+        "label": "In Stock — text",
+        "default": "#008c46"
+      },
+      {
+        "type": "text",
+        "id": "cgp_badge_preorder_label",
+        "label": "Pre-Order — label",
+        "default": "Pre Order"
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_preorder_bg",
+        "label": "Pre-Order — background",
+        "default": "#fff1d6"
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_preorder_text",
+        "label": "Pre-Order — text",
+        "default": "#a06400"
+      },
+      {
+        "type": "text",
+        "id": "cgp_badge_oos_label",
+        "label": "Out of Stock — label",
+        "default": "Out of Stock"
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_oos_bg",
+        "label": "Out of Stock — background",
+        "default": "#ededed"
+      },
+      {
+        "type": "color",
+        "id": "cgp_badge_oos_text",
+        "label": "Out of Stock — text",
+        "default": "#999999"
+      },
+      {
+        "type": "header",
+        "content": "Action buttons (right of price)"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_show_wishlist",
+        "label": "Show wishlist button",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_show_add_cart",
+        "label": "Show add-to-cart button",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "cgp_action_size",
+        "label": "Button size",
+        "min": 26,
+        "max": 46,
+        "step": 1,
+        "default": 32,
+        "unit": "px"
+      },
+      {
+        "type": "color",
+        "id": "cgp_action_bg",
+        "label": "Background",
+        "default": "#eaeaea"
+      },
+      {
+        "type": "color",
+        "id": "cgp_action_icon",
+        "label": "Icon colour",
+        "default": "#919191"
+      },
+      {
+        "type": "color",
+        "id": "cgp_action_border",
+        "label": "Border colour",
+        "default": "#eaeaea"
+      },
+      {
+        "type": "color",
+        "id": "cgp_action_hover_bg",
+        "label": "Hover background",
+        "default": "#f9cf13"
+      },
+      {
+        "type": "color",
+        "id": "cgp_action_hover_icon",
+        "label": "Hover icon",
+        "default": "#ffffff"
+      },
+      {
+        "type": "header",
+        "content": "Filter bar & layout"
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sticky_filter_bar",
+        "label": "Stick the top filter bar to the top on scroll",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_show_sidebar",
+        "label": "Show the side filters sidebar",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Filters sidebar"
+      },
+      {
+        "type": "range",
+        "id": "cgp_filter_width",
+        "label": "Sidebar width",
+        "min": 180,
+        "max": 400,
+        "step": 10,
+        "default": 200,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_filter_title_size",
+        "label": "\"Filter:\" title size",
+        "min": 12,
+        "max": 22,
+        "step": 1,
+        "default": 14,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_filter_group_size",
+        "label": "Group label size (Availability, Price…)",
+        "min": 11,
+        "max": 18,
+        "step": 1,
+        "default": 12,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_filter_item_size",
+        "label": "Filter item size",
+        "min": 10,
+        "max": 16,
+        "step": 1,
+        "default": 12,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "cgp_filter_item_gap",
+        "label": "Spacing between items",
+        "min": 0,
+        "max": 16,
+        "step": 1,
+        "default": 4,
+        "unit": "px"
+      },
+      {
+        "type": "color",
+        "id": "cgp_filter_text_color",
+        "label": "Text colour",
+        "default": "#1c222d"
+      },
+      {
+        "type": "color",
+        "id": "cgp_filter_accent_color",
+        "label": "Accent / count colour",
+        "default": "#1c222d"
+      },
+      {
+        "type": "range",
+        "id": "cgp_filter_checkbox_size",
+        "label": "Checkbox size",
+        "min": 12,
+        "max": 26,
+        "step": 1,
+        "default": 12,
+        "unit": "px"
+      },
+      {
+        "type": "color",
+        "id": "cgp_filter_checkbox_color",
+        "label": "Checkbox tick colour",
+        "default": "#494e58"
+      },
+      {
+        "type": "range",
+        "id": "cgp_filter_gap",
+        "label": "Spacing between groups",
+        "min": 8,
+        "max": 40,
+        "step": 2,
+        "default": 10,
+        "unit": "px"
+      },
+      {
+        "type": "header",
+        "content": "Discount filter bar"
+      },
+      {
+        "type": "paragraph",
+        "content": "A row of pills above the results that instantly filters the products shown on the current page by discount band."
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_enable_discount_filter",
+        "label": "Enable discount filter bar",
+        "default": true
+      },
+      {
+        "type": "text",
+        "id": "cgp_discount_filter_label",
+        "label": "\"All\" pill text",
+        "default": "All"
+      },
+      {
+        "type": "color",
+        "id": "cgp_discount_pill_bg",
+        "label": "Pill background",
+        "default": "#ffffff"
+      },
+      {
+        "type": "color",
+        "id": "cgp_discount_pill_text",
+        "label": "Pill text",
+        "default": "#1c222d"
+      },
+      {
+        "type": "color",
+        "id": "cgp_discount_pill_border",
+        "label": "Pill border",
+        "default": "#e3e6ea"
+      },
+      {
+        "type": "color",
+        "id": "cgp_discount_pill_active_bg",
+        "label": "Active pill background",
+        "default": "#1c222d"
+      },
+      {
+        "type": "color",
+        "id": "cgp_discount_pill_active_text",
+        "label": "Active pill text",
+        "default": "#ffffff"
+      },
+      {
+        "type": "header",
+        "content": "Promotion pill"
+      },
+      {
+        "type": "color",
+        "id": "cgp_promo_bg_color",
+        "label": "Promotion pill background",
+        "default": "#a3bedb"
+      },
+      {
+        "type": "color",
+        "id": "cgp_promo_text_color",
+        "label": "Promotion pill text",
+        "default": "#ffffff"
+      },
+      {
+        "type": "header",
+        "content": "Custom tag badge style (global)"
+      },
+      {
+        "type": "range",
+        "id": "cgp_cbadge_font_size",
+        "label": "Badge font size",
+        "min": 8,
+        "max": 20,
+        "step": 1,
+        "unit": "px",
+        "default": 10
+      },
+      {
+        "type": "select",
+        "id": "cgp_cbadge_weight",
+        "label": "Badge font weight",
+        "options": [
+          {
+            "value": "400",
+            "label": "Normal"
+          },
+          {
+            "value": "500",
+            "label": "Medium"
+          },
+          {
+            "value": "600",
+            "label": "Semibold"
+          },
+          {
+            "value": "700",
+            "label": "Bold"
+          }
+        ],
+        "default": "400"
+      },
+      {
+        "type": "range",
+        "id": "cgp_cbadge_padding_y",
+        "label": "Badge padding — vertical",
+        "min": 0,
+        "max": 14,
+        "step": 1,
+        "unit": "px",
+        "default": 2
+      },
+      {
+        "type": "range",
+        "id": "cgp_cbadge_padding_x",
+        "label": "Badge padding — horizontal",
+        "min": 0,
+        "max": 18,
+        "step": 1,
+        "unit": "px",
+        "default": 4
+      },
+      {
+        "type": "range",
+        "id": "cgp_cbadge_radius",
+        "label": "Badge corner radius",
+        "min": 0,
+        "max": 24,
+        "step": 1,
+        "unit": "px",
+        "default": 2
+      }
+    ]
+  },
+  {
+    "name": "Search drawer",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "Settings for the instant-search popup (search drawer)."
+      },
+      {
+        "type": "header",
+        "content": "绑定与行为"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_input_selector",
+        "label": "搜索输入框 CSS 选择器",
+        "default": "#Search-In-Modal-1, #Search-In-Modal, input[name='q']"
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_debounce_ms",
+        "label": "输入防抖 (ms)",
+        "min": 100,
+        "max": 600,
+        "step": 50,
+        "default": 250
+      },
+      {
+        "type": "header",
+        "content": "布局"
+      },
+      {
+        "type": "select",
+        "id": "cgp_sd_layout",
+        "label": "产品展示方式",
+        "options": [
+          {
+            "value": "grid",
+            "label": "网格 Grid"
+          },
+          {
+            "value": "list",
+            "label": "列表 List"
+          }
+        ],
+        "default": "grid"
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_product_columns",
+        "label": "产品每行列数 (网格模式)",
+        "min": 2,
+        "max": 5,
+        "step": 1,
+        "default": 5
+      },
+      {
+        "type": "header",
+        "content": "内容开关（对齐 Searchanise Content 配置）"
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_product_qty",
+        "label": "产品数量",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 10,
+        "info": "Shopify predictive search caps this at 10."
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sd_show_featured_collections",
+        "label": "默认面板显示推荐分类",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_featured_collection_qty",
+        "label": "推荐分类数量",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 5
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_suggestion_qty",
+        "label": "联想词数量",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 3
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sd_show_collections",
+        "label": "显示分类 (Categories)",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_collection_qty",
+        "label": "分类数量",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "default": 5
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sd_show_pages",
+        "label": "显示页面 (Pages)",
+        "default": false
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_page_qty",
+        "label": "页面数量",
+        "min": 1,
+        "max": 5,
+        "step": 1,
+        "default": 2
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sd_show_vendor",
+        "label": "显示品牌 (Vendor)",
+        "default": false
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sd_show_compare_at",
+        "label": "显示划线原价",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_desc_lines",
+        "label": "描述行数",
+        "min": 0,
+        "max": 4,
+        "step": 1,
+        "default": 2
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sd_show_vat_note",
+        "label": "显示 ex.VAT 标注",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "cgp_sd_show_banner",
+        "label": "默认面板显示 Banner",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_recent_qty",
+        "label": "最近搜索保留条数",
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "default": 5
+      },
+      {
+        "type": "header",
+        "content": "文案"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_heading_suggestions",
+        "label": "联想词标题",
+        "default": "Popular Suggestions"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_heading_collections",
+        "label": "分类标题",
+        "default": "Categories"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_heading_pages",
+        "label": "页面标题",
+        "default": "Pages"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_heading_products",
+        "label": "产品标题",
+        "default": "Products"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_heading_popular",
+        "label": "热门词标题",
+        "default": "Popular Searches"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_heading_recent",
+        "label": "最近搜索标题",
+        "default": "Recent Searches"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_heading_featured",
+        "label": "推荐产品标题",
+        "default": "Recommended For You"
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_view_all_label",
+        "label": "View all 按钮文案",
+        "default": "VIEW ALL ITEMS"
+      },
+      {
+        "type": "header",
+        "content": "样式（对齐 Searchanise Style 标签页）"
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_max_height",
+        "label": "弹窗最大高度 (px)",
+        "min": 320,
+        "max": 800,
+        "step": 20,
+        "default": 720
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_bg",
+        "label": "主背景",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_hover_bg",
+        "label": "悬停背景",
+        "default": "#F6F6F6"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_text",
+        "label": "正文文字",
+        "default": "#333333"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_heading",
+        "label": "区块标题",
+        "default": "#333333"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_card_title",
+        "label": "产品标题",
+        "default": "#545556"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_card_desc",
+        "label": "产品描述",
+        "default": "#9D9D9D"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_price",
+        "label": "价格",
+        "default": "#333333"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_price_sale",
+        "label": "促销价",
+        "default": "#DA5959"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_price_compare",
+        "label": "划线原价",
+        "default": "#C1C1C1"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_viewall_bg",
+        "label": "View all 背景",
+        "default": "#333333"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_viewall_text",
+        "label": "View all 文字",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_badge_instock",
+        "label": "In Stock 徽章背景",
+        "default": "#3F8F4F"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_badge_preorder",
+        "label": "Pre-Order 徽章背景",
+        "default": "#323232"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_badge_oos",
+        "label": "Out Of Stock 徽章背景",
+        "default": "#9C9C9C"
+      },
+      {
+        "type": "color",
+        "id": "cgp_sd_color_badge_discount",
+        "label": "折扣徽章背景",
+        "default": "#DA5959"
+      }
+    ]
+  }
+]

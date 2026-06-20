@@ -13,5 +13,10 @@
       ]
     }
   ],
-  "_todo": "main-search.liquid / main-collection-product-grid.liquid / card-product.liquid / settings_schema.json injections are added once those files are marked in the theme."
+  "settingsSchema": {
+    "file": "config/settings_schema.json",
+    "groupsFile": "settings-groups.json",
+    "replaceGroupNames": ["Search & Collections", "Search drawer"]
+  },
+  "_notes": "main-search.liquid + main-collection-product-grid.liquid are wholesale theme sections we own — they ship in theme-module/sections and are overwritten by copyDirs. card-product.liquid (native-card discount/preorder badge) is OPTIONAL and not auto-applied. settings_schema.json is JSON-merged: our two named groups are replaced/appended, the theme's other settings untouched."
 }
