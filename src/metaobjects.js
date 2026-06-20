@@ -25,6 +25,42 @@ export async function getGrantedScopes(ctx) {
   return (data.currentAppInstallation?.accessScopes || []).map((s) => s.handle);
 }
 
+// Map a metaobject field type name → UI input kind.
+export function kindFromType(typeName = '') {
+  if (typeName === 'boolean') return 'bool';
+  if (typeName.startsWith('list.')) return 'list';
+  if (typeName === 'color') return 'color';
+  if (typeName.includes('reference') || typeName.includes('file')) return 'ref';
+  return 'text';
+}
+
+// When the definition isn't visible (external apps can't read non-owned
+// definitions), infer the fields/kinds from existing entries' values.
+export function inferFields(entries) {
+  const keys = [];
+  const seen = new Set();
+  for (const e of entries) {
+    for (const k of Object.keys(e.fields || {})) {
+      if (!seen.has(k)) { seen.add(k); keys.push(k); }
+    }
+  }
+  return keys.map((key) => {
+    let kind = 'text';
+    for (const e of entries) {
+      const v = e.fields?.[key];
+      if (v == null || v === '') continue;
+      if (v === 'true' || v === 'false') kind = 'bool';
+      else if (/^\s*\[/.test(v)) kind = 'list';
+      else if (/^#[0-9a-fA-F]{3,8}$/.test(v.trim())) kind = 'color';
+      else if (/^gid:\/\//.test(v.trim())) kind = 'ref';
+      else kind = 'text';
+      break;
+    }
+    const name = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return { key, name, kind };
+  });
+}
+
 // Directly probe access to a type's entries — surfaces Shopify's exact error.
 export async function probeType(ctx, type) {
   try {

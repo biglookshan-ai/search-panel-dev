@@ -43,31 +43,30 @@ document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', 
 }));
 
 // ---- field rendering ----
-function fieldInput(fd, value) {
-  const t = fd.type?.name || 'single_line_text_field';
-  const id = 'f_' + fd.key;
-  if (t === 'boolean') {
-    return `<label class="inline"><input type="checkbox" data-key="${fd.key}" data-kind="bool" ${value === 'true' ? 'checked' : ''}/> ${esc(fd.name)}</label>`;
+// field = { key, name, kind }  kind: bool | list | color | ref | text
+function fieldInput(field, value) {
+  const label = esc(field.name || field.key);
+  const key = field.key;
+  if (field.kind === 'bool') {
+    return `<label class="inline"><input type="checkbox" data-key="${key}" data-kind="bool" ${value === 'true' ? 'checked' : ''}/> ${label}</label>`;
   }
-  if (t.startsWith('list.')) {
+  if (field.kind === 'list') {
     let lines = '';
     try { lines = (JSON.parse(value || '[]') || []).join('\n'); } catch { lines = value || ''; }
-    return `<label>${esc(fd.name)} <span class="hint">(每行一个)</span>
-      <textarea data-key="${fd.key}" data-kind="list" rows="3">${esc(lines)}</textarea></label>`;
+    return `<label>${label} <span class="hint">(每行一个)</span>
+      <textarea data-key="${key}" data-kind="list" rows="3">${esc(lines)}</textarea></label>`;
   }
-  if (t === 'color') {
+  if (field.kind === 'color') {
     const v = value || '#000000';
-    return `<label>${esc(fd.name)}
+    return `<label>${label}
       <span class="colorrow"><input type="color" value="${esc(v)}" oninput="this.nextElementSibling.value=this.value"/>
-      <input type="text" data-key="${fd.key}" data-kind="text" value="${esc(v)}"/></span></label>`;
+      <input type="text" data-key="${key}" data-kind="text" value="${esc(v)}"/></span></label>`;
   }
-  if (t.includes('file_reference') || t.includes('image')) {
-    return `<label>${esc(fd.name)} <span class="hint">(图片请在 Shopify 后台该 Metaobject 里设置)</span>
-      <input type="text" data-key="${fd.key}" data-kind="text" value="${esc(value || '')}" placeholder="gid://... 或留空"/></label>`;
+  if (field.kind === 'ref') {
+    return `<label>${label} <span class="hint">(引用/图片:gid://… 多个用逗号或每行一个;建议在 Shopify 后台设)</span>
+      <input type="text" data-key="${key}" data-kind="text" value="${esc(value || '')}" placeholder="gid://..."/></label>`;
   }
-  const rows = (t.includes('multi_line') || t.includes('rich_text')) ? 4 : 1;
-  if (rows > 1) return `<label>${esc(fd.name)}<textarea data-key="${fd.key}" data-kind="text" rows="${rows}">${esc(value || '')}</textarea></label>`;
-  return `<label>${esc(fd.name)}<input type="text" data-key="${fd.key}" data-kind="text" value="${esc(value || '')}"/></label>`;
+  return `<label>${label}<input type="text" data-key="${key}" data-kind="text" value="${esc(value || '')}"/></label>`;
 }
 
 function collectFields(formEl) {
@@ -83,57 +82,35 @@ function collectFields(formEl) {
   return fields;
 }
 
-let DEF = null, TYPE = '';
+let FIELDS = [], TYPE = '';
 
 async function loadType(type) {
   TYPE = type;
   const body = $('#meta-body');
   body.innerHTML = '<p class="muted">加载中…</p>';
   try {
-    const { definition, entries, availableTypes } = await api('GET', '/api/metaobjects/' + type);
-    DEF = definition;
-    if (!definition) {
-      body.innerHTML = `<p class="err">找不到类型 "${esc(type)}" 的 Metaobject 定义。</p><p class="muted">读取诊断…</p>`;
-      let d = {};
-      try { d = await api('GET', '/api/diag'); } catch (e) { d = { error: e.message }; }
-      const scopes = (d.scopes || []);
-      const hasRead = scopes.includes('read_metaobjects');
-      const probesHtml = (d.probes || []).map((p) =>
-        `<code>${esc(p.type)}</code>: ${p.ok ? ('OK (' + p.count + ' 条)') : '<span style="color:#c0392b">' + esc(p.error) + '</span>'}`
-      ).join('<br>');
-      body.innerHTML =
-        `<p class="err">找不到类型 "${esc(type)}" 的 Metaobject 定义。</p>` +
-        `<p class="muted">Token 已授权 scopes:<br>${scopes.map((s) => '<code>' + esc(s) + '</code>').join('、') || '<b style="color:#c0392b">(无 — 没授权任何权限!)</b>'}</p>` +
-        `<p class="muted">app 当前能看到的 Metaobject 类型:<br>${(d.definitionTypes || []).map((t) => '<code>' + esc(t) + '</code>').join('、') || '(无)'}</p>` +
-        `<p class="muted">直接访问各类型的结果(Shopify 原始返回):<br>${probesHtml || '(无)'}</p>` +
-        (hasRead
-          ? '<p class="muted">已有 read_metaobjects 但看不到 → 这些定义的 <b>admin 访问没对 app 开放</b>。需在后台把每个定义的访问设为对 app 可读写(public),或由拥有它的 app 修改。</p>'
-          : '<p class="muted">缺少 <code>read_metaobjects</code> → 在 Partner app 确认 scopes 后点下面刷新。</p>') +
-        `<button class="btn btn-primary" id="reconnect">重新连接(刷新授权)</button>`;
-      const rc = $('#reconnect');
-      if (rc) rc.addEventListener('click', async () => {
-        try { await api('POST', '/api/reconnect'); toast('已清缓存 token,刷新中…'); setTimeout(() => location.reload(), 700); }
-        catch (e) { toast(e.message, false); }
-      });
+    const { entries, fields } = await api('GET', '/api/metaobjects/' + type);
+    FIELDS = fields || [];
+    if (!FIELDS.length && !entries.length) {
+      body.innerHTML = '<p class="muted">这个类型还没有条目,也读不到字段。请先在 Shopify 后台给它加一条,再回来这里管理。</p>';
       return;
     }
-    const fds = definition.fieldDefinitions || [];
     let html = `<div class="rows">`;
-    entries.forEach((e) => { html += entryCard(fds, e); });
+    entries.forEach((e) => { html += entryCard(FIELDS, e); });
     html += `</div><button class="btn btn-primary" id="add-entry">+ 新增</button>`;
     body.innerHTML = html;
     body.querySelectorAll('[data-entry]').forEach(bindEntry);
     $('#add-entry').addEventListener('click', () => {
       const wrap = document.createElement('div');
-      wrap.innerHTML = entryCard(fds, { id: '', handle: '', fields: {} }, true);
+      wrap.innerHTML = entryCard(FIELDS, { id: '', handle: '', fields: {} }, true);
       $('.rows').appendChild(wrap.firstElementChild);
       bindEntry($('.rows').lastElementChild);
     });
   } catch (e) { body.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
 
-function entryCard(fds, entry, isNew = false) {
-  const inner = fds.map((fd) => fieldInput(fd, entry.fields[fd.key])).join('');
+function entryCard(fields, entry, isNew = false) {
+  const inner = fields.map((f) => fieldInput(f, entry.fields[f.key])).join('');
   const title = isNew ? '新条目' : esc(entry.displayName || entry.handle || entry.id);
   return `<form class="entry" data-entry data-id="${esc(entry.id)}">
     <div class="entry-head"><b>${title}</b></div>

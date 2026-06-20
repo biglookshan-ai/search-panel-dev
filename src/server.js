@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { listThemes } from './shopify.js';
-import { getAllDefinitions, getGrantedScopes, probeType, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
+import { getAllDefinitions, getGrantedScopes, probeType, listEntries, createEntry, updateEntry, deleteEntry, kindFromType, inferFields } from './metaobjects.js';
 import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 import { clearToken } from './token-store.js';
@@ -57,10 +57,16 @@ const okType = (t) => TYPES.includes(t);
 
 api.get('/metaobjects/:type', wrap(async (req) => {
   if (!okType(req.params.type)) throw new Error('Unknown type');
-  const all = await getAllDefinitions(req.ctx);
-  const definition = all.find((d) => d.type === req.params.type) || null;
-  const entries = definition ? await listEntries(req.ctx, req.params.type) : [];
-  return { definition, entries, availableTypes: all.map((d) => d.type) };
+  // Entries are readable with read_metaobjects even when the DEFINITION isn't
+  // visible (external apps can't list non-owned definitions). So drive the UI
+  // off the entries: use the definition's fields if we can see it, else infer.
+  const entries = await listEntries(req.ctx, req.params.type);
+  const defs = await getAllDefinitions(req.ctx).catch(() => []);
+  const def = defs.find((d) => d.type === req.params.type) || null;
+  const fields = def
+    ? def.fieldDefinitions.map((fd) => ({ key: fd.key, name: fd.name, kind: kindFromType(fd.type?.name) }))
+    : inferFields(entries);
+  return { entries, fields, fromDefinition: !!def };
 }));
 api.post('/metaobjects/:type', wrap(async (req) => {
   if (!okType(req.params.type)) throw new Error('Unknown type');
