@@ -93,9 +93,24 @@ async function loadType(type) {
     const { definition, entries, availableTypes } = await api('GET', '/api/metaobjects/' + type);
     DEF = definition;
     if (!definition) {
-      body.innerHTML = `<p class="err">找不到类型 "${esc(type)}" 的 Metaobject 定义。</p>` +
-        `<p class="muted">这个店铺现有的 Metaobject 类型:<br>${(availableTypes || []).map((t) => '<code>' + esc(t) + '</code>').join('、') || '(无)'}</p>` +
-        `<p class="muted">如果你的角标/排序/面板用的是上面别的 handle,告诉我实际名字,我改一下映射。</p>`;
+      body.innerHTML = `<p class="err">找不到类型 "${esc(type)}" 的 Metaobject 定义。</p><p class="muted">读取诊断…</p>`;
+      let d = {};
+      try { d = await api('GET', '/api/diag'); } catch (e) { d = { error: e.message }; }
+      const scopes = (d.scopes || []);
+      const hasRead = scopes.includes('read_metaobjects');
+      body.innerHTML =
+        `<p class="err">找不到类型 "${esc(type)}" 的 Metaobject 定义。</p>` +
+        `<p class="muted">Token 已授权 scopes:<br>${scopes.map((s) => '<code>' + esc(s) + '</code>').join('、') || '<b style="color:#c0392b">(无 — 没授权任何权限!)</b>'}</p>` +
+        `<p class="muted">app 当前能看到的 Metaobject 类型:<br>${(d.definitionTypes || []).map((t) => '<code>' + esc(t) + '</code>').join('、') || '(无)'}</p>` +
+        (hasRead
+          ? '<p class="muted">已有 read_metaobjects 但看不到定义 → 多半是这些定义的<b>访问权限没对 app 开放</b>(需要把定义的 admin 访问设为 public)。把这条发我,我处理。</p>'
+          : '<p class="muted">缺少 <code>read_metaobjects</code> 权限 → 在 Partner app 改/确认 scopes 后,点下面按钮刷新授权。</p>') +
+        `<button class="btn btn-primary" id="reconnect">重新连接(刷新授权)</button>`;
+      const rc = $('#reconnect');
+      if (rc) rc.addEventListener('click', async () => {
+        try { await api('POST', '/api/reconnect'); toast('已清缓存 token,刷新中…'); setTimeout(() => location.reload(), 700); }
+        catch (e) { toast(e.message, false); }
+      });
       return;
     }
     const fds = definition.fieldDefinitions || [];

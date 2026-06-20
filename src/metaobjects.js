@@ -19,6 +19,12 @@ export async function getDefinition(ctx, type) {
   return all.find((d) => d.type === type) || null;
 }
 
+// Which scopes the current access token actually has (to diagnose access issues).
+export async function getGrantedScopes(ctx) {
+  const data = await graphql(ctx, `query{ currentAppInstallation{ accessScopes{ handle } } }`);
+  return (data.currentAppInstallation?.accessScopes || []).map((s) => s.handle);
+}
+
 export async function listEntries(ctx, type) {
   const data = await graphql(ctx,
     `query($type:String!){

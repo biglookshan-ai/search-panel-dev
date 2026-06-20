@@ -3,9 +3,10 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { listThemes } from './shopify.js';
-import { getAllDefinitions, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
+import { getAllDefinitions, getGrantedScopes, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
 import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
+import { clearToken } from './token-store.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -73,6 +74,19 @@ api.delete('/metaobjects/:type', wrap(async (req) => {
   if (!req.body.id) throw new Error('Missing id');
   return { deletedId: await deleteEntry(req.ctx, req.body.id) };
 }));
+api.get('/diag', wrap(async (req) => {
+  const [scopes, defs] = await Promise.all([
+    getGrantedScopes(req.ctx).catch((e) => ['<error: ' + e.message + '>']),
+    getAllDefinitions(req.ctx).catch(() => []),
+  ]);
+  return { shop: req.ctx.shop, scopes, definitionTypes: defs.map((d) => d.type) };
+}));
+
+api.post('/reconnect', wrap(async (req) => {
+  clearToken(req.ctx.shop);
+  return { ok: true };
+}));
+
 api.get('/themes', wrap(async (req) => ({ themes: await listThemes(req.ctx) })));
 api.post('/themes/:id/apply', wrap(async (req) => applyToTheme(req.ctx, req.params.id, { dryRun: !!req.body.dryRun })));
 

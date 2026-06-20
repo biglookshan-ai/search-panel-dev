@@ -27,3 +27,8 @@ export function setToken(shop, token) {
   map[shop] = token;
   save();
 }
+export function clearToken(shop) {
+  load();
+  delete map[shop];
+  save();
+}
