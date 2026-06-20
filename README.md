@@ -1,56 +1,63 @@
 # search-panel-dev — CineGearPro Search Admin
 
-A small self-hosted admin for the CineGearPro pure-theme search engine:
+Self-hosted admin for the CineGearPro pure-theme search engine.
 
-1. **Metaobjects** — manage `cgp_badge` (custom tag badges), `cgp_sort_rule`
-   (priority sort), `search_panel` (popular terms/products) in one UI. Saves go
-   straight to the store via the Admin API and are live immediately.
-2. **写入主题 (Apply to theme)** — pushes the search-engine *module* (the files in
-   `theme-module/` + marker blocks) into a selected theme via the Admin Asset API.
-   Re-runnable; replaces the content between the `CGP-SEARCH` markers each time.
-3. **Boosts / 设置** — link to the Search & Discovery app for boosts/synonyms/filters.
+1. **Metaobjects** — manage `cgp_badge`, `cgp_sort_rule`, `search_panel` in one UI
+   (live immediately via the Admin API).
+2. **写入主题 (Apply to theme)** — push the search-engine *module* into a chosen theme
+   via the Admin Asset API. Re-runnable / idempotent.
+3. **Boosts / 设置** — link to Search & Discovery for boosts/synonyms/filters.
 
-> The search engine itself stays a pure-theme solution. This app only *manages* it.
+Auth is **OAuth** (App ID + App Secret), so it can be a Partner / custom-distribution
+app installed on the store. (A fixed `SHOPIFY_ADMIN_TOKEN` is also supported as an
+override — set it to skip OAuth.)
 
-## Setup (local)
-```bash
-npm install
-cp .env.example .env   # fill in SHOPIFY_STORE + SHOPIFY_ADMIN_TOKEN
-npm start              # http://localhost:3000
-```
+## Create the app (Partner Dashboard)
+1. partners.shopify.com → **Apps → Create app → Create app manually**.
+2. App setup:
+   - **App URL**: `https://<your-railway-url>`
+   - **Allowed redirection URL(s)**: `https://<your-railway-url>/auth/callback`
+3. **API credentials**: copy **Client ID (API key)** and **Client secret**.
+4. **API scopes** (Configuration / requested scopes): `read_metaobjects`,
+   `write_metaobjects`, `read_themes`, `write_themes`.
+5. **Distribution → Custom distribution** → enter the store domain → generate the
+   install link (you'll use it once after deploy).
 
 ## Deploy on Railway
-1. Push this repo to GitHub (`biglookshan-ai/search-panel-dev`).
-2. Railway → New Project → Deploy from GitHub → pick this repo.
-3. Add Variables (Railway → Variables):
+1. Push to GitHub (`biglookshan-ai/search-panel-dev`) — done.
+2. Railway → New Project → Deploy from GitHub → this repo.
+3. (Recommended) add a **Volume** mounted at `/data` so the OAuth token survives
+   redeploys.
+4. **Variables**:
    - `SHOPIFY_STORE` = `cinegearpro.myshopify.com`
-   - `SHOPIFY_ADMIN_TOKEN` = custom-app Admin API token
+   - `SHOPIFY_API_KEY` = Client ID
+   - `SHOPIFY_API_SECRET` = Client secret
+   - `SHOPIFY_SCOPES` = `read_metaobjects,write_metaobjects,read_themes,write_themes`
+   - `APP_URL` = the Railway URL (no trailing slash)
    - `SHOPIFY_API_VERSION` = `2025-01`
-   - `ADMIN_UI_PASSWORD` = a password (recommended, since the URL is public)
-4. Railway auto-detects Node and runs `npm start`. Open the generated URL.
+   - `DATA_DIR` = `/data` (if you mounted a volume)
+   - `ADMIN_UI_PASSWORD` = a password
+5. Deploy. Open the Railway URL → it'll prompt to **连接店铺 (Connect)** → that runs
+   OAuth and stores the offline token. Then the UI works.
 
-## The Admin API token
-Create a **custom app** in the store admin (Settings → Apps and sales channels →
-Develop apps), with Admin API scopes:
-- `read_metaobjects`, `write_metaobjects`
-- `read_themes`, `write_themes`
+> Make sure the Railway App URL matches `APP_URL` and the redirect URL in the
+> Partner app, or OAuth callback will fail.
 
-Install it, reveal the **Admin API access token**, put it in Railway Variables.
-Never commit the token.
+## Local dev
+```bash
+npm install
+cp .env.example .env   # fill API key/secret + APP_URL=http://localhost:3000
+npm start              # http://localhost:3000  → open /auth once
+```
 
 ## ⚠️ Apply-to-theme safety
-- Prefer an **unpublished/draft** theme. The UI warns before writing to the live theme.
-- Always run **试运行 (dry run)** first to see the change list.
-- Writing assets is reversible (re-publish a previous theme version), but treat the
-  live theme with care.
+- Prefer an **unpublished/draft** theme; the UI warns before writing to the live one.
+- Run **试运行 (dry run)** first to see the change list.
+- `main-search.liquid` + `main-collection-product-grid.liquid` are overwritten
+  wholesale (the search engine owns those pages). `settings_schema.json` is
+  JSON-merged (only our two groups). `theme.liquid` gets a marker block.
+  `card-product.liquid` (native-card badges) is optional and NOT auto-applied.
 
-## theme-module/
-The search-engine files that get written into the theme. Update these (and
-`config/injections.json`) when the search engine changes, redeploy, then re-Apply.
-
-## Status / TODO
-- Metaobject management: working (badge / sort_rule / search_panel).
-- Apply: copies all `theme-module/**` files + injects `layout/theme.liquid`.
-  Remaining shared-file injections (main-search, main-collection-product-grid,
-  card-product, settings_schema) are added to `config/injections.json` once those
-  files are marked with `CGP-SEARCH` markers in the theme.
+## Updating the search engine
+Edit `theme-module/**` (+ `config/injections.json` / `theme-module/settings-groups.json`),
+redeploy, then re-run Apply.

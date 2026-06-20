@@ -1,29 +1,32 @@
 // Thin Shopify Admin API client (GraphQL for metaobjects, REST for theme assets).
-// Reads credentials from env. No third-party deps.
+// Token comes from token-store (OAuth offline token, or SHOPIFY_ADMIN_TOKEN override).
+import { getStoredToken, getStoredShop } from './token-store.js';
 
-const STORE = process.env.SHOPIFY_STORE;
-const TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
 const VERSION = process.env.SHOPIFY_API_VERSION || '2025-01';
 
-function assertEnv() {
-  if (!STORE || !TOKEN) {
-    throw new Error('Missing SHOPIFY_STORE or SHOPIFY_ADMIN_TOKEN env vars.');
+function creds() {
+  const store = getStoredShop();
+  const token = getStoredToken();
+  if (!store || !token) {
+    const err = new Error('Not connected — open /auth to connect the store (or set SHOPIFY_ADMIN_TOKEN).');
+    err.needsAuth = true;
+    throw err;
   }
+  return { store, token };
 }
 
-const base = () => `https://${STORE}/admin/api/${VERSION}`;
-const headers = () => ({
-  'X-Shopify-Access-Token': TOKEN,
+const headers = (token) => ({
+  'X-Shopify-Access-Token': token,
   'Content-Type': 'application/json',
   Accept: 'application/json',
 });
 
 // ---- GraphQL ----
 export async function graphql(query, variables = {}) {
-  assertEnv();
-  const res = await fetch(`${base()}/graphql.json`, {
+  const { store, token } = creds();
+  const res = await fetch(`https://${store}/admin/api/${VERSION}/graphql.json`, {
     method: 'POST',
-    headers: headers(),
+    headers: headers(token),
     body: JSON.stringify({ query, variables }),
   });
   const json = await res.json().catch(() => ({}));
@@ -34,18 +37,17 @@ export async function graphql(query, variables = {}) {
 
 // ---- REST: themes + assets ----
 export async function listThemes() {
-  assertEnv();
-  const res = await fetch(`${base()}/themes.json`, { headers: headers() });
+  const { store, token } = creds();
+  const res = await fetch(`https://${store}/admin/api/${VERSION}/themes.json`, { headers: headers(token) });
   const json = await res.json();
   if (!res.ok) throw new Error(`themes.json HTTP ${res.status}: ${JSON.stringify(json)}`);
   return (json.themes || []).map((t) => ({ id: t.id, name: t.name, role: t.role }));
 }
 
-// Returns the asset's value (string) or null if it doesn't exist (404).
 export async function getAsset(themeId, key) {
-  assertEnv();
-  const url = `${base()}/themes/${themeId}/assets.json?asset[key]=${encodeURIComponent(key)}`;
-  const res = await fetch(url, { headers: headers() });
+  const { store, token } = creds();
+  const url = `https://${store}/admin/api/${VERSION}/themes/${themeId}/assets.json?asset[key]=${encodeURIComponent(key)}`;
+  const res = await fetch(url, { headers: headers(token) });
   if (res.status === 404) return null;
   const json = await res.json();
   if (!res.ok) throw new Error(`getAsset ${key} HTTP ${res.status}: ${JSON.stringify(json)}`);
@@ -53,10 +55,10 @@ export async function getAsset(themeId, key) {
 }
 
 export async function putAsset(themeId, key, value) {
-  assertEnv();
-  const res = await fetch(`${base()}/themes/${themeId}/assets.json`, {
+  const { store, token } = creds();
+  const res = await fetch(`https://${store}/admin/api/${VERSION}/themes/${themeId}/assets.json`, {
     method: 'PUT',
-    headers: headers(),
+    headers: headers(token),
     body: JSON.stringify({ asset: { key, value } }),
   });
   const json = await res.json().catch(() => ({}));
@@ -65,5 +67,5 @@ export async function putAsset(themeId, key, value) {
 }
 
 export function config() {
-  return { store: STORE, version: VERSION, hasToken: !!TOKEN };
+  return { store: getStoredShop(), version: VERSION, connected: !!getStoredToken() };
 }

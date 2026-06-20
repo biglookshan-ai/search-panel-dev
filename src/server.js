@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { config as shopifyConfig, listThemes } from './shopify.js';
 import { getDefinition, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
 import { applyToTheme } from './theme-apply.js';
+import { authStart, authCallback, oauthConfigured } from './oauth.js';
 
 // --- tiny .env loader (Railway injects vars directly; this is for local dev) ---
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -19,10 +20,15 @@ if (fs.existsSync(envPath)) {
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 
-// --- optional password gate (HTTP Basic) when ADMIN_UI_PASSWORD is set ---
+// OAuth routes — must be reachable WITHOUT the password gate (Shopify calls back).
+app.get('/auth', authStart);
+app.get('/auth/callback', authCallback);
+
+// --- optional password gate (HTTP Basic) for everything else ---
 const PW = process.env.ADMIN_UI_PASSWORD;
 if (PW) {
   app.use((req, res, next) => {
+    if (req.path.startsWith('/auth')) return next();
     const h = req.headers.authorization || '';
     const got = h.startsWith('Basic ') ? Buffer.from(h.slice(6), 'base64').toString().split(':')[1] : '';
     if (got === PW) return next();
@@ -34,13 +40,17 @@ app.use(express.static(path.join(ROOT, 'public')));
 
 const wrap = (fn) => async (req, res) => {
   try { res.json(await fn(req)); }
-  catch (e) { console.error(e); res.status(500).json({ error: String(e.message || e) }); }
+  catch (e) {
+    if (e.needsAuth) return res.status(401).json({ error: e.message, needsAuth: true });
+    console.error(e);
+    res.status(500).json({ error: String(e.message || e) });
+  }
 };
 
 const TYPES = ['cgp_badge', 'cgp_sort_rule', 'search_panel'];
 const okType = (t) => TYPES.includes(t);
 
-app.get('/api/config', wrap(async () => shopifyConfig()));
+app.get('/api/config', wrap(async () => ({ ...shopifyConfig(), oauthConfigured: oauthConfigured() })));
 
 app.get('/api/metaobjects/:type', wrap(async (req) => {
   if (!okType(req.params.type)) throw new Error('Unknown type');

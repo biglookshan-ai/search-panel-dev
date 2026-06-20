@@ -162,9 +162,14 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
   try {
     const c = await api('GET', '/api/config');
     STORE = c.store || '';
-    $('#store').textContent = STORE + (c.hasToken ? '' : ' ⚠️ 未配置 token');
-    const handle = STORE.replace('.myshopify.com', '');
-    $('#boosts-link').href = `https://admin.shopify.com/store/${handle}/apps`;
-  } catch (e) { $('#store').textContent = e.message; }
-  loadType('cgp_badge');
+    const handle = (STORE || '').replace('.myshopify.com', '');
+    $('#boosts-link').href = handle ? `https://admin.shopify.com/store/${handle}/apps` : '#';
+    if (c.connected) {
+      $('#store').textContent = (STORE || '已连接') + ' ✓';
+      loadType('cgp_badge');
+    } else {
+      $('#store').innerHTML = (STORE || '未连接') + ' — <a href="/auth" class="connect">连接店铺 (OAuth)</a>';
+      $('#meta-body').innerHTML = '<p class="muted">还没连接店铺。点右上角 <b>「连接店铺」</b> 用 OAuth 授权后即可管理 Metaobject 与写入主题。</p>';
+    }
+  } catch (e) { $('#store').textContent = String(e.message || e); }
 })();
