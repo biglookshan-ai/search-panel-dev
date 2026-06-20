@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { listThemes } from './shopify.js';
-import { getAllDefinitions, getGrantedScopes, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
+import { getAllDefinitions, getGrantedScopes, probeType, listEntries, createEntry, updateEntry, deleteEntry } from './metaobjects.js';
 import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 import { clearToken } from './token-store.js';
@@ -75,11 +75,14 @@ api.delete('/metaobjects/:type', wrap(async (req) => {
   return { deletedId: await deleteEntry(req.ctx, req.body.id) };
 }));
 api.get('/diag', wrap(async (req) => {
-  const [scopes, defs] = await Promise.all([
+  const [scopes, defs, ...probes] = await Promise.all([
     getGrantedScopes(req.ctx).catch((e) => ['<error: ' + e.message + '>']),
     getAllDefinitions(req.ctx).catch(() => []),
+    probeType(req.ctx, 'cgp_badge'),
+    probeType(req.ctx, 'cgp_sort_rule'),
+    probeType(req.ctx, 'search_panel'),
   ]);
-  return { shop: req.ctx.shop, scopes, definitionTypes: defs.map((d) => d.type) };
+  return { shop: req.ctx.shop, scopes, definitionTypes: defs.map((d) => d.type), probes };
 }));
 
 api.post('/reconnect', wrap(async (req) => {

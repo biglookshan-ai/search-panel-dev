@@ -25,6 +25,16 @@ export async function getGrantedScopes(ctx) {
   return (data.currentAppInstallation?.accessScopes || []).map((s) => s.handle);
 }
 
+// Directly probe access to a type's entries — surfaces Shopify's exact error.
+export async function probeType(ctx, type) {
+  try {
+    const d = await graphql(ctx, `query($t:String!){ metaobjects(type:$t, first:1){ nodes{ id } } }`, { t: type });
+    return { type, ok: true, count: (d.metaobjects?.nodes || []).length };
+  } catch (e) {
+    return { type, ok: false, error: String(e.message || e) };
+  }
+}
+
 export async function listEntries(ctx, type) {
   const data = await graphql(ctx,
     `query($type:String!){

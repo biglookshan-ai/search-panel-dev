@@ -98,13 +98,17 @@ async function loadType(type) {
       try { d = await api('GET', '/api/diag'); } catch (e) { d = { error: e.message }; }
       const scopes = (d.scopes || []);
       const hasRead = scopes.includes('read_metaobjects');
+      const probesHtml = (d.probes || []).map((p) =>
+        `<code>${esc(p.type)}</code>: ${p.ok ? ('OK (' + p.count + ' 条)') : '<span style="color:#c0392b">' + esc(p.error) + '</span>'}`
+      ).join('<br>');
       body.innerHTML =
         `<p class="err">找不到类型 "${esc(type)}" 的 Metaobject 定义。</p>` +
         `<p class="muted">Token 已授权 scopes:<br>${scopes.map((s) => '<code>' + esc(s) + '</code>').join('、') || '<b style="color:#c0392b">(无 — 没授权任何权限!)</b>'}</p>` +
         `<p class="muted">app 当前能看到的 Metaobject 类型:<br>${(d.definitionTypes || []).map((t) => '<code>' + esc(t) + '</code>').join('、') || '(无)'}</p>` +
+        `<p class="muted">直接访问各类型的结果(Shopify 原始返回):<br>${probesHtml || '(无)'}</p>` +
         (hasRead
-          ? '<p class="muted">已有 read_metaobjects 但看不到定义 → 多半是这些定义的<b>访问权限没对 app 开放</b>(需要把定义的 admin 访问设为 public)。把这条发我,我处理。</p>'
-          : '<p class="muted">缺少 <code>read_metaobjects</code> 权限 → 在 Partner app 改/确认 scopes 后,点下面按钮刷新授权。</p>') +
+          ? '<p class="muted">已有 read_metaobjects 但看不到 → 这些定义的 <b>admin 访问没对 app 开放</b>。需在后台把每个定义的访问设为对 app 可读写(public),或由拥有它的 app 修改。</p>'
+          : '<p class="muted">缺少 <code>read_metaobjects</code> → 在 Partner app 确认 scopes 后点下面刷新。</p>') +
         `<button class="btn btn-primary" id="reconnect">重新连接(刷新授权)</button>`;
       const rc = $('#reconnect');
       if (rc) rc.addEventListener('click', async () => {
