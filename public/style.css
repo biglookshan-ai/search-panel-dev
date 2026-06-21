@@ -74,3 +74,11 @@ main { max-width: 920px; margin: 0 auto; }
 .chip-btn { border: 1px solid #d4d8de; background: #fff; border-radius: 6px; cursor: pointer; width: 28px; height: 28px; flex: 0 0 auto; font-size: 13px; line-height: 1; }
 .chip-btn:disabled { opacity: .35; cursor: default; }
 .chip-x { color: #c0392b; border-color: #e3b3ad; }
+
+/* drag + multi-select for picker chips */
+.chip .drag { cursor: grab; color: #b0b6bf; flex: 0 0 auto; font-size: 16px; user-select: none; }
+.chip[draggable] { cursor: default; }
+.chip.dragging { opacity: .4; }
+.chip.dragover { border-color: #1c222d; box-shadow: 0 0 0 2px #f9cf13; }
+.chip-sel { flex: 0 0 auto; width: 16px; height: 16px; }
+.bulkbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fff8d6; border: 1px solid #f0e3a0; border-radius: 8px; margin-bottom: 10px; font-size: 13px; flex-wrap: wrap; }

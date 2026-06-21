@@ -426,6 +426,8 @@ function simpleModuleEl(entryId, title, preview, detailHtml) {
 function refModuleEl(entryId, key, title, initialGids, kind) {
   let gids = (initialGids || []).slice();
   const meta = {};
+  const selected = new Set();
+  let dragGid = null;
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `
@@ -434,6 +436,7 @@ function refModuleEl(entryId, key, title, initialGids, kind) {
     <div class="detail" data-detail hidden>
       <div class="picker"><input type="search" data-search placeholder="搜索${kind === 'product' ? '产品' : '集合'}添加…"/>
         <div class="picker-results" data-results hidden></div></div>
+      <div class="bulkbar" data-bulk hidden></div>
       <div class="chips" data-chips></div>
       <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div>
     </div>`;
@@ -441,23 +444,61 @@ function refModuleEl(entryId, key, title, initialGids, kind) {
   const countEl = card.querySelector('[data-count]');
   const resultsEl = card.querySelector('[data-results]');
   const searchEl = card.querySelector('[data-search]');
+  const bulkEl = card.querySelector('[data-bulk]');
+
+  // Move the whole selected group up/down by one relative to unselected items.
+  function moveSelected(dir) {
+    const sel = gids.filter((g) => selected.has(g));
+    if (!sel.length) return;
+    const rest = gids.filter((g) => !selected.has(g));
+    const firstPos = gids.findIndex((g) => selected.has(g));
+    const unselBefore = gids.slice(0, firstPos).filter((g) => !selected.has(g)).length;
+    const at = Math.max(0, Math.min(rest.length, unselBefore + (dir === 'up' ? -1 : 1)));
+    rest.splice(at, 0, ...sel);
+    gids = rest;
+    paint();
+  }
+
+  function paintBulk() {
+    if (!selected.size) { bulkEl.hidden = true; bulkEl.innerHTML = ''; return; }
+    bulkEl.hidden = false;
+    bulkEl.innerHTML = `<span>已选 ${selected.size} 项</span>
+      <button type="button" class="btn btn-sm" data-bup>↑ 上移</button>
+      <button type="button" class="btn btn-sm" data-bdown>↓ 下移</button>
+      <button type="button" class="btn btn-sm btn-danger" data-bdel>删除选中</button>
+      <button type="button" class="btn btn-sm" data-bclr>取消选择</button>`;
+    bulkEl.querySelector('[data-bup]').onclick = () => moveSelected('up');
+    bulkEl.querySelector('[data-bdown]').onclick = () => moveSelected('down');
+    bulkEl.querySelector('[data-bdel]').onclick = () => { gids = gids.filter((g) => !selected.has(g)); selected.clear(); paint(); };
+    bulkEl.querySelector('[data-bclr]').onclick = () => { selected.clear(); paint(); };
+  }
 
   function paint() {
     countEl.textContent = '· ' + gids.length + ' 个';
     chipsEl.innerHTML = gids.length ? gids.map((g, i) => {
       const m = meta[g] || {};
       const img = m.image ? `<img src="${esc(m.image)}" alt=""/>` : '<span class="noimg"></span>';
-      return `<div class="chip" data-gid="${esc(g)}">${img}<span class="chip-name" title="${esc(g)}">${esc(m.title || g)}</span>
+      return `<div class="chip" draggable="true" data-gid="${esc(g)}">
+        <input type="checkbox" class="chip-sel" data-sel ${selected.has(g) ? 'checked' : ''}/>
+        <span class="drag" title="拖动排序">⠿</span>
+        ${img}<span class="chip-name" title="${esc(g)}">${esc(m.title || g)}</span>
         <button type="button" class="chip-btn" data-up ${i === 0 ? 'disabled' : ''}>↑</button>
         <button type="button" class="chip-btn" data-down ${i === gids.length - 1 ? 'disabled' : ''}>↓</button>
         <button type="button" class="chip-btn chip-x" data-remove>✕</button></div>`;
     }).join('') : '<p class="muted">还没有添加。用上面搜索框添加。</p>';
     chipsEl.querySelectorAll('.chip').forEach((chip) => {
       const g = chip.dataset.gid;
-      chip.querySelector('[data-remove]').addEventListener('click', () => { gids = gids.filter((x) => x !== g); paint(); });
+      chip.querySelector('[data-sel]').addEventListener('change', (e) => { if (e.target.checked) selected.add(g); else selected.delete(g); paintBulk(); });
+      chip.querySelector('[data-remove]').addEventListener('click', () => { gids = gids.filter((x) => x !== g); selected.delete(g); paint(); });
       const up = chip.querySelector('[data-up]'); if (up && !up.disabled) up.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i - 1], gids[i]] = [gids[i], gids[i - 1]]; paint(); });
       const dn = chip.querySelector('[data-down]'); if (dn && !dn.disabled) dn.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i + 1], gids[i]] = [gids[i], gids[i + 1]]; paint(); });
+      chip.addEventListener('dragstart', (e) => { dragGid = g; chip.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+      chip.addEventListener('dragend', () => { dragGid = null; chipsEl.querySelectorAll('.chip').forEach((c) => c.classList.remove('dragging', 'dragover')); });
+      chip.addEventListener('dragover', (e) => { e.preventDefault(); chip.classList.add('dragover'); });
+      chip.addEventListener('dragleave', () => chip.classList.remove('dragover'));
+      chip.addEventListener('drop', (e) => { e.preventDefault(); chip.classList.remove('dragover'); if (!dragGid || dragGid === g) return; const from = gids.indexOf(dragGid); gids.splice(from, 1); const to = gids.indexOf(g); gids.splice(to, 0, dragGid); paint(); });
     });
+    paintBulk();
   }
 
   card._onOpen = async () => {
