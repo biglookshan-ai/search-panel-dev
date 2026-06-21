@@ -91,6 +91,7 @@ async function loadType(type) {
   try {
     const { entries, fields } = await api('GET', '/api/metaobjects/' + type);
     FIELDS = fields || [];
+    if (type === 'cgp_badge') return renderBadges(entries);
     if (!FIELDS.length && !entries.length) {
       body.innerHTML = '<p class="muted">这个类型还没有条目,也读不到字段。请先在 Shopify 后台给它加一条,再回来这里管理。</p>';
       return;
@@ -137,6 +138,91 @@ function bindEntry(form) {
   if (del) del.addEventListener('click', async () => {
     if (!confirm('确定删除这个条目?')) return;
     try { await api('DELETE', '/api/metaobjects/' + TYPE, { id: form.dataset.id }); toast('已删除 ✓'); loadType(TYPE); }
+    catch (e) { toast(e.message, false); }
+  });
+}
+
+// ---- cgp_badge: list view + quick enable toggle + expandable detail ----
+const BADGE_POS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+function renderBadges(entries) {
+  const body = $('#meta-body');
+  body.innerHTML = '<div class="list"></div><button class="btn btn-primary" id="add-entry">+ 新增角标</button>';
+  const list = $('.list');
+  entries.forEach((e) => list.appendChild(badgeCardEl(e)));
+  $('#add-entry').addEventListener('click', () => {
+    const card = badgeCardEl({ id: '', fields: { position: 'bottom-left', enabled: 'true', background: '#1c222d', text_color: '#ffffff' } }, true);
+    list.appendChild(card);
+    card.querySelector('[data-edit]').click();
+  });
+}
+
+function badgeCardEl(entry, isNew = false) {
+  const f = entry.fields || {};
+  const bg = f.background || '#1c222d', tc = f.text_color || '#ffffff';
+  const label = f.label || f.tag || '(角标)';
+  const on = f.enabled !== 'false';
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.dataset.id = entry.id || '';
+  el.innerHTML = `
+    <div class="summary">
+      <span class="swatch" style="background:${esc(bg)};color:${esc(tc)}">${esc(label)}</span>
+      <span class="grow"><b>${esc(f.tag || (isNew ? '新角标' : '(未设 tag)'))}</b> <span class="muted">· ${esc(f.position || '')}</span></span>
+      <label class="inline"><input type="checkbox" data-toggle ${on ? 'checked' : ''}/> 启用</label>
+      <button type="button" class="btn btn-sm" data-edit>${isNew ? '展开' : '编辑'}</button>
+    </div>
+    <div class="detail" data-detail hidden></div>`;
+  const toggle = el.querySelector('[data-toggle]');
+  toggle.addEventListener('change', async () => {
+    if (!el.dataset.id) return; // unsaved new row
+    try { await api('PUT', '/api/metaobjects/cgp_badge', { id: el.dataset.id, fields: { enabled: toggle.checked ? 'true' : 'false' } }); toast(toggle.checked ? '已启用' : '已停用'); }
+    catch (e) { toggle.checked = !toggle.checked; toast(e.message, false); }
+  });
+  const detail = el.querySelector('[data-detail]');
+  el.querySelector('[data-edit]').addEventListener('click', () => {
+    if (detail.hidden) {
+      if (!detail.dataset.loaded) { detail.innerHTML = badgeDetailHtml(entry); detail.dataset.loaded = '1'; bindBadgeDetail(el); }
+      detail.hidden = false;
+    } else detail.hidden = true;
+  });
+  return el;
+}
+
+function badgeDetailHtml(entry) {
+  const f = entry.fields || {};
+  const sel = BADGE_POS.map((p) => `<option value="${p}" ${f.position === p ? 'selected' : ''}>${p}</option>`).join('');
+  const colorRow = (key, def) => `<span class="colorrow"><input type="color" value="${esc(f[key] || def)}" oninput="this.nextElementSibling.value=this.value"/><input type="text" data-key="${key}" data-kind="text" value="${esc(f[key] || def)}"/></span>`;
+  return `
+    <label>Tag <span class="hint">(产品标签,用于匹配)</span><input type="text" data-key="tag" data-kind="text" value="${esc(f.tag || '')}"/></label>
+    <label>Label <span class="hint">(显示文字)</span><input type="text" data-key="label" data-kind="text" value="${esc(f.label || '')}"/></label>
+    <label>Image <span class="hint">(图片 gid,留空用文字)</span><input type="text" data-key="image" data-kind="text" value="${esc(f.image || '')}"/></label>
+    <label>Background 背景色 ${colorRow('background', '#1c222d')}</label>
+    <label>Text color 文字色 ${colorRow('text_color', '#ffffff')}</label>
+    <label>Position 位置<select data-key="position" data-kind="text">${sel}</select></label>
+    <label class="inline"><input type="checkbox" data-key="enabled" data-kind="bool" ${f.enabled !== 'false' ? 'checked' : ''}/> Enabled 启用</label>
+    <div class="entry-actions">
+      <button type="button" class="btn btn-primary" data-act="save">保存</button>
+      ${entry.id ? '<button type="button" class="btn btn-danger" data-act="del">删除</button>' : ''}
+    </div>`;
+}
+
+function bindBadgeDetail(card) {
+  const detail = card.querySelector('[data-detail]');
+  detail.querySelector('[data-act="save"]').addEventListener('click', async () => {
+    try {
+      const fields = collectFields(detail);
+      const id = card.dataset.id;
+      if (id) await api('PUT', '/api/metaobjects/cgp_badge', { id, fields });
+      else await api('POST', '/api/metaobjects/cgp_badge', { fields });
+      toast('已保存 ✓');
+      loadType('cgp_badge');
+    } catch (e) { toast(e.message, false); }
+  });
+  const del = detail.querySelector('[data-act="del"]');
+  if (del) del.addEventListener('click', async () => {
+    if (!confirm('确定删除这个角标?')) return;
+    try { await api('DELETE', '/api/metaobjects/cgp_badge', { id: card.dataset.id }); toast('已删除 ✓'); loadType('cgp_badge'); }
     catch (e) { toast(e.message, false); }
   });
 }
