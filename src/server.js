@@ -7,6 +7,7 @@ import { getAllDefinitions, getGrantedScopes, probeType, listEntries, createEntr
 import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 import { clearToken } from './token-store.js';
+import { getProductTags } from './catalog.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -95,6 +96,8 @@ api.post('/reconnect', wrap(async (req) => {
   clearToken(req.ctx.shop);
   return { ok: true };
 }));
+
+api.get('/product-tags', wrap(async (req) => ({ tags: await getProductTags(req.ctx) })));
 
 api.get('/themes', wrap(async (req) => ({ themes: await listThemes(req.ctx) })));
 api.post('/themes/:id/apply', wrap(async (req) => applyToTheme(req.ctx, req.params.id, { dryRun: !!req.body.dryRun })));

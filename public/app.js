@@ -147,7 +147,21 @@ function bindEntry(form) {
 // ---- cgp_badge: list view + quick enable toggle + expandable detail ----
 const BADGE_POS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
+// Load all store product tags once into a shared <datalist> for tag pickers.
+let TAGS_LOADED = false;
+async function loadTags() {
+  if (TAGS_LOADED) return;
+  TAGS_LOADED = true;
+  let dl = document.getElementById('all-tags');
+  if (!dl) { dl = document.createElement('datalist'); dl.id = 'all-tags'; document.body.appendChild(dl); }
+  try {
+    const { tags } = await api('GET', '/api/product-tags');
+    dl.innerHTML = (tags || []).map((t) => `<option value="${esc(t)}"></option>`).join('');
+  } catch (e) { TAGS_LOADED = false; }
+}
+
 function renderBadges(entries) {
+  loadTags();
   const body = $('#meta-body');
   body.innerHTML = '<div class="list"></div><button class="btn btn-primary" id="add-entry">+ 新增角标</button>';
   const list = $('.list');
@@ -199,7 +213,7 @@ function badgeDetailHtml(entry) {
   const sel = BADGE_POS.map((p) => `<option value="${p}" ${f.position === p ? 'selected' : ''}>${p}</option>`).join('');
   const colorRow = (key, def) => `<span class="colorrow"><input type="color" value="${esc(f[key] || def)}" oninput="this.nextElementSibling.value=this.value"/><input type="text" data-key="${key}" data-kind="text" value="${esc(f[key] || def)}"/></span>`;
   return `
-    <label>Tag <span class="hint">(产品标签,用于匹配)</span><input type="text" data-key="tag" data-kind="text" value="${esc(f.tag || '')}"/></label>
+    <label>Tag <span class="hint">(产品标签,用于匹配;可下拉选或自己输入)</span><input type="text" data-key="tag" data-kind="text" list="all-tags" value="${esc(f.tag || '')}"/></label>
     <label>Label <span class="hint">(显示文字)</span><input type="text" data-key="label" data-kind="text" value="${esc(f.label || '')}"/></label>
     <label>Image <span class="hint">(图片 gid,留空用文字)</span><input type="text" data-key="image" data-kind="text" value="${esc(f.image || '')}"/></label>
     <label>Background 背景色 ${colorRow('background', '#1c222d')}</label>
