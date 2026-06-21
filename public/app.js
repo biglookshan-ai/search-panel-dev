@@ -370,64 +370,130 @@ function renderSearchPanel(entries) {
 
 function searchPanelEl(entry) {
   const f = entry.fields || {};
-  const popular = parseList(f.popular_terms);
-  const products = parseList(f.featured_products);
-  const collections = parseList(f.featured_collections);
   const wrap = document.createElement('div');
   wrap.className = 'panel-entry';
-  wrap.innerHTML = `
-    <h3 class="panel-title">${esc(entry.handle || entry.id)}</h3>
-    ${moduleBlock('popular_terms', 'Popular Terms 热门搜索词', joinPreview(popular, 8) || '(空)',
-      `<label>热门搜索词 <span class="hint">(每行一个,搜索框聚焦时显示)</span>
-        <textarea data-key="popular_terms" data-kind="list" rows="6">${esc(popular.join('\n'))}</textarea></label>`)}
-    ${moduleBlock('featured_products', 'Featured Products 热门产品', `${products.length} 个产品`,
-      `<label>热门产品 GID 列表 <span class="hint">(每行一个 gid://shopify/Product/…;搜索/添加待加 read_products 权限后做)</span>
-        <textarea data-key="featured_products" data-kind="list" rows="${Math.max(4, Math.min(products.length + 1, 12))}">${esc(products.join('\n'))}</textarea>
-        <div class="hint" style="margin-top:6px"><a href="#" data-act="reorder-products" class="connect">提示:上下移行 = 调整显示顺序</a></div></label>`)}
-    ${moduleBlock('featured_collections', 'Featured Collections 热门集合', `${collections.length} 个集合`,
-      `<label>热门集合 GID 列表 <span class="hint">(每行一个 gid://shopify/Collection/…)</span>
-        <textarea data-key="featured_collections" data-kind="list" rows="${Math.max(4, Math.min(collections.length + 1, 12))}">${esc(collections.join('\n'))}</textarea></label>`)}
-    ${moduleBlock('banner_image', 'Banner Image 横幅图片', f.banner_image ? f.banner_image.slice(0, 80) : '(无)',
-      `<label>Banner image GID <span class="hint">(gid://shopify/MediaImage/…)</span>
-        <input type="text" data-key="banner_image" data-kind="text" value="${esc(f.banner_image || '')}"/></label>`)}
-    ${moduleBlock('banner_link', 'Banner Link 横幅链接', f.banner_link || '(无)',
-      `<label>Banner link<input type="text" data-key="banner_link" data-kind="text" value="${esc(f.banner_link || '')}"/></label>`)}
-    ${moduleBlock('banner_alt', 'Banner Alt 替代文字', f.banner_alt || '(无)',
-      `<label>Banner alt<input type="text" data-key="banner_alt" data-kind="text" value="${esc(f.banner_alt || '')}"/></label>`)}
-  `;
-  // bind every module's edit toggle + save
-  wrap.querySelectorAll('.card[data-id]').forEach((card) => {
-    const detail = card.querySelector('[data-detail]');
-    const btn = card.querySelector('[data-edit]');
-    btn.addEventListener('click', () => {
-      detail.hidden = !detail.hidden;
-      btn.textContent = detail.hidden ? '编辑' : '关闭';
-      btn.classList.toggle('btn-primary', !detail.hidden);
-    });
-    card.querySelector('[data-act="save"]').addEventListener('click', async () => {
-      try {
-        const fields = collectFields(detail);
-        await api('PUT', '/api/metaobjects/search_panel', { id: entry.id, fields });
-        toast('已保存 ✓');
-        loadType('search_panel');
-      } catch (e) { toast(e.message, false); }
-    });
-  });
+  const h = document.createElement('h3');
+  h.className = 'panel-title';
+  h.textContent = entry.handle || entry.id;
+  wrap.appendChild(h);
+
+  wrap.appendChild(simpleModuleEl(entry.id, 'Popular Terms 热门搜索词', joinPreview(parseList(f.popular_terms), 8) || '(空)',
+    `<label>热门搜索词 <span class="hint">(每行一个,搜索框聚焦时显示)</span>
+      <textarea data-key="popular_terms" data-kind="list" rows="6">${esc(parseList(f.popular_terms).join('\n'))}</textarea></label>`));
+
+  wrap.appendChild(refModuleEl(entry.id, 'featured_products', 'Featured Products 热门产品', parseList(f.featured_products), 'product'));
+  wrap.appendChild(refModuleEl(entry.id, 'featured_collections', 'Featured Collections 热门集合', parseList(f.featured_collections), 'collection'));
+
+  wrap.appendChild(simpleModuleEl(entry.id, 'Banner Image 横幅图片', f.banner_image || '(无)',
+    `<label>Banner image GID <span class="hint">(gid://shopify/MediaImage/…;建议在 Shopify 后台选)</span>
+      <input type="text" data-key="banner_image" data-kind="text" value="${esc(f.banner_image || '')}"/></label>`));
+  wrap.appendChild(simpleModuleEl(entry.id, 'Banner Link 横幅链接', f.banner_link || '(无)',
+    `<label>Banner link<input type="text" data-key="banner_link" data-kind="text" value="${esc(f.banner_link || '')}"/></label>`));
+  wrap.appendChild(simpleModuleEl(entry.id, 'Banner Alt 替代文字', f.banner_alt || '(无)',
+    `<label>Banner alt<input type="text" data-key="banner_alt" data-kind="text" value="${esc(f.banner_alt || '')}"/></label>`));
   return wrap;
 }
 
-function moduleBlock(key, title, preview, detailHtml) {
-  return `
-    <div class="card" data-id="${esc(key)}">
-      <div class="summary">
-        <span class="grow"><b>${esc(title)}</b> <span class="muted">· ${esc(String(preview))}</span></span>
-        <button type="button" class="btn btn-sm" data-edit>编辑</button>
-      </div>
-      <div class="detail" data-detail hidden>
-        ${detailHtml}
-        <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div>
-      </div>
+function moduleToggle(card) {
+  const detail = card.querySelector('[data-detail]');
+  const btn = card.querySelector('[data-edit]');
+  btn.addEventListener('click', () => {
+    detail.hidden = !detail.hidden;
+    btn.textContent = detail.hidden ? '编辑' : '关闭';
+    btn.classList.toggle('btn-primary', !detail.hidden);
+    if (!detail.hidden && card._onOpen && !card._opened) { card._opened = true; card._onOpen(); }
+  });
+}
+
+function simpleModuleEl(entryId, title, preview, detailHtml) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="summary"><span class="grow"><b>${esc(title)}</b> <span class="muted">· ${esc(String(preview))}</span></span>
+      <button type="button" class="btn btn-sm" data-edit>编辑</button></div>
+    <div class="detail" data-detail hidden>${detailHtml}
+      <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div></div>`;
+  moduleToggle(card);
+  card.querySelector('[data-act="save"]').addEventListener('click', async () => {
+    try { await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields: collectFields(card.querySelector('[data-detail]')) }); toast('已保存 ✓'); }
+    catch (e) { toast(e.message, false); }
+  });
+  return card;
+}
+
+// Picker module for list-of-references (products / collections): chips with
+// image+name, reorder, remove, and a search-to-add box (Shopify-native style).
+function refModuleEl(entryId, key, title, initialGids, kind) {
+  let gids = (initialGids || []).slice();
+  const meta = {};
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="summary"><span class="grow"><b>${esc(title)}</b> <span class="muted" data-count>· ${gids.length} 个</span></span>
+      <button type="button" class="btn btn-sm" data-edit>编辑</button></div>
+    <div class="detail" data-detail hidden>
+      <div class="picker"><input type="search" data-search placeholder="搜索${kind === 'product' ? '产品' : '集合'}添加…"/>
+        <div class="picker-results" data-results hidden></div></div>
+      <div class="chips" data-chips></div>
+      <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div>
     </div>`;
+  const chipsEl = card.querySelector('[data-chips]');
+  const countEl = card.querySelector('[data-count]');
+  const resultsEl = card.querySelector('[data-results]');
+  const searchEl = card.querySelector('[data-search]');
+
+  function paint() {
+    countEl.textContent = '· ' + gids.length + ' 个';
+    chipsEl.innerHTML = gids.length ? gids.map((g, i) => {
+      const m = meta[g] || {};
+      const img = m.image ? `<img src="${esc(m.image)}" alt=""/>` : '<span class="noimg"></span>';
+      return `<div class="chip" data-gid="${esc(g)}">${img}<span class="chip-name" title="${esc(g)}">${esc(m.title || g)}</span>
+        <button type="button" class="chip-btn" data-up ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button type="button" class="chip-btn" data-down ${i === gids.length - 1 ? 'disabled' : ''}>↓</button>
+        <button type="button" class="chip-btn chip-x" data-remove>✕</button></div>`;
+    }).join('') : '<p class="muted">还没有添加。用上面搜索框添加。</p>';
+    chipsEl.querySelectorAll('.chip').forEach((chip) => {
+      const g = chip.dataset.gid;
+      chip.querySelector('[data-remove]').addEventListener('click', () => { gids = gids.filter((x) => x !== g); paint(); });
+      const up = chip.querySelector('[data-up]'); if (up && !up.disabled) up.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i - 1], gids[i]] = [gids[i], gids[i - 1]]; paint(); });
+      const dn = chip.querySelector('[data-down]'); if (dn && !dn.disabled) dn.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i + 1], gids[i]] = [gids[i], gids[i + 1]]; paint(); });
+    });
+  }
+
+  card._onOpen = async () => {
+    paint();
+    if (!gids.length) return;
+    try { (await api('POST', '/api/nodes', { ids: gids })).items.forEach((it) => { meta[it.id] = it; }); paint(); } catch (e) {}
+  };
+  moduleToggle(card);
+
+  let timer = null;
+  searchEl.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = searchEl.value.trim();
+    if (!q) { resultsEl.hidden = true; resultsEl.innerHTML = ''; return; }
+    timer = setTimeout(async () => {
+      try {
+        const path = (kind === 'product' ? '/api/products/search?q=' : '/api/collections/search?q=') + encodeURIComponent(q);
+        const { items } = await api('GET', path);
+        resultsEl.innerHTML = items.length ? items.map((it) =>
+          `<div class="result" data-id="${esc(it.id)}" data-title="${esc(it.title)}" data-image="${esc(it.image)}">${it.image ? `<img src="${esc(it.image)}"/>` : '<span class="noimg"></span>'}<span>${esc(it.title)}</span></div>`
+        ).join('') : '<div class="result muted">无结果</div>';
+        resultsEl.hidden = false;
+        resultsEl.querySelectorAll('.result[data-id]').forEach((r) => r.addEventListener('click', () => {
+          const id = r.dataset.id;
+          if (!gids.includes(id)) { gids.push(id); meta[id] = { title: r.dataset.title, image: r.dataset.image }; paint(); }
+          searchEl.value = ''; resultsEl.hidden = true; resultsEl.innerHTML = '';
+        }));
+      } catch (e) { resultsEl.innerHTML = '<div class="result err">' + esc(e.message) + '</div>'; resultsEl.hidden = false; }
+    }, 250);
+  });
+
+  card.querySelector('[data-act="save"]').addEventListener('click', async () => {
+    try { await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields: { [key]: JSON.stringify(gids) } }); countEl.textContent = '· ' + gids.length + ' 个'; toast('已保存 ✓'); }
+    catch (e) { toast(e.message, false); }
+  });
+  return card;
 }
 
 // ---- themes / apply ----

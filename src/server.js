@@ -7,7 +7,7 @@ import { getAllDefinitions, getGrantedScopes, probeType, listEntries, createEntr
 import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 import { clearToken } from './token-store.js';
-import { getProductTags } from './catalog.js';
+import { getProductTags, searchProducts, searchCollections, resolveNodes } from './catalog.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -98,6 +98,9 @@ api.post('/reconnect', wrap(async (req) => {
 }));
 
 api.get('/product-tags', wrap(async (req) => ({ tags: await getProductTags(req.ctx) })));
+api.get('/products/search', wrap(async (req) => ({ items: await searchProducts(req.ctx, req.query.q) })));
+api.get('/collections/search', wrap(async (req) => ({ items: await searchCollections(req.ctx, req.query.q) })));
+api.post('/nodes', wrap(async (req) => ({ items: await resolveNodes(req.ctx, req.body.ids || []) })));
 
 api.get('/themes', wrap(async (req) => ({ themes: await listThemes(req.ctx) })));
 api.post('/themes/:id/apply', wrap(async (req) => applyToTheme(req.ctx, req.params.id, { dryRun: !!req.body.dryRun })));
