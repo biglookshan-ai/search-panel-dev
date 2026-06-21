@@ -92,6 +92,8 @@ async function loadType(type) {
     const { entries, fields } = await api('GET', '/api/metaobjects/' + type);
     FIELDS = fields || [];
     if (type === 'cgp_badge') return renderBadges(entries);
+    if (type === 'cgp_sort_rule') return renderSortRules(entries);
+    if (type === 'search_panel') return renderSearchPanel(entries);
     if (!FIELDS.length && !entries.length) {
       body.innerHTML = '<p class="muted">这个类型还没有条目,也读不到字段。请先在 Shopify 后台给它加一条,再回来这里管理。</p>';
       return;
@@ -180,11 +182,14 @@ function badgeCardEl(entry, isNew = false) {
     catch (e) { toggle.checked = !toggle.checked; toast(e.message, false); }
   });
   const detail = el.querySelector('[data-detail]');
-  el.querySelector('[data-edit]').addEventListener('click', () => {
+  const editBtn = el.querySelector('[data-edit]');
+  editBtn.addEventListener('click', () => {
     if (detail.hidden) {
       if (!detail.dataset.loaded) { detail.innerHTML = badgeDetailHtml(entry); detail.dataset.loaded = '1'; bindBadgeDetail(el); }
       detail.hidden = false;
     } else detail.hidden = true;
+    editBtn.textContent = detail.hidden ? '编辑' : '关闭';
+    editBtn.classList.toggle('btn-primary', !detail.hidden);
   });
   return el;
 }
@@ -225,6 +230,190 @@ function bindBadgeDetail(card) {
     try { await api('DELETE', '/api/metaobjects/cgp_badge', { id: card.dataset.id }); toast('已删除 ✓'); loadType('cgp_badge'); }
     catch (e) { toast(e.message, false); }
   });
+}
+
+// ---- cgp_sort_rule: list + filter + sort + expandable edit ----
+function parseList(v) { try { const a = JSON.parse(v || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } }
+function joinPreview(arr, max = 4) {
+  const a = arr.slice(0, max).join(', ');
+  return arr.length > max ? a + ` … (+${arr.length - max})` : a;
+}
+
+let SORT_RULES = [], SR_FILTER = '', SR_ORDER = 'recent';
+
+function renderSortRules(entries) {
+  SORT_RULES = entries.map((e) => ({
+    id: e.id,
+    keywords: parseList(e.fields.keywords),
+    types: parseList(e.fields.priority_types),
+  }));
+  const body = $('#meta-body');
+  body.innerHTML = `
+    <div class="toolbar">
+      <input type="search" id="sr-filter" placeholder="搜索关键词或类型…" value="${esc(SR_FILTER)}" />
+      <select id="sr-order">
+        <option value="recent">默认顺序</option>
+        <option value="alpha">关键词 A-Z</option>
+        <option value="kw_desc">关键词数 多→少</option>
+        <option value="type_desc">类型数 多→少</option>
+      </select>
+    </div>
+    <div class="list" id="sr-list"></div>
+    <button class="btn btn-primary" id="add-entry">+ 新增规则</button>`;
+  $('#sr-order').value = SR_ORDER;
+  $('#sr-filter').addEventListener('input', (e) => { SR_FILTER = e.target.value; paintSortRules(); });
+  $('#sr-order').addEventListener('change', (e) => { SR_ORDER = e.target.value; paintSortRules(); });
+  $('#add-entry').addEventListener('click', () => {
+    const row = sortRuleCardEl({ id: '', keywords: [], types: [] }, true);
+    $('#sr-list').prepend(row);
+    row.querySelector('[data-edit]').click();
+  });
+  paintSortRules();
+}
+
+function paintSortRules() {
+  const f = SR_FILTER.trim().toLowerCase();
+  let view = SORT_RULES.filter((r) =>
+    !f || r.keywords.some((k) => k.toLowerCase().includes(f)) || r.types.some((t) => t.toLowerCase().includes(f))
+  );
+  if (SR_ORDER === 'alpha') view = view.slice().sort((a, b) => (a.keywords[0] || '').localeCompare(b.keywords[0] || ''));
+  else if (SR_ORDER === 'kw_desc') view = view.slice().sort((a, b) => b.keywords.length - a.keywords.length);
+  else if (SR_ORDER === 'type_desc') view = view.slice().sort((a, b) => b.types.length - a.types.length);
+  const list = $('#sr-list');
+  list.innerHTML = '';
+  if (!view.length) { list.innerHTML = '<p class="muted">没有匹配的规则。</p>'; return; }
+  view.forEach((r) => list.appendChild(sortRuleCardEl(r)));
+}
+
+function sortRuleCardEl(rule, isNew = false) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.dataset.id = rule.id || '';
+  el.innerHTML = `
+    <div class="summary">
+      <span class="grow">
+        <b>关键词:</b> ${esc(joinPreview(rule.keywords) || '(空)')}
+        <br><span class="muted"><b>类型:</b> ${esc(joinPreview(rule.types) || '(空)')}</span>
+      </span>
+      <button type="button" class="btn btn-sm" data-edit>${isNew ? '展开' : '编辑'}</button>
+    </div>
+    <div class="detail" data-detail hidden></div>`;
+  const detail = el.querySelector('[data-detail]');
+  const btn = el.querySelector('[data-edit]');
+  btn.addEventListener('click', () => {
+    if (detail.hidden) {
+      if (!detail.dataset.loaded) { detail.innerHTML = sortRuleDetailHtml(rule); detail.dataset.loaded = '1'; bindSortRuleDetail(el); }
+      detail.hidden = false;
+    } else detail.hidden = true;
+    btn.textContent = detail.hidden ? '编辑' : '关闭';
+    btn.classList.toggle('btn-primary', !detail.hidden);
+  });
+  return el;
+}
+
+function sortRuleDetailHtml(rule) {
+  return `
+    <label>Keywords 关键词 <span class="hint">(每行一个,匹配任意一个即应用此规则)</span>
+      <textarea data-key="keywords" data-kind="list" rows="4">${esc(rule.keywords.join('\n'))}</textarea></label>
+    <label>Priority types 优先类型 <span class="hint">(每行一个,产品类型按这个顺序排在前面)</span>
+      <textarea data-key="priority_types" data-kind="list" rows="4">${esc(rule.types.join('\n'))}</textarea></label>
+    <div class="entry-actions">
+      <button type="button" class="btn btn-primary" data-act="save">保存</button>
+      ${rule.id ? '<button type="button" class="btn btn-danger" data-act="del">删除</button>' : ''}
+    </div>`;
+}
+
+function bindSortRuleDetail(card) {
+  const detail = card.querySelector('[data-detail]');
+  detail.querySelector('[data-act="save"]').addEventListener('click', async () => {
+    try {
+      const fields = collectFields(detail);
+      const id = card.dataset.id;
+      if (id) await api('PUT', '/api/metaobjects/cgp_sort_rule', { id, fields });
+      else await api('POST', '/api/metaobjects/cgp_sort_rule', { fields });
+      toast('已保存 ✓');
+      loadType('cgp_sort_rule');
+    } catch (e) { toast(e.message, false); }
+  });
+  const del = detail.querySelector('[data-act="del"]');
+  if (del) del.addEventListener('click', async () => {
+    if (!confirm('确定删除这条排序规则?')) return;
+    try { await api('DELETE', '/api/metaobjects/cgp_sort_rule', { id: card.dataset.id }); toast('已删除 ✓'); loadType('cgp_sort_rule'); }
+    catch (e) { toast(e.message, false); }
+  });
+}
+
+// ---- search_panel: per-field modules, save independently ----
+function renderSearchPanel(entries) {
+  const body = $('#meta-body');
+  if (!entries.length) {
+    body.innerHTML = '<p class="muted">还没有 search_panel 条目。请在 Shopify 后台新建一条(handle 通常为 main)。</p>';
+    return;
+  }
+  body.innerHTML = '';
+  entries.forEach((e) => body.appendChild(searchPanelEl(e)));
+}
+
+function searchPanelEl(entry) {
+  const f = entry.fields || {};
+  const popular = parseList(f.popular_terms);
+  const products = parseList(f.featured_products);
+  const collections = parseList(f.featured_collections);
+  const wrap = document.createElement('div');
+  wrap.className = 'panel-entry';
+  wrap.innerHTML = `
+    <h3 class="panel-title">${esc(entry.handle || entry.id)}</h3>
+    ${moduleBlock('popular_terms', 'Popular Terms 热门搜索词', joinPreview(popular, 8) || '(空)',
+      `<label>热门搜索词 <span class="hint">(每行一个,搜索框聚焦时显示)</span>
+        <textarea data-key="popular_terms" data-kind="list" rows="6">${esc(popular.join('\n'))}</textarea></label>`)}
+    ${moduleBlock('featured_products', 'Featured Products 热门产品', `${products.length} 个产品`,
+      `<label>热门产品 GID 列表 <span class="hint">(每行一个 gid://shopify/Product/…;搜索/添加待加 read_products 权限后做)</span>
+        <textarea data-key="featured_products" data-kind="list" rows="${Math.max(4, Math.min(products.length + 1, 12))}">${esc(products.join('\n'))}</textarea>
+        <div class="hint" style="margin-top:6px"><a href="#" data-act="reorder-products" class="connect">提示:上下移行 = 调整显示顺序</a></div></label>`)}
+    ${moduleBlock('featured_collections', 'Featured Collections 热门集合', `${collections.length} 个集合`,
+      `<label>热门集合 GID 列表 <span class="hint">(每行一个 gid://shopify/Collection/…)</span>
+        <textarea data-key="featured_collections" data-kind="list" rows="${Math.max(4, Math.min(collections.length + 1, 12))}">${esc(collections.join('\n'))}</textarea></label>`)}
+    ${moduleBlock('banner_image', 'Banner Image 横幅图片', f.banner_image ? f.banner_image.slice(0, 80) : '(无)',
+      `<label>Banner image GID <span class="hint">(gid://shopify/MediaImage/…)</span>
+        <input type="text" data-key="banner_image" data-kind="text" value="${esc(f.banner_image || '')}"/></label>`)}
+    ${moduleBlock('banner_link', 'Banner Link 横幅链接', f.banner_link || '(无)',
+      `<label>Banner link<input type="text" data-key="banner_link" data-kind="text" value="${esc(f.banner_link || '')}"/></label>`)}
+    ${moduleBlock('banner_alt', 'Banner Alt 替代文字', f.banner_alt || '(无)',
+      `<label>Banner alt<input type="text" data-key="banner_alt" data-kind="text" value="${esc(f.banner_alt || '')}"/></label>`)}
+  `;
+  // bind every module's edit toggle + save
+  wrap.querySelectorAll('.card[data-id]').forEach((card) => {
+    const detail = card.querySelector('[data-detail]');
+    const btn = card.querySelector('[data-edit]');
+    btn.addEventListener('click', () => {
+      detail.hidden = !detail.hidden;
+      btn.textContent = detail.hidden ? '编辑' : '关闭';
+      btn.classList.toggle('btn-primary', !detail.hidden);
+    });
+    card.querySelector('[data-act="save"]').addEventListener('click', async () => {
+      try {
+        const fields = collectFields(detail);
+        await api('PUT', '/api/metaobjects/search_panel', { id: entry.id, fields });
+        toast('已保存 ✓');
+        loadType('search_panel');
+      } catch (e) { toast(e.message, false); }
+    });
+  });
+  return wrap;
+}
+
+function moduleBlock(key, title, preview, detailHtml) {
+  return `
+    <div class="card" data-id="${esc(key)}">
+      <div class="summary">
+        <span class="grow"><b>${esc(title)}</b> <span class="muted">· ${esc(String(preview))}</span></span>
+        <button type="button" class="btn btn-sm" data-edit>编辑</button>
+      </div>
+      <div class="detail" data-detail hidden>
+        ${detailHtml}
+        <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div>
+      </div>
+    </div>`;
 }
 
 // ---- themes / apply ----
