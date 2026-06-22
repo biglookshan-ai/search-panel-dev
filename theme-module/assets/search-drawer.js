@@ -357,17 +357,50 @@
     shufflePopular() {
       this.panel.querySelectorAll('[data-cgp-shuffle]').forEach((container) => {
         const limit = parseInt(container.dataset.cgpShuffle, 10) || 0;
-        const items = Array.from(container.children);
-        if (!limit || items.length <= limit) {
-          items.forEach((el) => { el.hidden = false; });
-          return;
+        // Optional per-list config (Featured Products / Collections):
+        //   data-cgp-key  — stable localStorage key for this list
+        //   data-cgp-cfg  — JSON {refreshSec, pin}
+        // refreshSec = 0 → reshuffle every open (default). pin = N first items
+        // (saved pinned-first by the admin app) that never shuffle and stay on top.
+        const key = container.dataset.cgpKey || '';
+        let refreshSec = 0, pinCount = 0;
+        try { const c = JSON.parse(container.dataset.cgpCfg || '{}'); refreshSec = +c.refreshSec || 0; pinCount = +c.pin || 0; } catch (e) {}
+
+        // Tag each item with its original DOM index so identity survives reordering.
+        const live = Array.from(container.children);
+        live.forEach((el, i) => { if (el.dataset.cgpIdx == null) el.dataset.cgpIdx = String(i); });
+        const canonical = live.slice().sort((a, b) => (+a.dataset.cgpIdx) - (+b.dataset.cgpIdx));
+        const byId = new Map(canonical.map((el) => [el.dataset.cgpIdx, el]));
+        const pinned = canonical.slice(0, pinCount);
+        const rest = canonical.slice(pinCount);
+
+        // Decide the order of the non-pinned items: reuse the stored order while
+        // within the refresh interval, otherwise compute a fresh shuffle.
+        const sk = key ? 'cgp-sd-shuffle:' + key : '';
+        let order = null;
+        if (sk && refreshSec > 0) {
+          try {
+            const st = JSON.parse(localStorage.getItem(sk) || 'null');
+            if (st && Array.isArray(st.order) && (Date.now() - st.ts) < refreshSec * 1000) {
+              const restIds = new Set(rest.map((el) => el.dataset.cgpIdx));
+              const filtered = st.order.filter((id) => restIds.has(id));
+              if (filtered.length === rest.length) order = filtered;
+            }
+          } catch (e) {}
         }
-        for (let i = items.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          const t = items[i]; items[i] = items[j]; items[j] = t;
+        if (!order) {
+          order = rest.map((el) => el.dataset.cgpIdx);
+          for (let i = order.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = order[i]; order[i] = order[j]; order[j] = t;
+          }
+          if (sk && refreshSec > 0) { try { localStorage.setItem(sk, JSON.stringify({ ts: Date.now(), order })); } catch (e) {} }
         }
-        items.forEach((el, idx) => {
-          el.hidden = idx >= limit;
+
+        const finalEls = pinned.concat(order.map((id) => byId.get(id)).filter(Boolean));
+        const show = limit ? Math.max(limit, pinned.length) : finalEls.length;
+        finalEls.forEach((el, idx) => {
+          el.hidden = idx >= show;
           container.appendChild(el);
         });
       });

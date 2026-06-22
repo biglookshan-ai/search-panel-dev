@@ -15,6 +15,8 @@
   assign popular_terms = panel.popular_terms.value
   assign featured_products = panel.featured_products.value
   assign featured_collections = panel.featured_collections.value
+  assign featured_products_cfg = panel.featured_products_config.value | default: '{}'
+  assign featured_collections_cfg = panel.featured_collections_config.value | default: '{}'
   assign s = settings
   assign sd_products_class = 'search-drawer__products'
   if s.cgp_sd_layout == 'list'
@@ -211,7 +213,7 @@
 
           {%- if s.cgp_sd_show_featured_collections and featured_collections.size > 0 -%}
             <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Categories' }}</h3>
-            <ul class="search-drawer__collections" data-cgp-shuffle="{{ s.cgp_sd_featured_collection_qty }}">
+            <ul class="search-drawer__collections" data-cgp-shuffle="{{ s.cgp_sd_featured_collection_qty }}" data-cgp-key="featured_collections" data-cgp-cfg="{{ featured_collections_cfg | escape }}">
               {%- for collection in featured_collections -%}
                 <li><a href="{{ collection.url }}" data-track="collection">{{ collection.title }}</a></li>
               {%- endfor -%}
@@ -222,7 +224,7 @@
         <div class="search-drawer__col search-drawer__col--right">
           {%- if featured_products.size > 0 -%}
             <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_featured | default: 'Recommended For You' }}</h3>
-            <ul class="{{ sd_products_class }}" data-cgp-shuffle="{{ s.cgp_sd_product_qty }}">
+            <ul class="{{ sd_products_class }}" data-cgp-shuffle="{{ s.cgp_sd_product_qty }}" data-cgp-key="featured_products" data-cgp-cfg="{{ featured_products_cfg | escape }}">
               {%- for product in featured_products -%}
                 <li>
                   {%- render 'search-drawer-product-card',
