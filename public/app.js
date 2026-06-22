@@ -381,8 +381,8 @@ function searchPanelEl(entry) {
     `<label>热门搜索词 <span class="hint">(每行一个,搜索框聚焦时显示)</span>
       <textarea data-key="popular_terms" data-kind="list" rows="6">${esc(parseList(f.popular_terms).join('\n'))}</textarea></label>`));
 
-  wrap.appendChild(refModuleEl(entry.id, 'featured_products', 'Featured Products 热门产品', parseList(f.featured_products), 'product'));
-  wrap.appendChild(refModuleEl(entry.id, 'featured_collections', 'Featured Collections 热门集合', parseList(f.featured_collections), 'collection'));
+  wrap.appendChild(refModuleEl(entry.id, 'featured_products', 'Featured Products 热门产品', parseList(f.featured_products), 'product', 'featured_products_config', f.featured_products_config));
+  wrap.appendChild(refModuleEl(entry.id, 'featured_collections', 'Featured Collections 热门集合', parseList(f.featured_collections), 'collection', 'featured_collections_config', f.featured_collections_config));
 
   wrap.appendChild(simpleModuleEl(entry.id, 'Banner Image 横幅图片', f.banner_image || '(无)',
     `<label>Banner image GID <span class="hint">(gid://shopify/MediaImage/…;建议在 Shopify 后台选)</span>
@@ -423,11 +423,17 @@ function simpleModuleEl(entryId, title, preview, detailHtml) {
 
 // Picker module for list-of-references (products / collections): chips with
 // image+name, reorder, remove, and a search-to-add box (Shopify-native style).
-function refModuleEl(entryId, key, title, initialGids, kind) {
+function parseCfg(v) { try { const c = JSON.parse(v || '{}'); return { refreshSec: +c.refreshSec || 0, pin: +c.pin || 0 }; } catch { return { refreshSec: 0, pin: 0 }; } }
+function refreshUnit(s) { if (!s) return 0; if (s % 86400 === 0) return 86400; if (s % 3600 === 0) return 3600; return 60; }
+function refreshNum(s) { const u = refreshUnit(s); return u ? Math.round(s / u) : 0; }
+
+function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue) {
   let gids = (initialGids || []).slice();
   const meta = {};
   const selected = new Set();
   let dragGid = null;
+  const cfg = parseCfg(cfgValue);
+  const pinned = new Set(gids.slice(0, cfg.pin)); // first `pin` items are pinned
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `
@@ -436,6 +442,17 @@ function refModuleEl(entryId, key, title, initialGids, kind) {
     <div class="detail" data-detail hidden>
       <div class="picker"><input type="search" data-search placeholder="搜索${kind === 'product' ? '产品' : '集合'}添加…"/>
         <div class="picker-results" data-results hidden></div></div>
+      <div class="refresh-row">
+        <span>随机刷新间隔:</span>
+        <input type="number" min="0" data-rn style="width:70px"/>
+        <select data-runit>
+          <option value="0">立即(每次打开都换)</option>
+          <option value="60">分钟</option>
+          <option value="3600">小时</option>
+          <option value="86400">天</option>
+        </select>
+        <span class="hint">📌 置顶项不参与随机,始终排在最前</span>
+      </div>
       <div class="bulkbar" data-bulk hidden></div>
       <div class="chips" data-chips></div>
       <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div>
@@ -445,6 +462,8 @@ function refModuleEl(entryId, key, title, initialGids, kind) {
   const resultsEl = card.querySelector('[data-results]');
   const searchEl = card.querySelector('[data-search]');
   const bulkEl = card.querySelector('[data-bulk]');
+  card.querySelector('[data-runit]').value = String(refreshUnit(cfg.refreshSec));
+  card.querySelector('[data-rn]').value = String(refreshNum(cfg.refreshSec));
 
   // Move the whole selected group up/down by one relative to unselected items.
   function moveSelected(dir) {
@@ -478,10 +497,11 @@ function refModuleEl(entryId, key, title, initialGids, kind) {
     chipsEl.innerHTML = gids.length ? gids.map((g, i) => {
       const m = meta[g] || {};
       const img = m.image ? `<img src="${esc(m.image)}" alt=""/>` : '<span class="noimg"></span>';
-      return `<div class="chip" draggable="true" data-gid="${esc(g)}">
+      return `<div class="chip${pinned.has(g) ? ' is-pinned' : ''}" draggable="true" data-gid="${esc(g)}">
         <input type="checkbox" class="chip-sel" data-sel ${selected.has(g) ? 'checked' : ''}/>
         <span class="drag" title="拖动排序">⠿</span>
         ${img}<span class="chip-name" title="${esc(g)}">${esc(m.title || g)}</span>
+        <button type="button" class="chip-btn chip-pin${pinned.has(g) ? ' on' : ''}" data-pin title="置顶/取消置顶">📌</button>
         <button type="button" class="chip-btn" data-up ${i === 0 ? 'disabled' : ''}>↑</button>
         <button type="button" class="chip-btn" data-down ${i === gids.length - 1 ? 'disabled' : ''}>↓</button>
         <button type="button" class="chip-btn chip-x" data-remove>✕</button></div>`;
@@ -489,7 +509,8 @@ function refModuleEl(entryId, key, title, initialGids, kind) {
     chipsEl.querySelectorAll('.chip').forEach((chip) => {
       const g = chip.dataset.gid;
       chip.querySelector('[data-sel]').addEventListener('change', (e) => { if (e.target.checked) selected.add(g); else selected.delete(g); paintBulk(); });
-      chip.querySelector('[data-remove]').addEventListener('click', () => { gids = gids.filter((x) => x !== g); selected.delete(g); paint(); });
+      chip.querySelector('[data-remove]').addEventListener('click', () => { gids = gids.filter((x) => x !== g); selected.delete(g); pinned.delete(g); paint(); });
+      chip.querySelector('[data-pin]').addEventListener('click', () => { if (pinned.has(g)) pinned.delete(g); else pinned.add(g); paint(); });
       const up = chip.querySelector('[data-up]'); if (up && !up.disabled) up.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i - 1], gids[i]] = [gids[i], gids[i - 1]]; paint(); });
       const dn = chip.querySelector('[data-down]'); if (dn && !dn.disabled) dn.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i + 1], gids[i]] = [gids[i], gids[i + 1]]; paint(); });
       chip.addEventListener('dragstart', (e) => { dragGid = g; chip.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
@@ -531,8 +552,19 @@ function refModuleEl(entryId, key, title, initialGids, kind) {
   });
 
   card.querySelector('[data-act="save"]').addEventListener('click', async () => {
-    try { await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields: { [key]: JSON.stringify(gids) } }); countEl.textContent = '· ' + gids.length + ' 个'; toast('已保存 ✓'); }
-    catch (e) { toast(e.message, false); }
+    try {
+      // 置顶项排到最前面（按当前顺序），剩下的保持原顺序。
+      gids = [...gids.filter((g) => pinned.has(g)), ...gids.filter((g) => !pinned.has(g))];
+      const runit = parseInt(card.querySelector('[data-runit]').value, 10) || 0;
+      const rn = parseInt(card.querySelector('[data-rn]').value, 10) || 0;
+      const refreshSec = runit === 0 ? 0 : Math.max(0, rn) * runit;
+      const fields = { [key]: JSON.stringify(gids) };
+      if (cfgField) fields[cfgField] = JSON.stringify({ refreshSec, pin: gids.filter((g) => pinned.has(g)).length });
+      await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields });
+      countEl.textContent = '· ' + gids.length + ' 个';
+      paint();
+      toast('已保存 ✓');
+    } catch (e) { toast(e.message, false); }
   });
   return card;
 }

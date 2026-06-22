@@ -82,3 +82,12 @@ main { max-width: 920px; margin: 0 auto; }
 .chip.dragover { border-color: #1c222d; box-shadow: 0 0 0 2px #f9cf13; }
 .chip-sel { flex: 0 0 auto; width: 16px; height: 16px; }
 .bulkbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fff8d6; border: 1px solid #f0e3a0; border-radius: 8px; margin-bottom: 10px; font-size: 13px; flex-wrap: wrap; }
+
+/* refresh interval row + pinned chips */
+.refresh-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px; color: #555; }
+.refresh-row input[type=number] { width: 70px; border: 1px solid #d4d8de; border-radius: 6px; padding: 6px 8px; font: inherit; }
+.refresh-row select { border: 1px solid #d4d8de; border-radius: 6px; padding: 6px 8px; font: inherit; background: #fff; }
+.refresh-row .hint { margin-left: auto; }
+.chip-pin { filter: grayscale(1) opacity(.45); }
+.chip-pin.on { filter: none; background: #fff8d6; border-color: #f0e3a0; }
+.chip.is-pinned { border-color: #f0c000; box-shadow: 0 0 0 1px #f9cf13 inset; background: #fffdf2; }
