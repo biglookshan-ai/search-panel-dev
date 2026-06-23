@@ -16,6 +16,15 @@
   var CFG = window.CGP_CONFIG || {};
   var BADGES = (window.CGP_BADGES || []).filter(function (b) { return b.enabled !== false && b.tag; });
   var ENDPOINT = mount.dataset.endpoint || '/search?q=' + encodeURIComponent(mount.dataset.q || '');
+  // On the search page, use the page's REAL query string so structured/faceted
+  // queries (e.g. q=product_type:"Slider") are reproduced exactly. The Liquid
+  // data-endpoint uses `search.terms | url_encode`, which can lose such queries —
+  // the cgp-json fetch then returned 0 and the app fell back to the native layout.
+  if (/\/search(\b|$|\.)/.test(location.pathname) && location.search.indexOf('q=') !== -1) {
+    var sqs = location.search;
+    if (sqs.indexOf('type=') === -1) sqs += '&type=product';
+    ENDPOINT = location.pathname + sqs;
+  }
   var MAX_PAGES = 20;
   var CHUNK = parseInt(CFG.perPage, 10) || 24;
   var SHOW_SIDEBAR = CFG.showSidebar !== false;
