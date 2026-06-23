@@ -302,11 +302,21 @@
     var tags = p.tags || [];
     var items = BADGES.filter(function (b) { return (b.position || 'bottom-left') === corner && tags.indexOf(b.tag) !== -1; });
     if (!items.length) return '';
+    // Badges sit beside the media-link anchor (not inside it), so a linked badge
+    // can be a real <a>. Link comes from CGP_BADGES (manual or auto collection).
     var inner = items.map(function (b) {
-      if (b.image) return '<span class="cgp-cbadge cgp-cbadge--img"><img src="' + esc(b.image) + '" alt="' + esc(b.label) + '" loading="lazy"></span>';
-      return '<span class="cgp-cbadge" style="background:' + esc(b.bg) + ';color:' + esc(b.text) + ';">' + esc(b.label) + '</span>';
+      var cls = b.image ? 'cgp-cbadge cgp-cbadge--img' : 'cgp-cbadge';
+      var content = b.image ? '<img src="' + esc(b.image) + '" alt="' + esc(b.label) + '" loading="lazy">' : esc(b.label);
+      var style = b.image ? '' : 'background:' + esc(b.bg) + ';color:' + esc(b.text) + ';';
+      if (b.link) return '<a class="' + cls + ' cgp-cbadge--link" href="' + esc(b.link) + '" style="' + style + '" data-track="custom-badge">' + content + '</a>';
+      return '<span class="' + cls + '" style="' + style + '">' + content + '</span>';
     }).join('');
     return '<div class="cgp-cbadges cgp-cbadges--' + corner + '">' + inner + '</div>';
+  }
+  // Bottom-corner badges render below the image (no overlap with the product).
+  function badgesBelow(p) {
+    var g = badgeCorner(p, 'bottom-left') + badgeCorner(p, 'bottom-right');
+    return g ? '<div class="cgp-cbadges-below">' + g + '</div>' : '';
   }
   function cardHTML(p) {
     var curDisc = p.compare > p.price ? Math.round((p.compare - p.price) / p.compare * 100) : 0;
@@ -320,8 +330,10 @@
       h += '<span class="cgp-badge cgp-badge--discount' + (curDisc > 0 ? '' : ' cgp-hidden') + '" data-cgp-discount-badge data-suffix="' + esc(CFG.discountSuffix || '% OFF') + '">' + curDisc + (CFG.discountSuffix || '% OFF') + '</span>';
     }
     h += '<span class="cgp-badge cgp-badge--status cgp-badge--' + p.status + hideStatus + '" data-cgp-status>' + esc(statusLabel) + '</span>';
-    h += badgeCorner(p, 'top-left') + badgeCorner(p, 'top-right') + badgeCorner(p, 'bottom-left') + badgeCorner(p, 'bottom-right');
-    h += '</div><div class="cgp-card__info">';
+    h += badgeCorner(p, 'top-left') + badgeCorner(p, 'top-right');
+    h += '</div>';
+    h += badgesBelow(p);
+    h += '<div class="cgp-card__info">';
     if (p.promos && p.promos.length) {
       h += '<div class="cgp-promos">';
       p.promos.forEach(function (pr) {
