@@ -528,7 +528,9 @@ html.cgp-app-failed .cgp-server-results { display: block !important; }
 .cgp-app__top--sticky {
   position: sticky;
   top: var(--cgp-sticky-top, 0px);
-  z-index: 20;
+  /* Just above the product cards (z-index:0) — low enough to stay UNDER the
+     store's header / side-menu drawer overlays. */
+  z-index: 1;
   background: rgb(var(--color-background, 255 255 255));
   padding-top: 12px;
 }

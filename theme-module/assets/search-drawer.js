@@ -231,7 +231,20 @@
     }
 
     onFocus(event) {
-      if (event.currentTarget) this.input = event.currentTarget;
+      const t = event.currentTarget;
+      // Mobile: the header input is hidden behind the full-screen drawer, so route
+      // the interaction to the drawer's own input and focus it synchronously within
+      // the user gesture (so the keyboard targets the visible field). One tap fires
+      // focus AND click — the guard makes the second one a no-op.
+      if (this.isMobile() && this.sdInput && t !== this.sdInput) {
+        if (!this.hidden && document.activeElement === this.sdInput) return;
+        if (t && t.value) this.sdInput.value = t.value;
+        this.input = this.sdInput;
+        this.open();
+        this.sdInput.focus({ preventScroll: true });
+        return;
+      }
+      if (t) this.input = t;
       this.stopNativePredictiveEvent(event);
       this.open();
       this.disableNativePredictiveSearch();
