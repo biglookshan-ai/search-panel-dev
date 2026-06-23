@@ -28,6 +28,9 @@
   border-radius: var(--cgp-card-radius, 8px);
   overflow: hidden;
   position: relative;
+  /* Own stacking context so the absolute badges (z-index 2–3) stay scoped to the
+     card and can't float above page-level fixed UI (e.g. the mobile bottom nav). */
+  z-index: 0;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .cgp-card:hover {
@@ -195,6 +198,12 @@
   align-items: flex-end;
   gap: 8px;
   margin-top: auto;
+}
+/* Narrow cards (mobile): stack price above the action buttons so the price isn't
+   covered by the wishlist/cart icons. */
+@media screen and (max-width: 749px) {
+  .cgp-card__price-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+  .cgp-card__actions { justify-content: flex-start; }
 }
 .cgp-card__price {
   display: flex;
@@ -614,7 +623,7 @@ html.cgp-app-failed .cgp-server-results { display: block !important; }
     color: var(--cgp-pill-text, #1c222d);
     white-space: nowrap;
   }
-  .cgp-app__filterbtn::before { content: "⚙"; opacity: .7; }
+  .cgp-app__filterbtn svg { opacity: .8; }
 
   body.cgp-sheet-open { overflow: hidden; }
   .cgp-app__sheet:not([hidden]) {

@@ -467,7 +467,9 @@
           '<div class="cgp-app__top' + (CFG.stickyBar ? ' cgp-app__top--sticky' : '') + '">' +
             '<div class="cgp-app__bar"><span class="cgp-app__count"></span></div>' +
             '<div class="cgp-app__dd">' +
-              '<button type="button" class="cgp-app__filterbtn" data-cgp-filter-open>Filter<span class="cgp-app__filtern" data-filtern></span></button>' +
+              '<button type="button" class="cgp-app__filterbtn" data-cgp-filter-open>' +
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>' +
+                'Filter<span class="cgp-app__filtern" data-filtern></span></button>' +
               dropdowns +
               '<label class="cgp-app__sortwrap">Sort by: <select class="cgp-app__sort">' +
                 SORTS.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') +

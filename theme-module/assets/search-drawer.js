@@ -77,6 +77,9 @@
 
       this.inputs.forEach((inp) => {
         inp.addEventListener('focus', this.boundOnFocus, true);
+        // Also open on click: re-tapping an already-focused input fires no focus
+        // event, so on mobile the drawer wouldn't reopen until the user typed.
+        inp.addEventListener('click', this.boundOnFocus, true);
         inp.addEventListener('input', this.boundOnInput, true);
         inp.addEventListener('keydown', this.boundOnKeydown, true);
         inp.addEventListener('keyup', this.boundOnKeyup, true);
@@ -176,6 +179,7 @@
       if (!this.initialized || !this.inputs) return;
       this.inputs.forEach((inp) => {
         inp.removeEventListener('focus', this.boundOnFocus, true);
+        inp.removeEventListener('click', this.boundOnFocus, true);
         inp.removeEventListener('input', this.boundOnInput, true);
         inp.removeEventListener('keydown', this.boundOnKeydown, true);
         inp.removeEventListener('keyup', this.boundOnKeyup, true);
