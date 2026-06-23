@@ -129,7 +129,14 @@
       {%- if b.image.value != blank -%}{%- assign b_img = b.image.value | image_url: width: 240 -%}{%- endif -%}
       {%- capture b_bg -%}{{ b.background }}{%- endcapture -%}
       {%- capture b_text -%}{{ b.text_color }}{%- endcapture -%}
-      {%- assign b_link = b.link.value | default: '' | strip -%}
+      {%- comment -%} "Link" field type returns an object (use .url); text/url type returns a string. {%- endcomment -%}
+      {%- assign b_link = '' -%}
+      {%- if b.link.value.url != blank -%}
+        {%- assign b_link = b.link.value.url -%}
+      {%- elsif b.link.value != blank -%}
+        {%- assign b_link = b.link.value -%}
+      {%- endif -%}
+      {%- assign b_link = b_link | strip -%}
       {%- if b_link == blank and b.tag.value != blank -%}
         {%- assign b_handle = b.tag.value | handleize -%}
         {%- assign b_col = collections[b_handle] -%}
