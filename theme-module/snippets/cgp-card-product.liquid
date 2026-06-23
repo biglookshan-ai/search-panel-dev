@@ -103,8 +103,11 @@
     <span class="cgp-badge cgp-badge--status cgp-badge--{{ status }}{% if hide_status %} cgp-hidden{% endif %}"
           data-cgp-status>{{ status_label }}</span>
 
-    {%- render 'cgp-custom-badges', product: p -%}
+    {%- render 'cgp-custom-badges', product: p, placement: 'over' -%}
   </div>
+
+  {%- comment -%} Bottom-corner custom badges render below the image (no overlap). {%- endcomment -%}
+  {%- render 'cgp-custom-badges', product: p, placement: 'below' -%}
 
   {%- comment -%} ---------- Info ---------- {%- endcomment -%}
   <div class="cgp-card__info">

@@ -265,6 +265,22 @@ body.search-drawer-open { overflow: hidden; }
 }
 .sd-card__media .cgp-cbadge--img { padding: 0; background: none !important; }
 .sd-card__media .cgp-cbadge--img img { display: block; width: auto; max-width: 56px; height: auto; }
+
+/* Bottom badges below the image (no overlap). Sibling of .sd-card__media. */
+.cgp-cbadges-below { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; flex-wrap: wrap; padding: 4px 10px 0; }
+.cgp-cbadges-below .cgp-cbadges { position: static; max-width: none; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; align-items: center; }
+.cgp-cbadges-below .cgp-cbadges--bottom-right { margin-left: auto; }
+.cgp-cbadges-below .cgp-cbadge {
+  font-size: var(--cgp-cbadge-size, 10px);
+  font-weight: var(--cgp-cbadge-weight, 400);
+  line-height: 1;
+  padding: var(--cgp-cbadge-pad, 2px 4px);
+  border-radius: var(--cgp-cbadge-radius, 2px);
+  white-space: nowrap;
+}
+.cgp-cbadges-below .cgp-cbadge--img { padding: 0; background: none !important; }
+.cgp-cbadges-below .cgp-cbadge--img img { display: block; width: auto; max-width: 56px; height: auto; }
+.cgp-cbadge--link { cursor: pointer; text-decoration: none; }
 .sd-card__body {
   padding: 8px 10px 10px;
   display: flex;

@@ -108,6 +108,26 @@
 }
 .cgp-cbadge--img { padding: 0; background: none !important; }
 .cgp-cbadge--img img { display: block; width: auto; max-width: 72px; height: auto; }
+.cgp-cbadge--link { cursor: pointer; text-decoration: none; }
+.cgp-cbadge--link:hover { filter: brightness(.95); }
+
+/* Bottom badges rendered BELOW the image (no overlap with product). */
+.cgp-cbadges-below {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px var(--cgp-card-padding, 14px) 0;
+}
+.cgp-cbadges-below .cgp-cbadges {
+  position: static;
+  max-width: none;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cgp-cbadges-below .cgp-cbadges--bottom-right { margin-left: auto; justify-content: flex-end; }
 
 /* ---------- Info ---------- */
 .cgp-card__info {

@@ -218,7 +218,8 @@ function badgeDetailHtml(entry) {
     <label>Image <span class="hint">(图片 gid,留空用文字)</span><input type="text" data-key="image" data-kind="text" value="${esc(f.image || '')}"/></label>
     <label>Background 背景色 ${colorRow('background', '#1c222d')}</label>
     <label>Text color 文字色 ${colorRow('text_color', '#ffffff')}</label>
-    <label>Position 位置<select data-key="position" data-kind="text">${sel}</select></label>
+    <label>Position 位置 <span class="hint">(bottom-* 显示在图片下方,不遮挡图片)</span><select data-key="position" data-kind="text">${sel}</select></label>
+    <label>Link 链接 <span class="hint">(留空则自动用与 tag 同名的 collection;点击徽章跳转)</span><input type="text" data-key="link" data-kind="text" value="${esc(f.link || '')}" placeholder="/collections/..."/></label>
     <label class="inline"><input type="checkbox" data-key="enabled" data-kind="bool" ${f.enabled !== 'false' ? 'checked' : ''}/> Enabled 启用</label>
     <div class="entry-actions">
       <button type="button" class="btn btn-primary" data-act="save">保存</button>
