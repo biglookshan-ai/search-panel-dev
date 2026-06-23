@@ -36,7 +36,7 @@
           {%- assign btag = b.tag.value -%}
           {%- assign bpos = b.position.value | default: 'bottom-left' | strip -%}
           {%- if btag != blank and bpos == corner and product.tags contains btag -%}
-            {%- comment -%} Resolve the click-through link: manual field first (Link type → .url, text/url type → string), else collection by handle. {%- endcomment -%}
+            {%- comment -%} Only an explicitly-filled link makes a badge clickable (Link type → .url, text/url type → string); blank = plain badge. {%- endcomment -%}
             {%- assign bhref = '' -%}
             {%- if b.link.value.url != blank -%}
               {%- assign bhref = b.link.value.url -%}
@@ -44,11 +44,6 @@
               {%- assign bhref = b.link.value -%}
             {%- endif -%}
             {%- assign bhref = bhref | strip -%}
-            {%- if bhref == blank -%}
-              {%- assign bhandle = btag | handleize -%}
-              {%- assign bcol = collections[bhandle] -%}
-              {%- if bcol.id -%}{%- assign bhref = bcol.url -%}{%- endif -%}
-            {%- endif -%}
             {%- assign bimg = b.image.value -%}
             {%- if bimg != blank -%}
               {%- assign bcls = 'cgp-cbadge cgp-cbadge--img' -%}

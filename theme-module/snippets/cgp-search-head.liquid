@@ -129,7 +129,7 @@
       {%- if b.image.value != blank -%}{%- assign b_img = b.image.value | image_url: width: 240 -%}{%- endif -%}
       {%- capture b_bg -%}{{ b.background }}{%- endcapture -%}
       {%- capture b_text -%}{{ b.text_color }}{%- endcapture -%}
-      {%- comment -%} "Link" field type returns an object (use .url); text/url type returns a string. {%- endcomment -%}
+      {%- comment -%} Only an explicitly-filled link makes a badge clickable; blank = plain badge. "Link" field type returns an object (use .url); text/url type returns a string. {%- endcomment -%}
       {%- assign b_link = '' -%}
       {%- if b.link.value.url != blank -%}
         {%- assign b_link = b.link.value.url -%}
@@ -137,11 +137,6 @@
         {%- assign b_link = b.link.value -%}
       {%- endif -%}
       {%- assign b_link = b_link | strip -%}
-      {%- if b_link == blank and b.tag.value != blank -%}
-        {%- assign b_handle = b.tag.value | handleize -%}
-        {%- assign b_col = collections[b_handle] -%}
-        {%- if b_col.id -%}{%- assign b_link = b_col.url -%}{%- endif -%}
-      {%- endif -%}
       {"tag": {{ b.tag.value | json }}, "position": {{ b.position.value | default: 'bottom-left' | json }}, "label": {{ b.label.value | default: '' | json }}, "image": {{ b_img | json }}, "bg": {{ b_bg | strip | default: '#1c222d' | json }}, "text": {{ b_text | strip | default: '#ffffff' | json }}, "link": {{ b_link | json }}, "enabled": {% if b.enabled.value == false %}false{% else %}true{% endif %}}
     {%- endfor -%}
   ];
