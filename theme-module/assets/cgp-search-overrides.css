@@ -15,6 +15,18 @@
   margin: 0;
 }
 
+/* Replaced Searchanise — hide any leftover Searchanise (internal name "snize")
+   widget/skeleton still injected by its app block on collection/search pages
+   (renders below our results, most visible on empty collections). */
+[id^="snize"],
+[id*="snize_"],
+[class^="snize"],
+[class*=" snize"],
+[data-snize],
+[data-snize-element] {
+  display: none !important;
+}
+
 
 /* ============================================================
    CARD
