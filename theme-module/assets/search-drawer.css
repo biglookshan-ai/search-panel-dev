@@ -450,22 +450,26 @@ search-drawer.cgp-sd-loading .search-drawer__panel {
 @media (max-width: 749px) {
   search-drawer {
     /* Drop below the header search box (JS sets top) and fill to the bottom, so
-       the header input stays visible and keeps native focus + keyboard. */
+       the header input stays visible and keeps native focus + keyboard. Flex
+       column: close bar on top, scrolling panel fills the rest. */
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 1003;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+    display: flex;
+    flex-direction: column;
   }
   .search-drawer__backdrop { display: none !important; }
   body.search-drawer-open { overflow: hidden; }
 
-  /* The header input is used directly on mobile, so the drawer-owned bar is off. */
-  .search-drawer__searchbar { display: none; }
+  /* Close bar (the header input is used to type — this is just the close affordance). */
+  .search-drawer__searchbar { display: flex; justify-content: flex-end; flex: 0 0 auto; padding: 6px 8px; border-bottom: 0; }
   .search-drawer__panel {
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: none;
-    padding: 16px 14px 24px;
+    padding: 4px 14px 24px;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
