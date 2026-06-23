@@ -123,7 +123,16 @@
       window.CGP_DEBUG.fetched = ALL.length;
       window.CGP_DEBUG.pages = (first && first.pages) || 0;
       window.CGP_DEBUG.total = (first && first.total) || 0;
-      if (!ALL.length) { fallback('no products from ' + ENDPOINT); return; }
+      // A genuinely-empty collection/search still returns a valid JSON object
+      // (numeric total/pages). Only fall back to the native layout when the fetch
+      // or parse actually FAILED (fetchPage returns a bare {products:[]} then).
+      var realResponse = first && (typeof first.total === 'number' || typeof first.pages === 'number');
+      if (!ALL.length) {
+        if (!realResponse) { fallback('no products from ' + ENDPOINT); return; }
+        if (!safeRun('build', build)) { fallback('build threw'); return; }
+        safeRun('update', update); // render our own empty state ("No products found")
+        return;
+      }
       if (!safeRun('build', build)) { fallback('build threw'); return; }
       var pages = Math.min(first.pages || 1, MAX_PAGES);
       var rest = [];
@@ -417,6 +426,11 @@
     if (!grid) return;
     grid.innerHTML = '';
     var more = mount.querySelector('.cgp-app__more');
+    if (!view.length) {
+      grid.innerHTML = '<li class="cgp-app__empty">' + esc(CFG.emptyText || 'No products found.') + '</li>';
+      if (more) more.innerHTML = '';
+      return;
+    }
     if (MODE === 'infinite') {
       rendered = 0;
       appendCards(view.slice(0, CHUNK));

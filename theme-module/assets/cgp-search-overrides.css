@@ -597,6 +597,16 @@ html.cgp-app-failed .cgp-server-results { display: block !important; }
   display: grid !important;
   grid-template-columns: repeat(var(--cgp-cols-desktop, 4), minmax(0, 1fr)) !important;
 }
+/* Empty state (genuinely-empty collection / filtered-to-zero) — spans the grid. */
+.cgp-app__empty {
+  grid-column: 1 / -1;
+  list-style: none;
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--cgp-title-color, #1c222d);
+  font-size: 1.5rem;
+}
+
 /* Dawn gives .grid__item a percentage width/max-width (base.css) which fights the
    grid cell and collapses the card — reset it so each cell (1fr) controls width. */
 .cgp-app__grid > li,
