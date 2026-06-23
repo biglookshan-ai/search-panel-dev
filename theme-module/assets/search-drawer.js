@@ -315,7 +315,14 @@
     }
 
     onDocumentClick(event) {
-      if (!this.contains(event.target) && event.target !== this.input) this.close();
+      if (this.contains(event.target)) return;
+      if (event.target === this.input || event.target === this.sdInput) return;
+      // Clicking any bound search input must not close the drawer. On mobile,
+      // open() switches this.input to the drawer's own input, so the originally
+      // tapped header input would otherwise be treated as an outside click and
+      // close the drawer on the same tap that opened it.
+      if (this.inputs && this.inputs.indexOf(event.target) !== -1) return;
+      this.close();
     }
 
     onPanelClick(event) {
