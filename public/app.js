@@ -99,7 +99,8 @@ async function loadType(type) {
   try {
     const { entries, fields } = await api('GET', '/api/metaobjects/' + type);
     FIELDS = fields || [];
-    if (type === 'cgp_badge') return renderBadges(entries);
+    if (type === 'cgp_badge') return renderBadges(entries, 'cgp_badge');
+    if (type === 'cgp_status_badge') return renderBadges(entries, 'cgp_status_badge');
     if (type === 'cgp_sort_rule') return renderSortRules(entries);
     if (type === 'search_panel') return renderSearchPanel(entries);
     if (!FIELDS.length && !entries.length) {
@@ -152,8 +153,10 @@ function bindEntry(form) {
   });
 }
 
-// ---- cgp_badge: list view + quick enable toggle + expandable detail ----
-const BADGE_POS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+// ---- cgp_badge + cgp_status_badge: list view + quick enable toggle + detail ----
+// cgp_badge = custom badges below the image (left/right, optional link/image).
+// cgp_status_badge = product-status badges over the image bottom-right (text only).
+const BADGE_POS = ['left', 'right'];
 
 // Load all store product tags once into a shared <datalist> for tag pickers.
 let TAGS_LOADED = false;
@@ -168,31 +171,36 @@ async function loadTags() {
   } catch (e) { TAGS_LOADED = false; }
 }
 
-function renderBadges(entries) {
+function renderBadges(entries, type) {
+  type = type || 'cgp_badge';
   loadTags();
   const body = $('#meta-body');
   body.innerHTML = '<div class="list"></div><button class="btn btn-primary" id="add-entry">+ 新增角标</button>';
   const list = $('.list');
-  entries.forEach((e) => list.appendChild(badgeCardEl(e)));
+  entries.forEach((e) => list.appendChild(badgeCardEl(e, false, type)));
   $('#add-entry').addEventListener('click', () => {
-    const card = badgeCardEl({ id: '', fields: { position: 'bottom-left', enabled: 'true', background: '#1c222d', text_color: '#ffffff' } }, true);
+    const init = type === 'cgp_status_badge'
+      ? { enabled: 'true', background: '#1c222d', text_color: '#ffffff' }
+      : { position: 'left', enabled: 'true', background: '#1c222d', text_color: '#ffffff' };
+    const card = badgeCardEl({ id: '', fields: init }, true, type);
     list.appendChild(card);
     card.querySelector('[data-edit]').click();
   });
 }
 
-function badgeCardEl(entry, isNew = false) {
+function badgeCardEl(entry, isNew = false, type = 'cgp_badge') {
   const f = entry.fields || {};
   const bg = f.background || '#1c222d', tc = f.text_color || '#ffffff';
   const label = f.label || f.tag || '(角标)';
   const on = f.enabled !== 'false';
+  const meta = type === 'cgp_status_badge' ? '图片右下角' : (/right/i.test(f.position || '') ? '右' : '左');
   const el = document.createElement('div');
   el.className = 'card';
   el.dataset.id = entry.id || '';
   el.innerHTML = `
     <div class="summary">
       <span class="swatch" style="background:${esc(bg)};color:${esc(tc)}">${esc(label)}</span>
-      <span class="grow"><b>${esc(f.tag || (isNew ? '新角标' : '(未设 tag)'))}</b> <span class="muted">· ${esc(f.position || '')}</span></span>
+      <span class="grow"><b>${esc(f.tag || (isNew ? '新角标' : '(未设 tag)'))}</b> <span class="muted">· ${esc(meta)}</span></span>
       <label class="inline"><input type="checkbox" data-toggle ${on ? 'checked' : ''}/> 启用</label>
       <button type="button" class="btn btn-sm" data-edit>${isNew ? '展开' : '编辑'}</button>
     </div>
@@ -200,14 +208,14 @@ function badgeCardEl(entry, isNew = false) {
   const toggle = el.querySelector('[data-toggle]');
   toggle.addEventListener('change', async () => {
     if (!el.dataset.id) return; // unsaved new row
-    try { await api('PUT', '/api/metaobjects/cgp_badge', { id: el.dataset.id, fields: { enabled: toggle.checked ? 'true' : 'false' } }); toast(toggle.checked ? '已启用' : '已停用'); }
+    try { await api('PUT', '/api/metaobjects/' + type, { id: el.dataset.id, fields: { enabled: toggle.checked ? 'true' : 'false' } }); toast(toggle.checked ? '已启用' : '已停用'); }
     catch (e) { toggle.checked = !toggle.checked; toast(e.message, false); }
   });
   const detail = el.querySelector('[data-detail]');
   const editBtn = el.querySelector('[data-edit]');
   editBtn.addEventListener('click', () => {
     if (detail.hidden) {
-      if (!detail.dataset.loaded) { detail.innerHTML = badgeDetailHtml(entry); detail.dataset.loaded = '1'; bindBadgeDetail(el); }
+      if (!detail.dataset.loaded) { detail.innerHTML = badgeDetailHtml(entry, type); detail.dataset.loaded = '1'; bindBadgeDetail(el, type); }
       detail.hidden = false;
     } else detail.hidden = true;
     editBtn.textContent = detail.hidden ? '编辑' : '关闭';
@@ -216,18 +224,20 @@ function badgeCardEl(entry, isNew = false) {
   return el;
 }
 
-function badgeDetailHtml(entry) {
+function badgeDetailHtml(entry, type) {
   const f = entry.fields || {};
-  const sel = BADGE_POS.map((p) => `<option value="${p}" ${f.position === p ? 'selected' : ''}>${p}</option>`).join('');
+  const isStatus = type === 'cgp_status_badge';
+  const sel = BADGE_POS.map((p) => `<option value="${p}" ${(/right/i.test(f.position || '') ? 'right' : 'left') === p ? 'selected' : ''}>${p === 'left' ? '左 left' : '右 right'}</option>`).join('');
   const colorRow = (key, def) => `<span class="colorrow"><input type="color" value="${esc(f[key] || def)}" oninput="this.nextElementSibling.value=this.value"/><input type="text" data-key="${key}" data-kind="text" value="${esc(f[key] || def)}"/></span>`;
   return `
+    ${isStatus ? '<p class="hint">产品状态角标:按 tag 匹配,显示在图片右下角(叠在图上)。</p>' : ''}
     <label>Tag <span class="hint">(产品标签,用于匹配;可下拉选或自己输入)</span><input type="text" data-key="tag" data-kind="text" list="all-tags" value="${esc(f.tag || '')}"/></label>
     <label>Label <span class="hint">(显示文字)</span><input type="text" data-key="label" data-kind="text" value="${esc(f.label || '')}"/></label>
-    <label>Image <span class="hint">(图片 gid,留空用文字)</span><input type="text" data-key="image" data-kind="text" value="${esc(f.image || '')}"/></label>
+    ${isStatus ? '' : `<label>Image <span class="hint">(图片 gid,留空用文字)</span><input type="text" data-key="image" data-kind="text" value="${esc(f.image || '')}"/></label>`}
     <label>Background 背景色 ${colorRow('background', '#1c222d')}</label>
     <label>Text color 文字色 ${colorRow('text_color', '#ffffff')}</label>
-    <label>Position 位置 <span class="hint">(bottom-* 显示在图片下方,不遮挡图片)</span><select data-key="position" data-kind="text">${sel}</select></label>
-    <label>Link 链接 <span class="hint">(字段用 URL 类型;填了才可点击跳转,留空则为纯展示徽章)</span><input type="text" data-key="link" data-kind="text" value="${esc(linkUrl(f.link))}" placeholder="https://...../collections/..."/></label>
+    ${isStatus ? '' : `<label>Position 位置 <span class="hint">(图片下方:左 / 右)</span><select data-key="position" data-kind="text">${sel}</select></label>`}
+    ${isStatus ? '' : `<label>Link 链接 <span class="hint">(字段用 URL 类型;填了才可点击跳转,留空则为纯展示徽章)</span><input type="text" data-key="link" data-kind="text" value="${esc(linkUrl(f.link))}" placeholder="https://...../collections/..."/></label>`}
     <label class="inline"><input type="checkbox" data-key="enabled" data-kind="bool" ${f.enabled !== 'false' ? 'checked' : ''}/> Enabled 启用</label>
     <div class="entry-actions">
       <button type="button" class="btn btn-primary" data-act="save">保存</button>
@@ -235,22 +245,23 @@ function badgeDetailHtml(entry) {
     </div>`;
 }
 
-function bindBadgeDetail(card) {
+function bindBadgeDetail(card, type) {
+  type = type || 'cgp_badge';
   const detail = card.querySelector('[data-detail]');
   detail.querySelector('[data-act="save"]').addEventListener('click', async () => {
     try {
       const fields = collectFields(detail);
       const id = card.dataset.id;
-      if (id) await api('PUT', '/api/metaobjects/cgp_badge', { id, fields });
-      else await api('POST', '/api/metaobjects/cgp_badge', { fields });
+      if (id) await api('PUT', '/api/metaobjects/' + type, { id, fields });
+      else await api('POST', '/api/metaobjects/' + type, { fields });
       toast('已保存 ✓');
-      loadType('cgp_badge');
+      loadType(type);
     } catch (e) { toast(e.message, false); }
   });
   const del = detail.querySelector('[data-act="del"]');
   if (del) del.addEventListener('click', async () => {
     if (!confirm('确定删除这个角标?')) return;
-    try { await api('DELETE', '/api/metaobjects/cgp_badge', { id: card.dataset.id }); toast('已删除 ✓'); loadType('cgp_badge'); }
+    try { await api('DELETE', '/api/metaobjects/' + type, { id: card.dataset.id }); toast('已删除 ✓'); loadType(type); }
     catch (e) { toast(e.message, false); }
   });
 }

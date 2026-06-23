@@ -606,11 +606,12 @@
       let h = `<a class="sd-card" href="${esc(p.url)}" data-track="product" data-product-id="${p.id}">`;
       h += '<div class="sd-card__media">';
       if (p.image) h += `<img class="sd-card__img" src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy">`;
+      if (p.image2) h += `<img class="sd-card__img sd-card__img--hover" src="${esc(p.image2)}" alt="" loading="lazy" aria-hidden="true">`;
       if (p.discount > 0) h += `<span class="sd-badge sd-badge--discount">${p.discount}${esc(cfg.discountSuffix || '% OFF')}</span>`;
       h += `<span class="sd-badge sd-badge--status sd-badge--${statusCls}">${esc(statusLabel)}</span>`;
-      h += this.customBadges(p, 'over');
+      h += this.statusBadges(p);
       h += '</div>';
-      h += this.customBadges(p, 'below');
+      h += this.customBadges(p);
       h += '<div class="sd-card__body">';
       h += `<h4 class="sd-card__title">${esc(p.title)}</h4>`;
       h += `<div class="sd-card__price${onSale ? ' sd-card__price--sale' : ''}">`;
@@ -623,37 +624,37 @@
       return h;
     }
 
-    // Custom tag badges (window.CGP_BADGES, matched by product tags) — same data
-    // and classes as the results-page cards, so the merchant's badges show in the
-    // drawer too. Grouped by corner; .cgp-cbadge styles live in search-drawer.css.
-    customBadges(p, placement) {
-      placement = placement || 'over';
-      const want = placement === 'below' ? ['bottom-left', 'bottom-right'] : ['top-left', 'top-right'];
+    // Custom tag badges (CGP_BADGES) BELOW the image, left / right by position.
+    // The card is an <a>, so linked badges use span + data-cgp-href (delegated
+    // click navigates) to avoid invalid nested anchors.
+    customBadges(p) {
       const tags = p.tags || [];
-      const badges = (window.CGP_BADGES || []).filter((b) =>
-        b.enabled !== false && b.tag && tags.indexOf(b.tag) !== -1 && want.indexOf(b.position || 'bottom-left') !== -1);
+      const badges = (window.CGP_BADGES || []).filter((b) => b.enabled !== false && b.tag && tags.indexOf(b.tag) !== -1);
       if (!badges.length) return '';
-      const corners = {};
-      badges.forEach((b) => {
-        const pos = b.position || 'bottom-left';
-        (corners[pos] = corners[pos] || []).push(b);
-      });
-      // The card itself is an <a>, so linked badges use a span + data-cgp-href
-      // (a delegated click handler navigates) to avoid invalid nested anchors.
-      const groups = Object.keys(corners).map((pos) => {
-        const inner = corners[pos].map((b) => {
+      const sideOf = (b) => (/right/i.test(b.position || '') ? 'right' : 'left');
+      const render = (side) => {
+        const inner = badges.filter((b) => sideOf(b) === side).map((b) => {
           const cls = b.image ? 'cgp-cbadge cgp-cbadge--img' : 'cgp-cbadge';
-          const content = b.image
-            ? `<img src="${esc(b.image)}" alt="${esc(b.label)}" loading="lazy">`
-            : esc(b.label);
+          const content = b.image ? `<img src="${esc(b.image)}" alt="${esc(b.label)}" loading="lazy">` : esc(b.label);
           const style = b.image ? '' : `background:${esc(b.bg)};color:${esc(b.text)};`;
           return b.link
             ? `<span class="${cls} cgp-cbadge--link" role="link" tabindex="0" data-cgp-href="${esc(b.link)}" style="${style}">${content}</span>`
             : `<span class="${cls}" style="${style}">${content}</span>`;
         }).join('');
-        return `<div class="cgp-cbadges cgp-cbadges--${pos}">${inner}</div>`;
-      }).join('');
-      return placement === 'below' ? `<div class="cgp-cbadges-below">${groups}</div>` : groups;
+        return inner ? `<div class="cgp-cbadges cgp-cbadges--${side}">${inner}</div>` : '';
+      };
+      const groups = render('left') + render('right');
+      return groups ? `<div class="cgp-cbadges-below">${groups}</div>` : '';
+    }
+
+    // Product-status badges (CGP_STATUS_BADGES, tag-triggered) overlay the drawer
+    // card image bottom-right (distinct from custom badges).
+    statusBadges(p) {
+      const tags = p.tags || [];
+      const items = (window.CGP_STATUS_BADGES || []).filter((b) => b.enabled !== false && b.tag && tags.indexOf(b.tag) !== -1);
+      if (!items.length) return '';
+      const inner = items.map((b) => `<span class="cgp-statusbadge" style="background:${esc(b.bg)};color:${esc(b.text)};">${esc(b.label || b.tag)}</span>`).join('');
+      return `<div class="cgp-statusbadges">${inner}</div>`;
     }
 
     refreshOptions() {

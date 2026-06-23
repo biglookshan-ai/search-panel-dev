@@ -75,6 +75,16 @@
   box-sizing: border-box;
   mix-blend-mode: var(--cgp-image-blend, multiply);
 }
+/* Second image shown on hover (desktop only — no effect on touch devices). */
+.cgp-card__img--hover {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+@media (hover: hover) {
+  .cgp-card__media:hover .cgp-card__img--hover { opacity: 1; }
+}
 
 /* ---------- Badges (over image) ---------- */
 .cgp-badge {
@@ -123,8 +133,30 @@
 }
 .cgp-cbadge--img { padding: 0; background: none !important; }
 .cgp-cbadge--img img { display: block; width: auto; max-width: 72px; height: auto; }
-.cgp-cbadge--link { cursor: pointer; text-decoration: none; }
+/* Linked badge: underline so it reads as clickable. */
+.cgp-cbadge--link { cursor: pointer; text-decoration: underline; }
 .cgp-cbadge--link:hover { filter: brightness(.95); }
+
+/* ---------- Product-status badges (over image, bottom-right) ---------- */
+.cgp-statusbadges {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 80%;
+}
+.cgp-statusbadge {
+  font-size: var(--cgp-statusbadge-size, 11px);
+  font-weight: var(--cgp-statusbadge-weight, 600);
+  line-height: 1;
+  padding: var(--cgp-statusbadge-pad, 4px 8px);
+  border-radius: var(--cgp-statusbadge-radius, 4px);
+  white-space: nowrap;
+}
 
 /* Bottom badges rendered BELOW the image (no overlap with product). */
 .cgp-cbadges-below {
@@ -142,6 +174,7 @@
   flex-wrap: wrap;
   align-items: center;
 }
+.cgp-cbadges-below .cgp-cbadges--right,
 .cgp-cbadges-below .cgp-cbadges--bottom-right { margin-left: auto; justify-content: flex-end; }
 
 /* ---------- Info ---------- */

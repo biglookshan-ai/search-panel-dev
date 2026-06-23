@@ -928,6 +928,66 @@
         "step": 1,
         "unit": "px",
         "default": 2
+      },
+      {
+        "type": "header",
+        "content": "Product status badge style (global)"
+      },
+      {
+        "type": "paragraph",
+        "content": "Tag-triggered status badges (Coming Soon / Clearance / B-Stock …) shown on the image bottom-right. Per-badge text & colours come from the cgp_status_badge metaobject."
+      },
+      {
+        "type": "range",
+        "id": "cgp_statusbadge_font_size",
+        "label": "Status badge font size",
+        "min": 8,
+        "max": 20,
+        "step": 1,
+        "unit": "px",
+        "default": 11
+      },
+      {
+        "type": "select",
+        "id": "cgp_statusbadge_weight",
+        "label": "Status badge font weight",
+        "options": [
+          { "value": "400", "label": "Normal" },
+          { "value": "500", "label": "Medium" },
+          { "value": "600", "label": "Semibold" },
+          { "value": "700", "label": "Bold" }
+        ],
+        "default": "600"
+      },
+      {
+        "type": "range",
+        "id": "cgp_statusbadge_padding_y",
+        "label": "Status badge padding — vertical",
+        "min": 0,
+        "max": 14,
+        "step": 1,
+        "unit": "px",
+        "default": 4
+      },
+      {
+        "type": "range",
+        "id": "cgp_statusbadge_padding_x",
+        "label": "Status badge padding — horizontal",
+        "min": 0,
+        "max": 18,
+        "step": 1,
+        "unit": "px",
+        "default": 8
+      },
+      {
+        "type": "range",
+        "id": "cgp_statusbadge_radius",
+        "label": "Status badge corner radius",
+        "min": 0,
+        "max": 24,
+        "step": 1,
+        "unit": "px",
+        "default": 4
       }
     ]
   },

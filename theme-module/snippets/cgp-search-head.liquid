@@ -26,6 +26,11 @@
     --cgp-cbadge-weight: {{ settings.cgp_cbadge_weight | default: 400 }};
     --cgp-cbadge-pad: {{ settings.cgp_cbadge_padding_y | default: 2 }}px {{ settings.cgp_cbadge_padding_x | default: 4 }}px;
     --cgp-cbadge-radius: {{ settings.cgp_cbadge_radius | default: 2 }}px;
+    /* Product-status badges (cgp_status_badge metaobject) — image bottom-right. */
+    --cgp-statusbadge-size: {{ settings.cgp_statusbadge_font_size | default: 11 }}px;
+    --cgp-statusbadge-weight: {{ settings.cgp_statusbadge_weight | default: 600 }};
+    --cgp-statusbadge-pad: {{ settings.cgp_statusbadge_padding_y | default: 4 }}px {{ settings.cgp_statusbadge_padding_x | default: 8 }}px;
+    --cgp-statusbadge-radius: {{ settings.cgp_statusbadge_radius | default: 4 }}px;
     /* Card */
     --cgp-card-bg: {{ settings.cgp_card_bg }};
     --cgp-card-border-width: {% if settings.cgp_card_show_border %}{{ settings.cgp_card_border_width }}px{% else %}0px{% endif %};
@@ -137,7 +142,15 @@
         {%- assign b_link = b.link.value -%}
       {%- endif -%}
       {%- assign b_link = b_link | strip -%}
-      {"tag": {{ b.tag.value | json }}, "position": {{ b.position.value | default: 'bottom-left' | json }}, "label": {{ b.label.value | default: '' | json }}, "image": {{ b_img | json }}, "bg": {{ b_bg | strip | default: '#1c222d' | json }}, "text": {{ b_text | strip | default: '#ffffff' | json }}, "link": {{ b_link | json }}, "enabled": {% if b.enabled.value == false %}false{% else %}true{% endif %}}
+      {"tag": {{ b.tag.value | json }}, "position": {{ b.position.value | default: 'left' | json }}, "label": {{ b.label.value | default: '' | json }}, "image": {{ b_img | json }}, "bg": {{ b_bg | strip | default: '#1c222d' | json }}, "text": {{ b_text | strip | default: '#ffffff' | json }}, "link": {{ b_link | json }}, "enabled": {% if b.enabled.value == false %}false{% else %}true{% endif %}}
+    {%- endfor -%}
+  ];
+  window.CGP_STATUS_BADGES = [
+    {%- for b in metaobjects.cgp_status_badge.values -%}
+      {%- unless forloop.first %},{% endunless -%}
+      {%- capture sb_bg -%}{{ b.background }}{%- endcapture -%}
+      {%- capture sb_text -%}{{ b.text_color }}{%- endcapture -%}
+      {"tag": {{ b.tag.value | json }}, "label": {{ b.label.value | default: '' | json }}, "bg": {{ sb_bg | strip | default: '#1c222d' | json }}, "text": {{ sb_text | strip | default: '#ffffff' | json }}, "enabled": {% if b.enabled.value == false %}false{% else %}true{% endif %}}
     {%- endfor -%}
   ];
 </script>

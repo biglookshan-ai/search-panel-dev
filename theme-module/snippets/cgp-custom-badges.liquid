@@ -1,42 +1,33 @@
 {%- comment -%}
-  Renders tag-triggered custom badges. Data source: Metaobject "cgp_badge"
-  (metaobjects.cgp_badge.values). Each entry:
-    - tag         (single line text)  trigger product tag (case-sensitive)
-    - position    (single line text)  top-left | top-right | bottom-left | bottom-right
-    - label       (single line text)  badge text (optional)
+  Tag-triggered custom badges, rendered BELOW the product image (never over it).
+  Data: metaobject cgp_badge. Fields:
+    - tag         (single line text)  trigger product tag
+    - position    (single line text)  left | right (default left)
+    - label       (single line text)  badge text
     - image       (file: image)       optional, overrides text
     - background  (color)             text-badge background
     - text_color  (color)             text-badge colour
-    - enabled     (boolean)           optional; false hides the rule
-    - link        (single line text)  optional URL; if blank we auto-link to the
-                                       collection whose handle == handleize(tag).
-                                       When a link resolves, the badge is clickable.
-  placement:
-    - 'over'  (default) → top-left / top-right, overlaid on the image
-    - 'below'           → bottom-left / bottom-right, rendered BELOW the image
-                          (does not cover the product image)
-  Accepts: product, placement
+    - enabled     (boolean)           false hides the rule
+    - link        (URL)               optional; filled = clickable (underlined)
+  position: any value containing "right" → right side; anything else → left.
+  Same-side multiples follow metaobject order. Accepts: product
 {%- endcomment -%}
 {%- liquid
   assign badge_defs = metaobjects.cgp_badge.values
-  assign placement = placement | default: 'over'
-  if placement == 'below'
-    assign corners = 'bottom-left,bottom-right' | split: ','
-  else
-    assign corners = 'top-left,top-right' | split: ','
-  endif
 -%}
 {%- if badge_defs.size > 0 -%}
   {%- assign any = '' -%}
   {%- capture group_html -%}
-    {%- for corner in corners -%}
-      {%- capture corner_html -%}
+    {%- for side in 'left,right' | split: ',' -%}
+      {%- capture side_html -%}
         {%- for b in badge_defs -%}
           {%- if b.enabled.value == false -%}{%- continue -%}{%- endif -%}
           {%- assign btag = b.tag.value -%}
-          {%- assign bpos = b.position.value | default: 'bottom-left' | strip -%}
-          {%- if btag != blank and bpos == corner and product.tags contains btag -%}
-            {%- comment -%} Only an explicitly-filled link makes a badge clickable (Link type → .url, text/url type → string); blank = plain badge. {%- endcomment -%}
+          {%- assign bpos = b.position.value | default: 'left' | downcase -%}
+          {%- assign bside = 'left' -%}
+          {%- if bpos contains 'right' -%}{%- assign bside = 'right' -%}{%- endif -%}
+          {%- if btag != blank and bside == side and product.tags contains btag -%}
+            {%- comment -%} Only an explicitly-filled link makes a badge clickable (Link type → .url, text/url type → string). {%- endcomment -%}
             {%- assign bhref = '' -%}
             {%- if b.link.value.url != blank -%}
               {%- assign bhref = b.link.value.url -%}
@@ -62,18 +53,14 @@
           {%- endif -%}
         {%- endfor -%}
       {%- endcapture -%}
-      {%- assign corner_stripped = corner_html | strip -%}
-      {%- if corner_stripped != blank -%}
-        <div class="cgp-cbadges cgp-cbadges--{{ corner }}">{{ corner_html }}</div>
+      {%- assign side_stripped = side_html | strip -%}
+      {%- if side_stripped != blank -%}
+        <div class="cgp-cbadges cgp-cbadges--{{ side }}">{{ side_html }}</div>
         {%- assign any = 'y' -%}
       {%- endif -%}
     {%- endfor -%}
   {%- endcapture -%}
   {%- if any != blank -%}
-    {%- if placement == 'below' -%}
-      <div class="cgp-cbadges-below">{{ group_html }}</div>
-    {%- else -%}
-      {{ group_html }}
-    {%- endif -%}
+    <div class="cgp-cbadges-below">{{ group_html }}</div>
   {%- endif -%}
 {%- endif -%}

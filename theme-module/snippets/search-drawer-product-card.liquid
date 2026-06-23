@@ -1,0 +1,76 @@
+{%- comment -%}
+  search-drawer-product-card.liquid — compact predictive-drawer card.
+  Matches the main custom card look (soft status badge top-right, discount
+  badge top-left over the image, muted prices). Works in grid or list layout
+  (the parent <ul> carries the layout class).
+  Params: product, show_vendor, show_compare_at, show_desc_lines, show_vat_note
+{%- endcomment -%}
+
+{%- liquid
+  assign on_sale = false
+  if product.compare_at_price > product.price
+    assign on_sale = true
+    assign discount_pct = product.compare_at_price | minus: product.price | times: 100.0 | divided_by: product.compare_at_price | round
+  endif
+
+  assign uk_total = 0
+  assign ew_total = 0
+  assign any_continue = false
+  for v in product.variants
+    assign vuk = v.metafields.custom.uk_inventory.value | default: 0
+    assign vew = v.metafields.custom.es_inventory.value | default: 0
+    assign uk_total = uk_total | plus: vuk
+    assign ew_total = ew_total | plus: vew
+    if v.inventory_policy == 'continue'
+      assign any_continue = true
+    endif
+  endfor
+  assign badge = 'out-of-stock'
+  if uk_total > 0 or ew_total > 0
+    assign badge = 'in-stock'
+  elsif any_continue
+    assign badge = 'pre-order'
+  endif
+-%}
+
+<a class="sd-card" href="{{ product.url }}" data-track="product" data-product-id="{{ product.id }}">
+  <div class="sd-card__media">
+    {%- if product.featured_image -%}
+      {{ product.featured_image | image_url: width: 320 | image_tag: loading: 'lazy', class: 'sd-card__img', alt: product.featured_image.alt | default: product.title }}
+      {%- if product.media[1] -%}
+        <img class="sd-card__img sd-card__img--hover" src="{{ product.media[1] | image_url: width: 320 }}" alt="" loading="lazy" aria-hidden="true">
+      {%- endif -%}
+    {%- endif -%}
+
+    {%- if on_sale -%}
+      <span class="sd-badge sd-badge--discount">{{ discount_pct }}% OFF</span>
+    {%- endif -%}
+    <span class="sd-badge sd-badge--status sd-badge--{{ badge }}">
+      {%- case badge -%}
+        {%- when 'pre-order' -%}Pre-Order
+        {%- when 'out-of-stock' -%}Out of Stock
+        {%- else -%}In Stock
+      {%- endcase -%}
+    </span>
+    {%- render 'cgp-status-badges', product: product -%}
+  </div>
+
+  <div class="sd-card__body">
+    <h4 class="sd-card__title">{{ product.title }}</h4>
+
+    {%- if show_vendor -%}
+      <p class="sd-card__vendor">{{ product.vendor }}</p>
+    {%- endif -%}
+
+    <div class="sd-card__price{% if on_sale %} sd-card__price--sale{% endif %}">
+      {%- if on_sale and show_compare_at -%}
+        <s class="sd-card__price-compare">{{ product.compare_at_price | money }}</s>
+      {%- endif -%}
+      <span class="sd-card__price-row">
+        {%- if product.price_varies -%}<span class="sd-card__from">From</span>{%- endif -%}
+        <span class="sd-card__price-current">{{ product.price | money }}</span>
+        {%- if show_vat_note -%}<span class="sd-card__vat">ex.VAT</span>{%- endif -%}
+      </span>
+    </div>
+  </div>
+</a>

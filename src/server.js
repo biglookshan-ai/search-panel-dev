@@ -53,7 +53,7 @@ const wrap = (fn) => async (req, res) => {
   catch (e) { console.error(e); res.status(500).json({ error: String(e.message || e) }); }
 };
 
-const TYPES = ['cgp_badge', 'cgp_sort_rule', 'search_panel'];
+const TYPES = ['cgp_badge', 'cgp_status_badge', 'cgp_sort_rule', 'search_panel'];
 const okType = (t) => TYPES.includes(t);
 
 api.get('/metaobjects/:type', wrap(async (req) => {

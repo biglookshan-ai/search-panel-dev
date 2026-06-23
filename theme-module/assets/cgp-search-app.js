@@ -328,12 +328,15 @@
   }
 
   /* ---------- Cards ---------- */
-  function badgeCorner(p, corner) {
+  // Custom badges (CGP_BADGES) render BELOW the image; position picks the side
+  // ("right" → right, else left). Linked badges are real <a> (underlined via CSS).
+  function cbadgeSide(p, side) {
     var tags = p.tags || [];
-    var items = BADGES.filter(function (b) { return (b.position || 'bottom-left') === corner && tags.indexOf(b.tag) !== -1; });
+    var items = BADGES.filter(function (b) {
+      var s = /right/i.test(b.position || '') ? 'right' : 'left';
+      return s === side && tags.indexOf(b.tag) !== -1;
+    });
     if (!items.length) return '';
-    // Badges sit beside the media-link anchor (not inside it), so a linked badge
-    // can be a real <a>. Link comes from CGP_BADGES (manual or auto collection).
     var inner = items.map(function (b) {
       var cls = b.image ? 'cgp-cbadge cgp-cbadge--img' : 'cgp-cbadge';
       var content = b.image ? '<img src="' + esc(b.image) + '" alt="' + esc(b.label) + '" loading="lazy">' : esc(b.label);
@@ -341,12 +344,22 @@
       if (b.link) return '<a class="' + cls + ' cgp-cbadge--link" href="' + esc(b.link) + '" style="' + style + '" data-track="custom-badge">' + content + '</a>';
       return '<span class="' + cls + '" style="' + style + '">' + content + '</span>';
     }).join('');
-    return '<div class="cgp-cbadges cgp-cbadges--' + corner + '">' + inner + '</div>';
+    return '<div class="cgp-cbadges cgp-cbadges--' + side + '">' + inner + '</div>';
   }
-  // Bottom-corner badges render below the image (no overlap with the product).
   function badgesBelow(p) {
-    var g = badgeCorner(p, 'bottom-left') + badgeCorner(p, 'bottom-right');
+    var g = cbadgeSide(p, 'left') + cbadgeSide(p, 'right');
     return g ? '<div class="cgp-cbadges-below">' + g + '</div>' : '';
+  }
+  // Product-status badges (CGP_STATUS_BADGES, tag-triggered) overlay the image
+  // bottom-right. Distinct from custom badges; multiple stack.
+  function statusBadges(p) {
+    var tags = p.tags || [];
+    var items = (window.CGP_STATUS_BADGES || []).filter(function (b) { return b.enabled !== false && b.tag && tags.indexOf(b.tag) !== -1; });
+    if (!items.length) return '';
+    var inner = items.map(function (b) {
+      return '<span class="cgp-statusbadge" style="background:' + esc(b.bg) + ';color:' + esc(b.text) + ';">' + esc(b.label || b.tag) + '</span>';
+    }).join('');
+    return '<div class="cgp-statusbadges">' + inner + '</div>';
   }
   function cardHTML(p) {
     var curDisc = p.compare > p.price ? Math.round((p.compare - p.price) / p.compare * 100) : 0;
@@ -355,12 +368,13 @@
     var h = '<div class="cgp-card cgp-card--' + p.status + '" data-cgp-card data-product-id="' + p.id + '" data-discount="' + p.discount + '" data-status="' + p.status + '">';
     h += '<div class="cgp-card__media"><a href="' + esc(p.url) + '" class="cgp-card__media-link" tabindex="-1" aria-hidden="true">';
     h += p.image ? '<img class="cgp-card__img" data-cgp-main-image="' + esc(p.image) + '" src="' + esc(p.image) + '" alt="' + esc(p.title) + '" loading="lazy">' : '<div class="cgp-card__img"></div>';
+    if (p.image2) h += '<img class="cgp-card__img cgp-card__img--hover" src="' + esc(p.image2) + '" alt="" loading="lazy" aria-hidden="true">';
     h += '</a>';
     if (CFG.showDiscountBadge !== false) {
       h += '<span class="cgp-badge cgp-badge--discount' + (curDisc > 0 ? '' : ' cgp-hidden') + '" data-cgp-discount-badge data-suffix="' + esc(CFG.discountSuffix || '% OFF') + '">' + curDisc + (CFG.discountSuffix || '% OFF') + '</span>';
     }
     h += '<span class="cgp-badge cgp-badge--status cgp-badge--' + p.status + hideStatus + '" data-cgp-status>' + esc(statusLabel) + '</span>';
-    h += badgeCorner(p, 'top-left') + badgeCorner(p, 'top-right');
+    h += statusBadges(p);
     h += '</div>';
     h += badgesBelow(p);
     h += '<div class="cgp-card__info">';

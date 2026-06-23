@@ -279,6 +279,21 @@ body.search-drawer-open { overflow: hidden; }
   box-sizing: border-box;
   mix-blend-mode: multiply;
 }
+/* Second image on hover (desktop only). */
+.sd-card__img--hover { position: absolute; inset: 0; opacity: 0; transition: opacity 0.25s ease; }
+@media (hover: hover) {
+  .sd-card__media:hover .sd-card__img--hover { opacity: 1; }
+}
+/* Product-status badges overlay the drawer card image bottom-right. */
+.sd-card__media .cgp-statusbadges { position: absolute; right: 8px; bottom: 8px; z-index: 3; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 85%; }
+.sd-card__media .cgp-statusbadge {
+  font-size: var(--cgp-statusbadge-size, 11px);
+  font-weight: var(--cgp-statusbadge-weight, 600);
+  line-height: 1;
+  padding: var(--cgp-statusbadge-pad, 4px 8px);
+  border-radius: var(--cgp-statusbadge-radius, 4px);
+  white-space: nowrap;
+}
 
 /* ---------- Custom tag badges in the drawer (window.CGP_BADGES) ----------
    Same markup/classes as the results-page cards; that CSS only loads on the
@@ -309,6 +324,7 @@ body.search-drawer-open { overflow: hidden; }
 /* Bottom badges below the image (no overlap). Sibling of .sd-card__media. */
 .cgp-cbadges-below { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; flex-wrap: wrap; padding: 4px 10px 0; }
 .cgp-cbadges-below .cgp-cbadges { position: static; max-width: none; display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; align-items: center; }
+.cgp-cbadges-below .cgp-cbadges--right,
 .cgp-cbadges-below .cgp-cbadges--bottom-right { margin-left: auto; }
 .cgp-cbadges-below .cgp-cbadge {
   font-size: var(--cgp-cbadge-size, 10px);
@@ -320,7 +336,7 @@ body.search-drawer-open { overflow: hidden; }
 }
 .cgp-cbadges-below .cgp-cbadge--img { padding: 0; background: none !important; }
 .cgp-cbadges-below .cgp-cbadge--img img { display: block; width: auto; max-width: 56px; height: auto; }
-.cgp-cbadge--link { cursor: pointer; text-decoration: none; }
+.cgp-cbadge--link { cursor: pointer; text-decoration: underline; }
 .sd-card__body {
   padding: 8px 10px 10px;
   display: flex;

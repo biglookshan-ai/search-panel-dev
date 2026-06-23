@@ -78,6 +78,12 @@
              height="{{ p.featured_image.height }}"
              alt="{{ p.featured_image.alt | escape }}"
              {% unless lazy_load == false %}loading="lazy"{% endunless %}>
+        {%- if p.media[1] -%}
+          <img class="cgp-card__img cgp-card__img--hover"
+               src="{{ p.media[1] | image_url: width: 600 }}"
+               srcset="{{ p.media[1] | image_url: width: 300 }} 300w, {{ p.media[1] | image_url: width: 600 }} 600w"
+               sizes="(min-width: 990px) 300px, 45vw" alt="" loading="lazy" aria-hidden="true">
+        {%- endif -%}
       {%- else -%}
         {{ 'product-1' | placeholder_svg_tag: 'cgp-card__img placeholder-svg' }}
       {%- endif -%}
@@ -103,11 +109,12 @@
     <span class="cgp-badge cgp-badge--status cgp-badge--{{ status }}{% if hide_status %} cgp-hidden{% endif %}"
           data-cgp-status>{{ status_label }}</span>
 
-    {%- render 'cgp-custom-badges', product: p, placement: 'over' -%}
+    {%- comment -%} Product-status badges (Coming Soon / Clearance …) overlay bottom-right. {%- endcomment -%}
+    {%- render 'cgp-status-badges', product: p -%}
   </div>
 
-  {%- comment -%} Bottom-corner custom badges render below the image (no overlap). {%- endcomment -%}
-  {%- render 'cgp-custom-badges', product: p, placement: 'below' -%}
+  {%- comment -%} Custom badges render below the image (left / right). {%- endcomment -%}
+  {%- render 'cgp-custom-badges', product: p -%}
 
   {%- comment -%} ---------- Info ---------- {%- endcomment -%}
   <div class="cgp-card__info">

@@ -1,0 +1,29 @@
+{%- comment -%}
+  Tag-triggered product-status badges (Coming Soon / Clearance / B-Stock …),
+  overlaid on the product image at the BOTTOM-RIGHT (distinct from custom badges,
+  which sit below the image). Data: metaobject cgp_status_badge. Fields:
+    - tag         (single line text)  trigger product tag
+    - label       (single line text)  badge text
+    - background  (color)             background
+    - text_color  (color)             text colour
+    - enabled     (boolean)           false hides the rule
+  Multiple matches stack. Accepts: product
+{%- endcomment -%}
+{%- liquid
+  assign sb_defs = metaobjects.cgp_status_badge.values
+-%}
+{%- if sb_defs.size > 0 -%}
+  {%- capture sb_html -%}
+    {%- for b in sb_defs -%}
+      {%- if b.enabled.value == false -%}{%- continue -%}{%- endif -%}
+      {%- assign btag = b.tag.value -%}
+      {%- if btag != blank and product.tags contains btag -%}
+        <span class="cgp-statusbadge" style="background:{{ b.background.value | default: '#1c222d' }};color:{{ b.text_color.value | default: '#ffffff' }};">{{ b.label.value | default: btag }}</span>
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endcapture -%}
+  {%- assign sb_stripped = sb_html | strip -%}
+  {%- if sb_stripped != blank -%}
+    <div class="cgp-statusbadges">{{ sb_html }}</div>
+  {%- endif -%}
+{%- endif -%}
