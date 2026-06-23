@@ -148,13 +148,9 @@
 
     position(immediate) {
       if (this.hidden) return;
-      // Mobile uses full-screen CSS (inset: 0) — don't set an inline top.
-      if (window.matchMedia('(max-width: 749px)').matches) {
-        this.style.top = '';
-        if (this.backdrop) this.backdrop.style.top = '';
-        this._top = null;
-        return;
-      }
+      // Both mobile and desktop drop the drawer just below the search box (mobile
+      // then fills to the bottom via CSS bottom:0) so the header input stays
+      // visible and keeps native focus + keyboard.
       // Use the resting top cached while the drawer was CLOSED (navbar compact),
       // captured on open() and then FROZEN for the whole session. We never
       // re-measure while open, because the custom navbar reflows the search box
@@ -231,20 +227,7 @@
     }
 
     onFocus(event) {
-      const t = event.currentTarget;
-      // Mobile: the header input is hidden behind the full-screen drawer, so route
-      // the interaction to the drawer's own input and focus it synchronously within
-      // the user gesture (so the keyboard targets the visible field). One tap fires
-      // focus AND click — the guard makes the second one a no-op.
-      if (this.isMobile() && this.sdInput && t !== this.sdInput) {
-        if (!this.hidden && document.activeElement === this.sdInput) return;
-        if (t && t.value) this.sdInput.value = t.value;
-        this.input = this.sdInput;
-        this.open();
-        this.sdInput.focus({ preventScroll: true });
-        return;
-      }
-      if (t) this.input = t;
+      if (event.currentTarget) this.input = event.currentTarget;
       this.stopNativePredictiveEvent(event);
       this.open();
       this.disableNativePredictiveSearch();
@@ -373,7 +356,6 @@
     }
 
     open() {
-      const wasHidden = this.hidden;
       this.hidden = false;
       // Compensate for the scrollbar the body lock removes — otherwise the page
       // (and the search box) shift right when the drawer opens, the layout
@@ -393,14 +375,6 @@
       // a one-shot measure left a gap; tracking every frame fixes it whatever the
       // cause (header/theme), instead of snapping into place once at the end.
       this.startTracking();
-      // Mobile: switch to the drawer-owned input and focus it (the header input
-      // is hidden behind the full-screen drawer). Only on the initial open, so we
-      // don't refocus on every keystroke (open() is re-called from onInput).
-      if (wasHidden && this.isMobile() && this.sdInput && this.input !== this.sdInput) {
-        if (this.input) this.sdInput.value = this.input.value;
-        this.input = this.sdInput;
-        requestAnimationFrame(() => this.sdInput.focus({ preventScroll: true }));
-      }
       this.refreshOptions();
       // Fresh random subset of the popular lists each time the default panel opens.
       if (this.input && this.input.value.trim() === '') this.shufflePopular();

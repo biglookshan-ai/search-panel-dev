@@ -449,25 +449,21 @@ search-drawer.cgp-sd-loading .search-drawer__panel {
 /* ---------- 移动端：全屏弹层 + 自带搜索条 + 横滑标签 + 产品列表 ---------- */
 @media (max-width: 749px) {
   search-drawer {
-    position: fixed;
-    inset: 0 !important;
-    top: 0 !important;
+    /* Drop below the header search box (JS sets top) and fill to the bottom, so
+       the header input stays visible and keeps native focus + keyboard. */
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 1003;
-    border-top: 0;
-    box-shadow: none;
-    /* Column flexbox: fixed search bar on top, scrolling panel fills the rest —
-       so the panel scrolls under the virtual keyboard without losing the input. */
-    display: flex;
-    flex-direction: column;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
   }
-  /* Full-screen on mobile, so the backdrop isn't needed. */
   .search-drawer__backdrop { display: none !important; }
   body.search-drawer-open { overflow: hidden; }
 
-  .search-drawer__searchbar { display: flex; }
+  /* The header input is used directly on mobile, so the drawer-owned bar is off. */
+  .search-drawer__searchbar { display: none; }
   .search-drawer__panel {
-    flex: 1 1 auto;
-    min-height: 0;
+    height: 100%;
     max-height: none;
     padding: 16px 14px 24px;
     overscroll-behavior: contain;
