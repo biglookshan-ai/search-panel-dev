@@ -69,6 +69,14 @@ function fieldInput(field, value) {
   return `<label>${label}<input type="text" data-key="${key}" data-kind="text" value="${esc(value || '')}"/></label>`;
 }
 
+// Shopify "Link" field type stores a JSON object {url,text}; the UI edits a
+// plain URL string, so we unwrap on display and re-wrap on save.
+function linkUrl(v) {
+  if (!v) return '';
+  try { const o = JSON.parse(v); if (o && typeof o === 'object' && o.url) return o.url; } catch (e) {}
+  return v;
+}
+
 function collectFields(formEl) {
   const fields = {};
   formEl.querySelectorAll('[data-key]').forEach((el) => {
@@ -219,7 +227,7 @@ function badgeDetailHtml(entry) {
     <label>Background 背景色 ${colorRow('background', '#1c222d')}</label>
     <label>Text color 文字色 ${colorRow('text_color', '#ffffff')}</label>
     <label>Position 位置 <span class="hint">(bottom-* 显示在图片下方,不遮挡图片)</span><select data-key="position" data-kind="text">${sel}</select></label>
-    <label>Link 链接 <span class="hint">(留空则自动用与 tag 同名的 collection;点击徽章跳转)</span><input type="text" data-key="link" data-kind="text" value="${esc(f.link || '')}" placeholder="/collections/..."/></label>
+    <label>Link 链接 <span class="hint">(字段用 URL 类型;留空则自动用与 tag 同名的 collection;点击徽章跳转)</span><input type="text" data-key="link" data-kind="text" value="${esc(linkUrl(f.link))}" placeholder="https://...../collections/..."/></label>
     <label class="inline"><input type="checkbox" data-key="enabled" data-kind="bool" ${f.enabled !== 'false' ? 'checked' : ''}/> Enabled 启用</label>
     <div class="entry-actions">
       <button type="button" class="btn btn-primary" data-act="save">保存</button>
