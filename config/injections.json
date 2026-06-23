@@ -5,6 +5,7 @@
     {
       "file": "layout/theme.liquid",
       "anchorAfter": "{% sections 'header-group' %}",
+      "stripLegacyCgpScript": true,
       "block": [
         "    {%- comment -%} ===== CGP-SEARCH START — search engine module; re-applied by the admin app. Keep the markers. ===== {%- endcomment -%}",
         "    {% section 'search-drawer' %}",

@@ -56,14 +56,37 @@ export async function applyToTheme(ctx, themeId, { dryRun = false } = {}) {
 
   // 2) inject marker blocks into shared theme files
   for (const inj of cfg.injections) {
-    const current = await getAsset(ctx, themeId, inj.file);
-    if (current == null) { log.push(`SKIP  ${inj.file} (not found in theme)`); continue; }
-    if (current.includes('CGP-SEARCH START') || (inj.anchorAfter && current.includes(inj.anchorAfter))) {
-      const { content, mode } = injectBlock(current, inj.block, inj.anchorAfter);
-      if (!dryRun && content !== current) await putAsset(ctx, themeId, inj.file, content);
+    const original = await getAsset(ctx, themeId, inj.file);
+    if (original == null) { log.push(`SKIP  ${inj.file} (not found in theme)`); continue; }
+    let working = original;
+
+    // Remove any legacy inline CGP script (old themes defined window.CGP_BADGES /
+    // CGP_CONFIG inline in theme.liquid; that now lives in the cgp-search-head
+    // snippet, and a stale inline copy runs later and overrides it — e.g. without
+    // the badge `link` field). The regex matches a single <script> block that
+    // contains window.CGP_BADGES without spanning into other script tags.
+    if (inj.stripLegacyCgpScript) {
+      const before = working;
+      working = working.replace(
+        /[ \t]*<script\b[^>]*>(?:(?!<\/script>)[\s\S])*?window\.CGP_BADGES(?:(?!<\/script>)[\s\S])*?<\/script>[ \t]*\n?/gi,
+        '');
+      if (working !== before) log.push(`clean  ${inj.file} (removed legacy inline CGP script)`);
+    }
+
+    let mode = 'unchanged';
+    if (working.includes('CGP-SEARCH START') || (inj.anchorAfter && working.includes(inj.anchorAfter))) {
+      const res = injectBlock(working, inj.block, inj.anchorAfter);
+      working = res.content; mode = res.mode;
+    } else if (working === original) {
+      log.push(`SKIP  ${inj.file} (anchor & markers missing)`);
+      continue;
+    }
+
+    if (working !== original) {
+      if (!dryRun) await putAsset(ctx, themeId, inj.file, working);
       log.push(`inject ${inj.file} (${mode})`);
     } else {
-      log.push(`SKIP  ${inj.file} (anchor & markers missing)`);
+      log.push(`SKIP  ${inj.file} (no change)`);
     }
   }
 
