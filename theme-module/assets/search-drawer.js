@@ -82,6 +82,18 @@
         inp.addEventListener('keyup', this.boundOnKeyup, true);
         inp.form?.addEventListener('submit', this.boundOnSubmit);
       });
+      // Drawer-owned mobile search bar (search-drawer.liquid). The full-screen
+      // mobile drawer covers the header input, so it has its own; it reuses the
+      // same input/keydown/keyup handlers (which set this.input = currentTarget).
+      this.sdInput = this.querySelector('[data-sd-input]');
+      this.sdClose = this.querySelector('[data-sd-close]');
+      if (this.sdInput) {
+        this.sdInput.setAttribute('aria-controls', this.panel.id);
+        this.sdInput.addEventListener('input', this.boundOnInput, true);
+        this.sdInput.addEventListener('keydown', this.boundOnKeydown, true);
+        this.sdInput.addEventListener('keyup', this.boundOnKeyup, true);
+      }
+      this.sdClose?.addEventListener('click', () => this.close());
       this.panel.addEventListener('click', this.boundOnPanelClick);
       this.panel.addEventListener('pointerover', this.boundOnPointerover);
       document.addEventListener('click', this.boundOnDocumentClick);
@@ -267,12 +279,24 @@
         return;
       }
 
-      if (event.key === 'Enter' && this.activeIndex > -1) {
-        const option = this.getOptions()[this.activeIndex];
-        if (option) {
-          event.preventDefault();
-          this.stopNativePredictiveEvent(event);
-          this.activateOption(option);
+      if (event.key === 'Enter') {
+        if (this.activeIndex > -1) {
+          const option = this.getOptions()[this.activeIndex];
+          if (option) {
+            event.preventDefault();
+            this.stopNativePredictiveEvent(event);
+            this.activateOption(option);
+          }
+          return;
+        }
+        // The drawer-owned (mobile) input has no <form>; Enter goes to the results page.
+        if (this.input === this.sdInput) {
+          const q = this.input.value.trim();
+          if (q) {
+            event.preventDefault();
+            this.onSubmit();
+            window.location.href = (window.routes?.search_url || '/search') + '?q=' + encodeURIComponent(q);
+          }
         }
       }
     }
@@ -320,7 +344,12 @@
       if (index > -1) this.setActiveOption(index);
     }
 
+    isMobile() {
+      return window.matchMedia('(max-width: 749px)').matches;
+    }
+
     open() {
+      const wasHidden = this.hidden;
       this.hidden = false;
       // Compensate for the scrollbar the body lock removes — otherwise the page
       // (and the search box) shift right when the drawer opens, the layout
@@ -340,6 +369,14 @@
       // a one-shot measure left a gap; tracking every frame fixes it whatever the
       // cause (header/theme), instead of snapping into place once at the end.
       this.startTracking();
+      // Mobile: switch to the drawer-owned input and focus it (the header input
+      // is hidden behind the full-screen drawer). Only on the initial open, so we
+      // don't refocus on every keystroke (open() is re-called from onInput).
+      if (wasHidden && this.isMobile() && this.sdInput && this.input !== this.sdInput) {
+        if (this.input) this.sdInput.value = this.input.value;
+        this.input = this.sdInput;
+        requestAnimationFrame(() => this.sdInput.focus({ preventScroll: true }));
+      }
       this.refreshOptions();
       // Fresh random subset of the popular lists each time the default panel opens.
       if (this.input && this.input.value.trim() === '') this.shufflePopular();
@@ -414,7 +451,20 @@
           container.appendChild(el);
         });
       });
+      // Keep the featured-product grid to at most 2 rows for the current width.
+      this.capProductRows(this.panel.querySelector('.search-drawer__products'));
       this.refreshOptions();
+    }
+
+    // Show at most 2 rows of product cards on desktop/tablet (grid). The grid uses
+    // auto-fill columns, so read the actual column count and hide the overflow.
+    // Mobile renders a vertical list — keep the selection as-is (no cap).
+    capProductRows(grid) {
+      if (!grid || this.isMobile()) return;
+      const tpl = getComputedStyle(grid).gridTemplateColumns;
+      const cols = (tpl && tpl !== 'none') ? tpl.split(' ').filter(Boolean).length : 1;
+      const max = Math.max(1, cols) * 2;
+      Array.from(grid.children).forEach((el, i) => { if (i >= max) el.hidden = true; });
     }
 
     close() {
@@ -453,6 +503,7 @@
           if (ul && products && products.length) {
             ul.innerHTML = products.slice(0, this.productQty).map((p) => `<li>${this.sdCard(p)}</li>`).join('');
           }
+          this.capProductRows(ul);
           this.open();
           this.refreshOptions();
         }

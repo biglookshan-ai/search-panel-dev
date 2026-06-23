@@ -53,6 +53,43 @@ body.search-drawer-open { overflow: hidden; }
   padding: 20px 24px 24px;
 }
 
+/* Drawer-owned search bar — desktop hides it (uses the header input); only the
+   mobile media query shows it. font-size:16px avoids iOS focus-zoom. */
+.search-drawer__searchbar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  background: var(--sd-bg, #fff);
+  border-bottom: 1px solid var(--sd-hover-bg, #f0f0f0);
+}
+.search-drawer__searchbar .icon-search { flex: 0 0 auto; opacity: .5; }
+.search-drawer__searchbar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--sd-hover-bg, #e3e3e3);
+  border-radius: 999px;
+  background: var(--sd-hover-bg, #f6f6f6);
+  color: var(--sd-text, #333);
+  font-size: 16px;
+  outline: none;
+}
+.search-drawer__searchbar input:focus { border-color: var(--sd-heading, #333); }
+.search-drawer__sd-close {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--sd-text, #333);
+  cursor: pointer;
+}
+
 .search-drawer__columns {
   display: grid;
   grid-template-columns: minmax(220px, 280px) 1fr;
@@ -197,7 +234,10 @@ body.search-drawer-open { overflow: hidden; }
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(var(--sd-product-cols, 4), 1fr);
+  /* Columns adapt to the available width of the right column (≈5 max on a wide
+     window, fewer as it narrows) so cards are never squeezed. JS caps the shown
+     cards to 2 rows (see capProductRows in search-drawer.js). */
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
   gap: 14px 12px;
 }
 .search-drawer__products > li { min-width: 0; }
@@ -406,7 +446,7 @@ search-drawer.cgp-sd-loading .search-drawer__panel {
   min-height: 320px;
 }
 
-/* ---------- 移动端：全屏弹层、单栏、产品两列 ---------- */
+/* ---------- 移动端：全屏弹层 + 自带搜索条 + 横滑标签 + 产品列表 ---------- */
 @media (max-width: 749px) {
   search-drawer {
     position: fixed;
@@ -415,18 +455,82 @@ search-drawer.cgp-sd-loading .search-drawer__panel {
     z-index: 1003;
     border-top: 0;
     box-shadow: none;
+    /* Column flexbox: fixed search bar on top, scrolling panel fills the rest —
+       so the panel scrolls under the virtual keyboard without losing the input. */
+    display: flex;
+    flex-direction: column;
   }
   /* Full-screen on mobile, so the backdrop isn't needed. */
   .search-drawer__backdrop { display: none !important; }
   body.search-drawer-open { overflow: hidden; }
+
+  .search-drawer__searchbar { display: flex; }
   .search-drawer__panel {
-    min-height: 100vh;
-    max-height: 100vh;
-    padding: 72px 16px 24px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    padding: 16px 14px 24px;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
-  .search-drawer__columns { grid-template-columns: 1fr; gap: 20px; }
-  .search-drawer__products { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .search-drawer__products--list { display: flex; }
+  .search-drawer__columns { display: block; }
+  .search-drawer__col + .search-drawer__col { margin-top: 18px; }
+
+  /* Section headings: quiet small grey labels above each row. */
+  .search-drawer__heading {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--sd-card-desc, #9d9d9d);
+    border: 0;
+    margin: 0 0 8px;
+    padding: 0;
+  }
+  .search-drawer__col > * + .search-drawer__heading { margin-top: 16px; }
+
+  /* Popular searches / Categories / Pages → one-line horizontal chip rows. */
+  .search-drawer__suggestions,
+  .search-drawer__collections,
+  .search-drawer__pages {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -14px;
+    padding: 2px 14px;
+    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent);
+            mask-image: linear-gradient(to right, #000 88%, transparent);
+  }
+  .search-drawer__suggestions::-webkit-scrollbar,
+  .search-drawer__collections::-webkit-scrollbar,
+  .search-drawer__pages::-webkit-scrollbar { display: none; }
+  .search-drawer__suggestions > li,
+  .search-drawer__collections > li,
+  .search-drawer__pages > li { flex: 0 0 auto; }
+  .search-drawer__suggestions a,
+  .search-drawer__collections a,
+  .search-drawer__pages a {
+    margin: 0;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: var(--sd-hover-bg, #f6f6f6);
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .search-drawer__suggestions a .icon-search { display: none; }
+
+  /* Recommended products → list rows (image left, info right) to save space. */
+  .search-drawer__products {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .search-drawer__products .sd-card { flex-direction: row; align-items: center; }
+  .search-drawer__products .sd-card__media { flex: 0 0 84px; width: 84px; aspect-ratio: 1 / 1; align-self: stretch; }
+  .search-drawer__products .sd-card__body { justify-content: center; padding: 10px 14px; gap: 2px; }
+  .search-drawer__products .sd-card__title { -webkit-line-clamp: 2; font-size: 13px; margin-bottom: 4px; }
+  .search-drawer__products .sd-card__price { flex-direction: row; align-items: baseline; gap: 8px; }
+  .search-drawer__products .sd-card .sd-badge--status { display: none; }
+  .search-drawer__products .cgp-cbadges-below { padding: 2px 0 0; }
 }

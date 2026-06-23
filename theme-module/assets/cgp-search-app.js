@@ -269,6 +269,18 @@
       var n = mount.querySelector('[data-ddn="' + f.key + '"]');
       if (n) { var c = activeCount(f.key); n.textContent = c ? ' (' + c + ')' : ''; }
     });
+    // Mobile/tablet filter sheet: all facet groups in one scrollable list.
+    var sheetBody = mount.querySelector('[data-cgp-sheet-body]');
+    if (sheetBody) {
+      sheetBody.innerHTML = FACETS.map(function (f) {
+        return '<div class="cgp-facet"><div class="cgp-facet__title">' + esc(f.title) + '</div><div class="cgp-facet__body">' + bodyHTML(f.key) + '</div></div>';
+      }).join('');
+    }
+    var totalActive = FACETS.reduce(function (acc, f) { return acc + activeCount(f.key); }, 0);
+    var fn = mount.querySelector('[data-filtern]');
+    if (fn) fn.textContent = totalActive ? ' (' + totalActive + ')' : '';
+    var applyBtn = mount.querySelector('[data-cgp-filter-apply]');
+    if (applyBtn) applyBtn.textContent = 'Show ' + view.length + ' results';
     bindFacets();
   }
   function bindFacets() {
@@ -454,7 +466,9 @@
         '<div class="cgp-app' + (SHOW_SIDEBAR ? ' cgp-app--sidebar' : '') + '">' +
           '<div class="cgp-app__top' + (CFG.stickyBar ? ' cgp-app__top--sticky' : '') + '">' +
             '<div class="cgp-app__bar"><span class="cgp-app__count"></span></div>' +
-            '<div class="cgp-app__dd">' + dropdowns +
+            '<div class="cgp-app__dd">' +
+              '<button type="button" class="cgp-app__filterbtn" data-cgp-filter-open>Filter<span class="cgp-app__filtern" data-filtern></span></button>' +
+              dropdowns +
               '<label class="cgp-app__sortwrap">Sort by: <select class="cgp-app__sort">' +
                 SORTS.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') +
               '</select></label></div>' +
@@ -466,7 +480,34 @@
               '<div class="cgp-app__more"></div>' +
             '</div>' +
           '</div>' +
+          // Mobile/tablet filter sheet (full-screen). Facets rendered into it by renderFacets().
+          '<div class="cgp-app__sheet" data-cgp-sheet hidden>' +
+            '<div class="cgp-app__sheet-head"><span>Filter</span><button type="button" class="cgp-app__sheet-x" data-cgp-filter-close aria-label="Close">&times;</button></div>' +
+            '<div class="cgp-app__sheet-body" data-cgp-sheet-body></div>' +
+            '<div class="cgp-app__sheet-foot">' +
+              '<button type="button" class="cgp-app__sheet-clear" data-cgp-filter-clear>Clear all</button>' +
+              '<button type="button" class="cgp-app__sheet-apply" data-cgp-filter-apply>Show results</button>' +
+            '</div>' +
+          '</div>' +
         '</div>';
+      // Explicit grid column counts — CSS reads these vars (Dawn grid--N classes
+      // were collapsing to 1 column on mobile).
+      var gridEl = mount.querySelector('.cgp-app__grid');
+      if (gridEl) {
+        gridEl.style.setProperty('--cgp-cols-desktop', CFG.columnsDesktop || 4);
+        gridEl.style.setProperty('--cgp-cols-mobile', CFG.columnsMobile || 2);
+      }
+      // Filter sheet open/close/clear (mobile/tablet). Facet changes update results
+      // live behind the full-screen sheet; "Show results" just closes it.
+      var sheet = mount.querySelector('[data-cgp-sheet]');
+      function closeSheet() { sheet.hidden = true; document.body.classList.remove('cgp-sheet-open'); }
+      mount.querySelector('[data-cgp-filter-open]').addEventListener('click', function () { sheet.hidden = false; document.body.classList.add('cgp-sheet-open'); });
+      mount.querySelector('[data-cgp-filter-close]').addEventListener('click', closeSheet);
+      mount.querySelector('[data-cgp-filter-apply]').addEventListener('click', closeSheet);
+      mount.querySelector('[data-cgp-filter-clear]').addEventListener('click', function () {
+        state.brands = {}; state.types = {}; state.status = {}; state.sale = {}; state.pmin = null; state.pmax = null;
+        update();
+      });
       mount.querySelector('.cgp-app__sort').addEventListener('change', function (e) { state.sort = e.target.value; reloadForSort(); });
       window.addEventListener('scroll', function () {
         if (MODE !== 'infinite' || rendered >= view.length) return;

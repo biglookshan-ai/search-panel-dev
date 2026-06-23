@@ -572,6 +572,72 @@ html.cgp-app-failed .cgp-server-results { display: block !important; }
   .cgp-app__facets { display: none; }
 }
 
+/* ---------- Results grid: explicit columns (don't rely on Dawn grid--N) ---------- */
+/* Dawn's flex grid--N-col classes were collapsing to 1 column on mobile. Use an
+   explicit CSS Grid with column counts injected by the app (build()). */
+.cgp-app__grid {
+  display: grid !important;
+  grid-template-columns: repeat(var(--cgp-cols-desktop, 4), minmax(0, 1fr)) !important;
+}
+@media screen and (max-width: 989px) {
+  .cgp-app__grid {
+    grid-template-columns: repeat(var(--cgp-cols-mobile, 2), minmax(0, 1fr)) !important;
+  }
+}
+
+/* ---------- Filter button + sheet (mobile/tablet only) ---------- */
+.cgp-app__filterbtn { display: none; }
+.cgp-app__sheet { display: none; }
+@media screen and (max-width: 989px) {
+  /* Replace the dropdown pills with a single Filter button; keep Sort visible. */
+  .cgp-app__dd .cgp-dd { display: none; }
+  .cgp-app__filterbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 1.3rem;
+    padding: 8px 18px;
+    border: 1px solid var(--cgp-pill-border, #e3e6ea);
+    border-radius: 40px;
+    background: var(--cgp-pill-bg, #fff);
+    color: var(--cgp-pill-text, #1c222d);
+    white-space: nowrap;
+  }
+  .cgp-app__filterbtn::before { content: "⚙"; opacity: .7; }
+
+  body.cgp-sheet-open { overflow: hidden; }
+  .cgp-app__sheet:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0;
+    z-index: 1004;
+    background: rgb(var(--color-background, 255 255 255));
+  }
+  .cgp-app__sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 0.1rem solid rgba(var(--color-foreground, 0 0 0), 0.1);
+    font-size: 1.6rem;
+    font-weight: 600;
+  }
+  .cgp-app__sheet-x { border: 0; background: none; font-size: 28px; line-height: 1; cursor: pointer; color: inherit; }
+  .cgp-app__sheet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 16px 16px; }
+  .cgp-app__sheet-body .cgp-facet:first-child { padding-top: 12px; }
+  .cgp-app__sheet-foot {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    border-top: 0.1rem solid rgba(var(--color-foreground, 0 0 0), 0.1);
+  }
+  .cgp-app__sheet-foot button { flex: 1 1 0; padding: 13px; border-radius: 8px; font-size: 1.4rem; cursor: pointer; }
+  .cgp-app__sheet-clear { background: #fff; border: 1px solid var(--cgp-pill-border, #e3e6ea); color: var(--cgp-pill-text, #1c222d); }
+  .cgp-app__sheet-apply { background: var(--cgp-pill-active-bg, #1c222d); color: var(--cgp-pill-active-text, #fff); border: 0; }
+}
+
 /* Facets sidebar */
 .cgp-app__facets { min-width: 0; }
 .cgp-facet { border-bottom: 0.1rem solid rgba(var(--color-foreground, 0 0 0), 0.1); padding: 14px 0; }

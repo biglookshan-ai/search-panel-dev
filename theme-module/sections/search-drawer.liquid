@@ -59,6 +59,17 @@
   data-product-qty="{{ s.cgp_sd_product_qty }}"
   hidden
 >
+  {%- comment -%} Mobile-only search bar: the full-screen drawer covers the header
+    input, so it owns its own input (synced with the real one by JS). Sibling of
+    the panel so it survives the panel's innerHTML swaps. {%- endcomment -%}
+  <div class="search-drawer__searchbar" data-sd-searchbar>
+    <svg class="icon-search" aria-hidden="true" width="18" height="18"><use href="#icon-search"/></svg>
+    <input type="search" data-sd-input inputmode="search" autocomplete="off"
+      placeholder="{{ 'general.search.search' | t | default: 'Search products...' }}"
+      aria-label="{{ 'general.search.search' | t | default: 'Search' }}">
+    <button type="button" class="search-drawer__sd-close" data-sd-close aria-label="Close search">&times;</button>
+  </div>
+
   <div class="search-drawer__panel" id="search-drawer-results" role="listbox" aria-label="{{ 'templates.search.title' | t }}">
 
     {%- if predictive_search.performed -%}
