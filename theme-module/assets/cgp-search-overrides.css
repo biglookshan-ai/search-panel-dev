@@ -199,11 +199,18 @@
   gap: 8px;
   margin-top: auto;
 }
-/* Narrow cards (mobile): stack price above the action buttons so the price isn't
-   covered by the wishlist/cart icons. */
+/* Narrow cards (mobile): keep price + action buttons on one row by shrinking both
+   (smaller price font + smaller icon buttons) so they fit without overlapping. */
 @media screen and (max-width: 749px) {
-  .cgp-card__price-actions { flex-direction: column; align-items: stretch; gap: 10px; }
-  .cgp-card__actions { justify-content: flex-start; }
+  .cgp-card {
+    --cgp-price-cur-size: 14px;
+    --cgp-price-cmp-size: 10px;
+    --cgp-vat-size: 9px;
+    --cgp-action-size: 28px;
+  }
+  .cgp-card__price-actions { gap: 6px; }
+  .cgp-card__actions { gap: 5px; }
+  .cgp-action-btn svg { width: 15px; height: 15px; }
 }
 .cgp-card__price {
   display: flex;
