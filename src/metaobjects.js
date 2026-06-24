@@ -88,26 +88,38 @@ export async function listEntries(ctx, type) {
   }));
 }
 
+// Definitions with "Active-draft status" enabled default new/edited entries to
+// DRAFT, which Liquid (metaobjects.<type>.values) hides. Force ACTIVE so badges
+// show on the storefront. Definitions WITHOUT that capability reject the
+// `capabilities` arg, so we retry without it.
+const ACTIVE_CAP = { publishable: { status: 'ACTIVE' } };
+function isCapabilityError(payload) {
+  return (payload?.userErrors || []).some((e) =>
+    /capabilit|publishable/i.test(`${e.field} ${e.message} ${e.code || ''}`));
+}
+
 export async function createEntry(ctx, type, fields) {
-  const input = { type, fields: toFieldArray(fields) };
-  const data = await graphql(ctx,
-    `mutation($input:MetaobjectCreateInput!){
-      metaobjectCreate(metaobject:$input){ metaobject{ id handle } userErrors{ field message } }
-    }`,
-    { input }
-  );
+  const fieldArr = toFieldArray(fields);
+  const MUT = `mutation($input:MetaobjectCreateInput!){
+      metaobjectCreate(metaobject:$input){ metaobject{ id handle } userErrors{ field message code } }
+    }`;
+  let data = await graphql(ctx, MUT, { input: { type, fields: fieldArr, capabilities: ACTIVE_CAP } });
+  if (isCapabilityError(data.metaobjectCreate)) {
+    data = await graphql(ctx, MUT, { input: { type, fields: fieldArr } });
+  }
   throwUserErrors(data.metaobjectCreate);
   return data.metaobjectCreate.metaobject;
 }
 
 export async function updateEntry(ctx, id, fields) {
-  const input = { fields: toFieldArray(fields) };
-  const data = await graphql(ctx,
-    `mutation($id:ID!,$input:MetaobjectUpdateInput!){
-      metaobjectUpdate(id:$id, metaobject:$input){ metaobject{ id } userErrors{ field message } }
-    }`,
-    { id, input }
-  );
+  const fieldArr = toFieldArray(fields);
+  const MUT = `mutation($id:ID!,$input:MetaobjectUpdateInput!){
+      metaobjectUpdate(id:$id, metaobject:$input){ metaobject{ id } userErrors{ field message code } }
+    }`;
+  let data = await graphql(ctx, MUT, { id, input: { fields: fieldArr, capabilities: ACTIVE_CAP } });
+  if (isCapabilityError(data.metaobjectUpdate)) {
+    data = await graphql(ctx, MUT, { id, input: { fields: fieldArr } });
+  }
   throwUserErrors(data.metaobjectUpdate);
   return data.metaobjectUpdate.metaobject;
 }
