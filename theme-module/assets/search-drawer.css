@@ -153,10 +153,9 @@ body.search-drawer-open { overflow: hidden; }
   outline-offset: -2px;
 }
 .search-drawer__suggestions .icon-search { flex: 0 0 auto; opacity: .5; }
-/* Only Shopify's predictive query suggestions (data-track="suggestion") come back
-   lowercase — Title-Case those. The merchant's own popular_terms
-   (data-track="popular-term") are shown verbatim (exact stored casing). */
-.search-drawer__suggestions a[data-track="suggestion"] { text-transform: capitalize; }
+/* Popular Searches (merchant's popular_terms) display all lowercase by preference.
+   Predictive suggestions (data-track="suggestion") keep Shopify's default casing. */
+.search-drawer__suggestions a[data-track="popular-term"] { text-transform: lowercase; }
 /* styled_text 自带的匹配高亮：补全部分加粗 */
 .search-drawer__suggestions b,
 .search-drawer__collections b { font-weight: 700; }
