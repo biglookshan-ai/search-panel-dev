@@ -156,7 +156,10 @@ function bindEntry(form) {
 // ---- cgp_badge + cgp_status_badge: list view + quick enable toggle + detail ----
 // cgp_badge = custom badges below the image (left/right, optional link/image).
 // cgp_status_badge = product-status badges over the image bottom-right (text only).
-const BADGE_POS = ['left', 'right'];
+// position is a Choice-list field restricted to the 4 corner values, so we store
+// bottom-left/bottom-right (valid choices) but only offer 左/右 — the theme maps
+// any value containing "right" to the right side, below the image.
+const BADGE_POS = [['bottom-left', '左 left'], ['bottom-right', '右 right']];
 
 // Load all store product tags once into a shared <datalist> for tag pickers.
 let TAGS_LOADED = false;
@@ -227,7 +230,8 @@ function badgeCardEl(entry, isNew = false, type = 'cgp_badge') {
 function badgeDetailHtml(entry, type) {
   const f = entry.fields || {};
   const isStatus = type === 'cgp_status_badge';
-  const sel = BADGE_POS.map((p) => `<option value="${p}" ${(/right/i.test(f.position || '') ? 'right' : 'left') === p ? 'selected' : ''}>${p === 'left' ? '左 left' : '右 right'}</option>`).join('');
+  const curPos = /right/i.test(f.position || '') ? 'bottom-right' : 'bottom-left';
+  const sel = BADGE_POS.map(([v, lbl]) => `<option value="${v}" ${curPos === v ? 'selected' : ''}>${lbl}</option>`).join('');
   const colorRow = (key, def) => `<span class="colorrow"><input type="color" value="${esc(f[key] || def)}" oninput="this.nextElementSibling.value=this.value"/><input type="text" data-key="${key}" data-kind="text" value="${esc(f[key] || def)}"/></span>`;
   return `
     ${isStatus ? '<p class="hint">产品状态角标:按 tag 匹配,显示在图片右下角(叠在图上)。</p>' : ''}
