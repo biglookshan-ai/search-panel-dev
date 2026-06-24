@@ -279,9 +279,11 @@ body.search-drawer-open { overflow: hidden; }
   box-sizing: border-box;
   mix-blend-mode: multiply;
 }
-/* Second image on hover (desktop only). */
-.sd-card__img--hover { position: absolute; inset: 0; opacity: 0; transition: opacity 0.25s ease; }
+/* Second image on hover (desktop only). Hide the first so they don't blend. */
+.sd-card__img { transition: opacity 0.25s ease; }
+.sd-card__img--hover { position: absolute; inset: 0; opacity: 0; }
 @media (hover: hover) {
+  .sd-card__media:hover .sd-card__img { opacity: 0; }
   .sd-card__media:hover .sd-card__img--hover { opacity: 1; }
 }
 /* Product-status badges overlay the drawer card image bottom-right. */

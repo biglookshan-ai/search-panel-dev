@@ -74,15 +74,18 @@
   padding-top: var(--cgp-card-img-top, 8px);
   box-sizing: border-box;
   mix-blend-mode: var(--cgp-image-blend, multiply);
+  transition: opacity 0.25s ease;
 }
 /* Second image shown on hover (desktop only — no effect on touch devices). */
 .cgp-card__img--hover {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 0.25s ease;
 }
 @media (hover: hover) {
+  /* Hide the first image on hover so the second isn't blended through it
+     (both images use mix-blend-mode: multiply, so white areas show through). */
+  .cgp-card__media:hover .cgp-card__img { opacity: 0; }
   .cgp-card__media:hover .cgp-card__img--hover { opacity: 1; }
 }
 
