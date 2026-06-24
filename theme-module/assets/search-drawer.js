@@ -554,7 +554,10 @@
     async fetchCardProducts(q, signal) {
       try {
         const base = window.routes?.search_url || '/search';
-        const url = `${base}?q=${encodeURIComponent(q)}&type=product&view=cgp-json&_cgp=${Date.now()}`;
+        // Append a trailing wildcard so the last (in-progress) term prefix-matches
+        // — Shopify regular search otherwise matches whole words inconsistently for
+        // short queries (e.g. "sim" returned 1 product, "sime" returned many).
+        const url = `${base}?q=${encodeURIComponent(q + '*')}&type=product&view=cgp-json&_cgp=${Date.now()}`;
         const res = await fetch(url, { credentials: 'same-origin', signal });
         const txt = await res.text();
         let data;

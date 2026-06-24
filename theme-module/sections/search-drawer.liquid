@@ -88,7 +88,7 @@
           {%- endif -%}
 
           {%- if s.cgp_sd_show_collections and predictive_search.resources.collections.size > 0 -%}
-            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Categories' }}</h3>
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Collections' }}</h3>
             {%- comment -%}
               Order categories by closeness to the typed term: exact title match
               first, then titles that contain the term, then the rest. Relevance
@@ -219,7 +219,7 @@
           {%- endif -%}
 
           {%- if s.cgp_sd_show_featured_collections and featured_collections.size > 0 -%}
-            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Categories' }}</h3>
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Collections' }}</h3>
             <ul class="search-drawer__collections" data-cgp-shuffle="{{ s.cgp_sd_featured_collection_qty }}" data-cgp-key="featured_collections" data-cgp-cfg="{{ featured_collections_cfg | escape }}">
               {%- for collection in featured_collections -%}
                 <li><a href="{{ collection.url }}" data-track="collection">{{ collection.title }}</a></li>

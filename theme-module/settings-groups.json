@@ -1170,7 +1170,7 @@
         "type": "text",
         "id": "cgp_sd_heading_collections",
         "label": "分类标题",
-        "default": "Categories"
+        "default": "Collections"
       },
       {
         "type": "text",

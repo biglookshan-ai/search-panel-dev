@@ -153,6 +153,9 @@ body.search-drawer-open { overflow: hidden; }
   outline-offset: -2px;
 }
 .search-drawer__suggestions .icon-search { flex: 0 0 auto; opacity: .5; }
+/* Shopify predictive query suggestions come back lowercase — Title-Case them for
+   display (capitalize only upper-cases first letters, so DZOFILM stays DZOFILM). */
+.search-drawer__suggestions a { text-transform: capitalize; }
 /* styled_text 自带的匹配高亮：补全部分加粗 */
 .search-drawer__suggestions b,
 .search-drawer__collections b { font-weight: 700; }
@@ -544,17 +547,10 @@ search-drawer.cgp-sd-loading .search-drawer__panel {
   }
   .search-drawer__suggestions a .icon-search { display: none; }
 
-  /* Recommended products → list rows (image left, info right) to save space. */
+  /* Recommended products → 2 cards per row (full unified info: image top,
+     discount/stock badges, title, price — same compact card as desktop). */
   .search-drawer__products {
-    display: flex !important;
-    flex-direction: column;
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
-  .search-drawer__products .sd-card { flex-direction: row; align-items: center; }
-  .search-drawer__products .sd-card__media { flex: 0 0 84px; width: 84px; aspect-ratio: 1 / 1; align-self: stretch; }
-  .search-drawer__products .sd-card__body { justify-content: center; padding: 10px 14px; gap: 2px; }
-  .search-drawer__products .sd-card__title { -webkit-line-clamp: 2; font-size: 13px; margin-bottom: 4px; }
-  .search-drawer__products .sd-card__price { flex-direction: row; align-items: baseline; gap: 8px; }
-  .search-drawer__products .sd-card .sd-badge--status { display: none; }
-  .search-drawer__products .cgp-cbadges-below { padding: 2px 0 0; }
 }
