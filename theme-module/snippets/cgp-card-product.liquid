@@ -49,7 +49,7 @@
   # Current selected-variant discount (visible price + discount badge)
   assign cur_on_sale = false
   assign cur_discount = 0
-  if v.compare_at_price > v.price
+  if v.price > 0 and v.compare_at_price > v.price
     assign cur_on_sale = true
     assign cur_discount = v.compare_at_price | minus: v.price | times: 100.0 | divided_by: v.compare_at_price | round
   endif
@@ -174,10 +174,10 @@
     {%- comment -%} Price + action buttons row {%- endcomment -%}
     <div class="cgp-card__price-actions">
       <div class="cgp-card__price" data-cgp-price>
-        {%- if cur_on_sale -%}
+        {%- if cur_on_sale and v.price > 0 -%}
           <span class="cgp-card__price-compare" data-cgp-compare>{{ v.compare_at_price | money }}</span>
         {%- endif -%}
-        <span class="cgp-card__price-current" data-cgp-current>{{ v.price | money }}</span>
+        <span class="cgp-card__price-current" data-cgp-current>{% if v.price > 0 %}{{ v.price | money }}{% else %}£TBC{% endif %}</span>
         <span class="cgp-card__price-vat">{{ settings.cgp_vat_label }}</span>
       </div>
 

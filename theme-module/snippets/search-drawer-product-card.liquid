@@ -8,7 +8,7 @@
 
 {%- liquid
   assign on_sale = false
-  if product.compare_at_price > product.price
+  if product.price > 0 and product.compare_at_price > product.price
     assign on_sale = true
     assign discount_pct = product.compare_at_price | minus: product.price | times: 100.0 | divided_by: product.compare_at_price | round
   endif
@@ -67,8 +67,8 @@
         <s class="sd-card__price-compare">{{ product.compare_at_price | money }}</s>
       {%- endif -%}
       <span class="sd-card__price-row">
-        {%- if product.price_varies -%}<span class="sd-card__from">From</span>{%- endif -%}
-        <span class="sd-card__price-current">{{ product.price | money }}</span>
+        {%- if product.price_varies and product.price > 0 -%}<span class="sd-card__from">From</span>{%- endif -%}
+        <span class="sd-card__price-current">{% if product.price > 0 %}{{ product.price | money }}{% else %}£TBC{% endif %}</span>
         {%- if show_vat_note -%}<span class="sd-card__vat">ex.VAT</span>{%- endif -%}
       </span>
     </div>

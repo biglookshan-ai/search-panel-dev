@@ -19,7 +19,8 @@
 
   var MONEY = function (cents) {
     var v = parseFloat(cents);
-    if (isNaN(v)) return '';
+    // No / zero price → "£TBC" instead of £0.00.
+    if (isNaN(v) || v <= 0) return '£TBC';
     return '£' + (v / 100).toLocaleString('en-GB', {
       minimumFractionDigits: 2, maximumFractionDigits: 2
     });
@@ -54,7 +55,7 @@
       var cur = priceBox.querySelector('[data-cgp-current]');
       var cmp = priceBox.querySelector('[data-cgp-compare]');
       if (cur) cur.textContent = MONEY(price);
-      if (compare > parseFloat(price)) {
+      if (parseFloat(price) > 0 && compare > parseFloat(price)) {
         if (!cmp) {
           cmp = document.createElement('span');
           cmp.className = 'cgp-card__price-compare';
@@ -70,7 +71,7 @@
     /* Discount badge */
     var badge = card.querySelector('[data-cgp-discount-badge]');
     if (badge) {
-      if (compare > parseFloat(price)) {
+      if (parseFloat(price) > 0 && compare > parseFloat(price)) {
         var pct = Math.round((compare - parseFloat(price)) / compare * 100);
         badge.textContent = pct + (badge.dataset.suffix || '% OFF');
         badge.classList.remove('cgp-hidden');

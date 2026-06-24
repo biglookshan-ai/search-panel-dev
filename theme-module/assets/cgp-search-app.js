@@ -67,7 +67,8 @@
 
   var money = function (cents) {
     var v = parseFloat(cents);
-    if (isNaN(v)) return '';
+    // No / zero price → "£TBC" (To Be Confirmed) instead of £0.00.
+    if (isNaN(v) || v <= 0) return '£TBC';
     return '£' + (v / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
   var esc = function (s) {
@@ -362,7 +363,7 @@
     return '<div class="cgp-statusbadges">' + inner + '</div>';
   }
   function cardHTML(p) {
-    var curDisc = p.compare > p.price ? Math.round((p.compare - p.price) / p.compare * 100) : 0;
+    var curDisc = (p.price > 0 && p.compare > p.price) ? Math.round((p.compare - p.price) / p.compare * 100) : 0;
     var statusLabel = (CFG.labels && CFG.labels[p.status]) || p.status;
     var hideStatus = (p.status === 'instock' && CFG.showInstock === false) ? ' cgp-hidden' : '';
     var h = '<div class="cgp-card cgp-card--' + p.status + '" data-cgp-card data-product-id="' + p.id + '" data-discount="' + p.discount + '" data-status="' + p.status + '">';
@@ -398,7 +399,7 @@
       h += '</select></div>';
     }
     h += '<div class="cgp-card__price-actions"><div class="cgp-card__price" data-cgp-price>';
-    if (p.compare > p.price) h += '<span class="cgp-card__price-compare" data-cgp-compare>' + money(p.compare) + '</span>';
+    if (p.price > 0 && p.compare > p.price) h += '<span class="cgp-card__price-compare" data-cgp-compare>' + money(p.compare) + '</span>';
     h += '<span class="cgp-card__price-current" data-cgp-current>' + money(p.price) + '</span>';
     h += '<span class="cgp-card__price-vat">' + esc(CFG.vatLabel || 'ex.VAT') + '</span></div>';
     if (CFG.showWishlist || CFG.showAddCart) {

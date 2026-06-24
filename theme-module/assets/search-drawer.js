@@ -601,16 +601,16 @@
     sdCard(p) {
       const cfg = window.CGP_CONFIG || {};
       const labels = cfg.labels || {};
-      const money = (c) => '£' + (parseFloat(c) / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const money = (c) => { const v = parseFloat(c); return (isNaN(v) || v <= 0) ? '£TBC' : '£' + (v / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
       const statusMap = { instock: 'in-stock', preorder: 'pre-order', oos: 'out-of-stock' };
       const statusCls = statusMap[p.status] || 'in-stock';
       const statusLabel = labels[p.status] || (p.status === 'preorder' ? 'Pre-Order' : (p.status === 'oos' ? 'Out of Stock' : 'In Stock'));
-      const onSale = p.compare > p.price;
+      const onSale = p.price > 0 && p.compare > p.price;
       let h = `<a class="sd-card" href="${esc(p.url)}" data-track="product" data-product-id="${p.id}">`;
       h += '<div class="sd-card__media">';
       if (p.image) h += `<img class="sd-card__img" src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy">`;
       if (p.image2) h += `<img class="sd-card__img sd-card__img--hover" src="${esc(p.image2)}" alt="" loading="lazy" aria-hidden="true">`;
-      if (p.discount > 0) h += `<span class="sd-badge sd-badge--discount">${p.discount}${esc(cfg.discountSuffix || '% OFF')}</span>`;
+      if (p.discount > 0 && p.price > 0) h += `<span class="sd-badge sd-badge--discount">${p.discount}${esc(cfg.discountSuffix || '% OFF')}</span>`;
       h += `<span class="sd-badge sd-badge--status sd-badge--${statusCls}">${esc(statusLabel)}</span>`;
       h += this.statusBadges(p);
       h += '</div>';
@@ -620,7 +620,7 @@
       h += `<div class="sd-card__price${onSale ? ' sd-card__price--sale' : ''}">`;
       if (onSale) h += `<s class="sd-card__price-compare">${money(p.compare)}</s>`;
       h += '<span class="sd-card__price-row">';
-      if (p.multi) h += '<span class="sd-card__from">From</span>';
+      if (p.multi && p.price > 0) h += '<span class="sd-card__from">From</span>';
       h += `<span class="sd-card__price-current">${money(p.price)}</span>`;
       h += `<span class="sd-card__vat">${esc(cfg.vatLabel || 'ex.VAT')}</span>`;
       h += '</span></div></div></a>';
