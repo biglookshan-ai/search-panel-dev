@@ -941,6 +941,13 @@
         "content": "Product status badge style (global)"
       },
       {
+        "type": "checkbox",
+        "id": "cgp_hide_self_collection_statusbadge",
+        "label": "Hide a status badge on its own collection page",
+        "info": "On a collection page, hide status badges whose tag matches that collection's handle (e.g. a 'Clearance' status badge on the /collections/clearance page). Other collections & search are unaffected.",
+        "default": true
+      },
+      {
         "type": "paragraph",
         "content": "Tag-triggered status badges (Coming Soon / Clearance / B-Stock …) shown on the image bottom-right. Per-badge text & colours come from the cgp_status_badge metaobject."
       },

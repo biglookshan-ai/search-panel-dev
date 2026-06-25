@@ -17,6 +17,11 @@
     {%- for b in sb_defs -%}
       {%- if b.enabled.value == false -%}{%- continue -%}{%- endif -%}
       {%- assign btag = b.tag.value -%}
+      {%- comment -%} On a collection page, hide a status badge whose tag handleizes to THIS collection (when the setting is on). {%- endcomment -%}
+      {%- if settings.cgp_hide_self_collection_statusbadge and collection.handle != blank and btag != blank -%}
+        {%- assign btag_handle = btag | handleize -%}
+        {%- if btag_handle == collection.handle -%}{%- continue -%}{%- endif -%}
+      {%- endif -%}
       {%- if btag != blank and product.tags contains btag -%}
         <span class="cgp-statusbadge" style="background:{{ b.background.value | default: '#1c222d' }};color:{{ b.text_color.value | default: '#ffffff' }};">{{ b.label.value | default: btag }}</span>
       {%- endif -%}

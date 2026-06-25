@@ -67,6 +67,11 @@
     var m = String(link).match(/\/collections\/([^\/?#]+)/);
     return m ? decodeURIComponent(m[1]).toLowerCase() : '';
   }
+  // Status badges have no link, so their "own collection" = the collection whose
+  // handle matches the badge's tag (Shopify handleize), e.g. tag "Clearance" → clearance.
+  function handleizeTag(t) {
+    return String(t || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
 
   var FACETS = [
     { key: 'brands', title: 'Brands' },
@@ -370,7 +375,13 @@
   // bottom-right. Distinct from custom badges; multiple stack.
   function statusBadges(p) {
     var tags = p.tags || [];
-    var items = (window.CGP_STATUS_BADGES || []).filter(function (b) { return b.enabled !== false && b.tag && tags.indexOf(b.tag) !== -1; });
+    var hideSelf = CFG.hideSelfCollectionStatusBadge !== false && CUR_COLLECTION;
+    var items = (window.CGP_STATUS_BADGES || []).filter(function (b) {
+      if (b.enabled === false || !b.tag || tags.indexOf(b.tag) === -1) return false;
+      // On its own collection page (handle == handleize(tag)), hide it.
+      if (hideSelf && handleizeTag(b.tag) === CUR_COLLECTION) return false;
+      return true;
+    });
     if (!items.length) return '';
     var inner = items.map(function (b) {
       return '<span class="cgp-statusbadge" style="background:' + esc(b.bg) + ';color:' + esc(b.text) + ';">' + esc(b.label || b.tag) + '</span>';
