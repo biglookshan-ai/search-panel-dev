@@ -617,6 +617,10 @@
       const statusCls = statusMap[p.status] || 'in-stock';
       const statusLabel = labels[p.status] || (p.status === 'preorder' ? 'Pre-Order' : (p.status === 'oos' ? 'Out of Stock' : 'In Stock'));
       const onSale = p.price > 0 && p.compare > p.price;
+      // Prefer Shopify-formatted price strings (correct currency symbol + amount
+      // for the active market); fall back to local £ formatting for old payloads.
+      const curStr = (p.price > 0) ? (p.price_str ? esc(p.price_str) : money(p.price)) : '£TBC';
+      const cmpStr = p.compare_str ? esc(p.compare_str) : money(p.compare);
       let h = `<a class="sd-card" href="${esc(p.url)}" data-track="product" data-product-id="${p.id}">`;
       h += '<div class="sd-card__media">';
       if (p.image) h += `<img class="sd-card__img" src="${esc(p.image)}" alt="${esc(p.title)}" loading="lazy">`;
@@ -629,10 +633,10 @@
       h += '<div class="sd-card__body">';
       h += `<h4 class="sd-card__title">${esc(p.title)}</h4>`;
       h += `<div class="sd-card__price${onSale ? ' sd-card__price--sale' : ''}">`;
-      if (onSale) h += `<s class="sd-card__price-compare">${money(p.compare)}</s>`;
+      if (onSale) h += `<s class="sd-card__price-compare">${cmpStr}</s>`;
       h += '<span class="sd-card__price-row">';
       if (p.multi && p.price > 0) h += '<span class="sd-card__from">From</span>';
-      h += `<span class="sd-card__price-current">${money(p.price)}</span>`;
+      h += `<span class="sd-card__price-current">${curStr}</span>`;
       h += `<span class="sd-card__vat">${esc(cfg.vatLabel || 'ex.VAT')}</span>`;
       h += '</span></div></div></a>';
       return h;

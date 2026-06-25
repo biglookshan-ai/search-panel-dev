@@ -48,13 +48,17 @@
 
     var price = opt.dataset.price;
     var compare = parseFloat(opt.dataset.compare || '0');
+    // Prefer Shopify-formatted strings (correct currency for the active market);
+    // fall back to local £ formatting for variants without data-*-str.
+    var curText = (parseFloat(price) > 0) ? (opt.dataset.priceStr || MONEY(price)) : '£TBC';
+    var cmpText = opt.dataset.compareStr || MONEY(compare);
 
     /* Price */
     var priceBox = card.querySelector('[data-cgp-price]');
     if (priceBox) {
       var cur = priceBox.querySelector('[data-cgp-current]');
       var cmp = priceBox.querySelector('[data-cgp-compare]');
-      if (cur) cur.textContent = MONEY(price);
+      if (cur) cur.textContent = curText;
       if (parseFloat(price) > 0 && compare > parseFloat(price)) {
         if (!cmp) {
           cmp = document.createElement('span');
@@ -62,7 +66,7 @@
           cmp.setAttribute('data-cgp-compare', '');
           priceBox.insertBefore(cmp, cur);
         }
-        cmp.textContent = MONEY(compare);
+        cmp.textContent = cmpText;
       } else if (cmp) {
         cmp.remove();
       }

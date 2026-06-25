@@ -420,13 +420,17 @@
       if (CFG.showOptionLabel) h += '<label class="cgp-card__option-label">' + esc(p.option_name) + ':</label>';
       h += '<select class="cgp-card__variant" data-cgp-variant aria-label="' + esc(p.option_name || 'Variant') + '">';
       p.variants.forEach(function (v) {
-        h += '<option value="' + v.id + '" data-price="' + v.price + '" data-compare="' + (v.compare || 0) + '" data-image="' + esc(v.image || '') + '" data-available="' + v.available + '" data-policy="' + esc(v.policy) + '" data-uk="' + (v.uk || 0) + '" data-ew="' + (v.ew || 0) + '"' + (v.id === p.sel ? ' selected' : '') + '>' + esc(v.title) + '</option>';
+        h += '<option value="' + v.id + '" data-price="' + v.price + '" data-compare="' + (v.compare || 0) + '" data-price-str="' + esc(v.price_str || '') + '" data-compare-str="' + esc(v.compare_str || '') + '" data-image="' + esc(v.image || '') + '" data-available="' + v.available + '" data-policy="' + esc(v.policy) + '" data-uk="' + (v.uk || 0) + '" data-ew="' + (v.ew || 0) + '"' + (v.id === p.sel ? ' selected' : '') + '>' + esc(v.title) + '</option>';
       });
       h += '</select></div>';
     }
+    // Prefer Shopify-formatted strings (correct currency for the active market);
+    // fall back to local £ formatting for old payloads without *_str.
+    var curStr = (p.price > 0) ? (p.price_str || money(p.price)) : '£TBC';
+    var cmpStr = p.compare_str || money(p.compare);
     h += '<div class="cgp-card__price-actions"><div class="cgp-card__price" data-cgp-price>';
-    if (p.price > 0 && p.compare > p.price) h += '<span class="cgp-card__price-compare" data-cgp-compare>' + money(p.compare) + '</span>';
-    h += '<span class="cgp-card__price-current" data-cgp-current>' + money(p.price) + '</span>';
+    if (p.price > 0 && p.compare > p.price) h += '<span class="cgp-card__price-compare" data-cgp-compare>' + esc(cmpStr) + '</span>';
+    h += '<span class="cgp-card__price-current" data-cgp-current>' + esc(curStr) + '</span>';
     h += '<span class="cgp-card__price-vat">' + esc(CFG.vatLabel || 'ex.VAT') + '</span></div>';
     if (CFG.showWishlist || CFG.showAddCart) {
       // XB Wishlist needs the product handle to render the item in its drawer
