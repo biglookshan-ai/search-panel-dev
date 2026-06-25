@@ -347,6 +347,10 @@
 .cgp-card .xb-wishlist__btn-custom > .xb-wishlist__remove { display: none !important; }
 .cgp-card .xb-wishlist__btn-custom.cgp-wl-on > .xb-wishlist__add { display: none !important; }
 .cgp-card .xb-wishlist__btn-custom.cgp-wl-on > .xb-wishlist__remove { display: inline-flex !important; }
+/* When wishlisted, show an OUTLINE heart (like the cart icon) instead of a filled
+   one — the active button colour already signals "added". Overrides the SVG's
+   inline fill="currentColor". */
+.xb-wishlist__remove .cgp-action-btn svg { fill: none; }
 
 /* Spinner */
 .cgp-spinner {
