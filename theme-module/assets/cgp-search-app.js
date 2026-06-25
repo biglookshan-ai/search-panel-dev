@@ -216,10 +216,16 @@
   // (PRIORITY) above accessories. Stable sort, so boost order is preserved per tier.
   function applyPriority(list) {
     if (!IS_SEARCH || state.sort !== '' || !PRIORITY.length) return list;
+    // Exact-phrase matches (full query appears in the title or product type) are
+    // the strongest relevance signal — keep them ABOVE the type float, so e.g.
+    // "dummy battery" shows real dummy batteries before a generic "Battery"-type
+    // product that only matched the word "battery".
+    var q = QUERY.trim().toLowerCase();
     return list.map(function (p, i) {
+      var e = q && (((p.title || '').toLowerCase().indexOf(q) !== -1) || ((p.type || '').toLowerCase().indexOf(q) !== -1)) ? 0 : 1;
       var r = PRIORITY.indexOf((p.type || '').toLowerCase());
-      return { p: p, i: i, r: r === -1 ? 999 : r };
-    }).sort(function (a, b) { return (a.r - b.r) || (a.i - b.i); }).map(function (o) { return o.p; });
+      return { p: p, i: i, e: e, r: r === -1 ? 999 : r };
+    }).sort(function (a, b) { return (a.e - b.e) || (a.r - b.r) || (a.i - b.i); }).map(function (o) { return o.p; });
   }
   function tally(exclude, keyFn) {
     var m = {};

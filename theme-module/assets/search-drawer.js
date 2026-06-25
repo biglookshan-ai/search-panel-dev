@@ -608,12 +608,18 @@
         pr = String(cfg.priorityTypes || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
       }
       if (!pr.length) return list;
+      // Exact-phrase matches (full query appears in the title or product type)
+      // are the strongest relevance signal — keep them ABOVE the type float, so
+      // e.g. "dummy battery" shows real dummy batteries before a generic
+      // "Battery"-type product that only matched the word "battery".
+      const q = String(query || '').trim().toLowerCase();
       return list
         .map((p, i) => {
+          const e = q && (((p.title || '').toLowerCase().indexOf(q) !== -1) || ((p.type || '').toLowerCase().indexOf(q) !== -1)) ? 0 : 1;
           const r = pr.indexOf((p.type || '').toLowerCase());
-          return { p, i, r: r === -1 ? 999 : r };
+          return { p, i, e, r: r === -1 ? 999 : r };
         })
-        .sort((a, b) => (a.r - b.r) || (a.i - b.i))
+        .sort((a, b) => (a.e - b.e) || (a.r - b.r) || (a.i - b.i))
         .map((o) => o.p);
     }
 
