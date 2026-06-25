@@ -120,7 +120,7 @@
     showAddCart: {{ settings.cgp_show_add_cart | json }},
     vatLabel: {{ settings.cgp_vat_label | json }},
     priorityTypes: {{ settings.cgp_search_priority_types | default: '' | json }},
-    hideSelfCollectionBadge: {{ settings.cgp_hide_self_collection_badge | default: true | json }},
+    hideSelfCollectionBadge: {{ settings.cgp_hide_self_collection_badge | json }},
     sortRules: [{%- for r in metaobjects.cgp_sort_rule.values -%}{%- unless forloop.first %},{% endunless -%}{"keywords": {{ r.keywords.value | json }}, "types": {{ r.priority_types.value | json }}}{%- endfor -%}],
     labels: {
       instock: {{ settings.cgp_badge_instock_label | json }},
