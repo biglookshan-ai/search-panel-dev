@@ -49,8 +49,8 @@
 "image2": {% if p.media[1] %}{{ p.media[1] | image_url: width: 600 | json }}{% else %}null{% endif %},
 "price": {{ sel.price | default: 0 }},
 "compare": {{ sel.compare_at_price | default: 0 }},
-"price_str": {{ sel.price | money | json }},
-"compare_str": {% if sel.compare_at_price > sel.price %}{{ sel.compare_at_price | money | json }}{% else %}null{% endif %},
+"price_str": {{ sel.price | money | strip_html | json }},
+"compare_str": {% if sel.compare_at_price > sel.price %}{{ sel.compare_at_price | money | strip_html | json }}{% else %}null{% endif %},
 "discount": {{ best }},
 "status": {{ status | json }},
 "sel": {{ sel.id }},
@@ -75,7 +75,7 @@
 "variants": [
 {%- for v in p.variants -%}
 {%- unless forloop.first %},{% endunless -%}
-{"id":{{ v.id }},"title":{{ v.title | json }},"price":{{ v.price }},"compare":{{ v.compare_at_price | default: 0 }},"price_str":{{ v.price | money | json }},"compare_str":{% if v.compare_at_price > v.price %}{{ v.compare_at_price | money | json }}{% else %}null{% endif %},"available":{{ v.available }},"image":{% if v.featured_image %}{{ v.featured_image | image_url: width: 600 | json }}{% else %}null{% endif %},"policy":{{ v.inventory_policy | json }},"uk":{{ v.metafields.custom.uk_inventory.value | default: 0 }},"ew":{{ v.metafields.custom.es_inventory.value | default: 0 }}}
+{"id":{{ v.id }},"title":{{ v.title | json }},"price":{{ v.price }},"compare":{{ v.compare_at_price | default: 0 }},"price_str":{{ v.price | money | strip_html | json }},"compare_str":{% if v.compare_at_price > v.price %}{{ v.compare_at_price | money | strip_html | json }}{% else %}null{% endif %},"available":{{ v.available }},"image":{% if v.featured_image %}{{ v.featured_image | image_url: width: 600 | json }}{% else %}null{% endif %},"policy":{{ v.inventory_policy | json }},"uk":{{ v.metafields.custom.uk_inventory.value | default: 0 }},"ew":{{ v.metafields.custom.es_inventory.value | default: 0 }}}
 {%- endfor -%}
 ]
 }

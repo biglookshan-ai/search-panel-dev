@@ -158,8 +158,8 @@
             <option value="{{ variant.id }}"
                     data-price="{{ variant.price }}"
                     data-compare="{{ variant.compare_at_price | default: 0 }}"
-                    data-price-str="{{ variant.price | money | escape }}"
-                    data-compare-str="{% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | escape }}{% endif %}"
+                    data-price-str="{{ variant.price | money | strip_html | escape }}"
+                    data-compare-str="{% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | strip_html | escape }}{% endif %}"
                     data-image="{% if variant.featured_image %}{{ variant.featured_image | image_url: width: 600 }}{% endif %}"
                     data-available="{{ variant.available }}"
                     data-policy="{{ variant.inventory_policy }}"
@@ -177,9 +177,9 @@
     <div class="cgp-card__price-actions">
       <div class="cgp-card__price" data-cgp-price>
         {%- if cur_on_sale and v.price > 0 -%}
-          <span class="cgp-card__price-compare" data-cgp-compare>{{ v.compare_at_price | money }}</span>
+          <span class="cgp-card__price-compare" data-cgp-compare>{{ v.compare_at_price | money | strip_html }}</span>
         {%- endif -%}
-        <span class="cgp-card__price-current" data-cgp-current>{% if v.price > 0 %}{{ v.price | money }}{% else %}£TBC{% endif %}</span>
+        <span class="cgp-card__price-current" data-cgp-current>{% if v.price > 0 %}{{ v.price | money | strip_html }}{% else %}£TBC{% endif %}</span>
         <span class="cgp-card__price-vat">{{ settings.cgp_vat_label }}</span>
       </div>
 

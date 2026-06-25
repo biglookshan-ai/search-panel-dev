@@ -64,11 +64,11 @@
 
     <div class="sd-card__price{% if on_sale %} sd-card__price--sale{% endif %}">
       {%- if on_sale and show_compare_at -%}
-        <s class="sd-card__price-compare">{{ product.compare_at_price | money }}</s>
+        <s class="sd-card__price-compare">{{ product.compare_at_price | money | strip_html }}</s>
       {%- endif -%}
       <span class="sd-card__price-row">
         {%- if product.price_varies and product.price > 0 -%}<span class="sd-card__from">From</span>{%- endif -%}
-        <span class="sd-card__price-current">{% if product.price > 0 %}{{ product.price | money }}{% else %}£TBC{% endif %}</span>
+        <span class="sd-card__price-current">{% if product.price > 0 %}{{ product.price | money | strip_html }}{% else %}£TBC{% endif %}</span>
         {%- if show_vat_note -%}<span class="sd-card__vat">ex.VAT</span>{%- endif -%}
       </span>
     </div>
