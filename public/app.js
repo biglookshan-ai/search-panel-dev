@@ -297,7 +297,15 @@ function renderSortRules(entries) {
       </select>
     </div>
     <div class="list" id="sr-list"></div>
-    <button class="btn btn-primary" id="add-entry">+ 新增规则</button>`;
+    <button class="btn btn-primary" id="add-entry">+ 新增规则</button>
+    <details class="card" style="margin-top:14px">
+      <summary style="padding:12px 14px;cursor:pointer;font-weight:600">⬆ 批量导入规则(从表格粘贴)</summary>
+      <div class="detail" style="display:block">
+        <p class="hint">每行一条规则。直接从 Excel 复制「Keywords」「Priority Types」两列粘贴(Tab 分隔即可,有没有 Category 列都行);关键词/类型各自用逗号分隔。会自动忽略表头行。</p>
+        <textarea id="sr-import" rows="6" placeholder="dzofilm, nisi, cine, lens&#9;Cine Lens, Lens Adapter"></textarea>
+        <div class="entry-actions"><button class="btn btn-primary" id="sr-import-btn">导入</button></div>
+      </div>
+    </details>`;
   $('#sr-order').value = SR_ORDER;
   $('#sr-filter').addEventListener('input', (e) => { SR_FILTER = e.target.value; paintSortRules(); });
   $('#sr-order').addEventListener('change', (e) => { SR_ORDER = e.target.value; paintSortRules(); });
@@ -305,6 +313,29 @@ function renderSortRules(entries) {
     const row = sortRuleCardEl({ id: '', keywords: [], types: [] }, true);
     $('#sr-list').prepend(row);
     row.querySelector('[data-edit]').click();
+  });
+  $('#sr-import-btn').addEventListener('click', async () => {
+    const lines = ($('#sr-import').value || '').split('\n').map((l) => l.replace(/\r$/, '')).filter((l) => l.trim());
+    const rules = [];
+    for (const line of lines) {
+      const parts = line.split('\t').map((s) => s.trim());
+      if (parts.length < 2) continue;
+      const typesStr = parts[parts.length - 1];
+      const kwStr = parts[parts.length - 2];
+      if (/^keywords?$/i.test(kwStr) || /^priority types$/i.test(typesStr)) continue; // header row
+      const keywords = kwStr.split(',').map((s) => s.trim()).filter(Boolean);
+      const types = typesStr.split(',').map((s) => s.trim()).filter(Boolean);
+      if (keywords.length && types.length) rules.push({ keywords, types });
+    }
+    if (!rules.length) { toast('没解析到有效规则(每行需 关键词<Tab>类型)', false); return; }
+    if (!confirm('将新建 ' + rules.length + ' 条规则,确定?')) return;
+    let ok = 0;
+    for (const r of rules) {
+      try { await api('POST', '/api/metaobjects/cgp_sort_rule', { fields: { keywords: JSON.stringify(r.keywords), priority_types: JSON.stringify(r.types) } }); ok++; }
+      catch (e) { console.error('import rule failed', r, e); }
+    }
+    toast('导入完成:' + ok + '/' + rules.length + ' 条');
+    loadType('cgp_sort_rule');
   });
   paintSortRules();
 }
@@ -584,10 +615,20 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
       const refreshSec = runit === 0 ? 0 : Math.max(0, rn) * runit;
       const fields = { [key]: JSON.stringify(gids) };
       if (cfgField) fields[cfgField] = JSON.stringify({ refreshSec, pin: gids.filter((g) => pinned.has(g)).length });
-      await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields });
+      try {
+        await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields });
+        toast('已保存 ✓');
+      } catch (err) {
+        // The *_config field is optional — if the metaobject doesn't have it,
+        // still save the product/collection list (just without refresh/pin config).
+        if (cfgField && /does not exist/i.test(err.message || '')) {
+          delete fields[cfgField];
+          await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields });
+          toast('已保存(刷新间隔/置顶未存:metaobject 缺 ' + cfgField + ' 字段)');
+        } else { throw err; }
+      }
       countEl.textContent = '· ' + gids.length + ' 个';
       paint();
-      toast('已保存 ✓');
     } catch (e) { toast(e.message, false); }
   });
   return card;
