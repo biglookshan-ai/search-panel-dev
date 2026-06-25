@@ -592,9 +592,9 @@
     prioritise(list, query) {
       const cfg = window.CGP_CONFIG || {};
       const rules = cfg.sortRules || [];
+      const q = String(query || '').trim().toLowerCase();
       let pr = [];
       if (rules.length) {
-        const q = String(query || '').trim().toLowerCase();
         if (q) {
           rules.forEach((r) => {
             const hit = (r.keywords || []).some((k) => {
@@ -607,16 +607,17 @@
       } else {
         pr = String(cfg.priorityTypes || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
       }
-      if (!pr.length) return list;
+      if (!q) return list;
       // Exact-phrase matches (full query appears in the title or product type)
-      // are the strongest relevance signal — keep them ABOVE the type float, so
-      // e.g. "dummy battery" shows real dummy batteries before a generic
-      // "Battery"-type product that only matched the word "battery".
-      const q = String(query || '').trim().toLowerCase();
+      // ALWAYS float to the top — the strongest relevance signal — even when no
+      // type rule fired (e.g. an incomplete word like "dummy batt", which matches
+      // no keyword). So "dummy batt(ery)" shows real dummy batteries before a
+      // "Battery"-type product that only has "battery" in its title/description.
+      // Type priority, if any, is only a secondary sort within each tier.
       return list
         .map((p, i) => {
-          const e = q && (((p.title || '').toLowerCase().indexOf(q) !== -1) || ((p.type || '').toLowerCase().indexOf(q) !== -1)) ? 0 : 1;
-          const r = pr.indexOf((p.type || '').toLowerCase());
+          const e = (((p.title || '').toLowerCase().indexOf(q) !== -1) || ((p.type || '').toLowerCase().indexOf(q) !== -1)) ? 0 : 1;
+          const r = pr.length ? pr.indexOf((p.type || '').toLowerCase()) : -1;
           return { p, i, e, r: r === -1 ? 999 : r };
         })
         .sort((a, b) => (a.e - b.e) || (a.r - b.r) || (a.i - b.i))

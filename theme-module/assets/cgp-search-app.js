@@ -215,15 +215,19 @@
   // Default search order: keep relevance/boosts, but float "main product" types
   // (PRIORITY) above accessories. Stable sort, so boost order is preserved per tier.
   function applyPriority(list) {
-    if (!IS_SEARCH || state.sort !== '' || !PRIORITY.length) return list;
-    // Exact-phrase matches (full query appears in the title or product type) are
-    // the strongest relevance signal — keep them ABOVE the type float, so e.g.
-    // "dummy battery" shows real dummy batteries before a generic "Battery"-type
-    // product that only matched the word "battery".
+    if (!IS_SEARCH || state.sort !== '') return list;
     var q = QUERY.trim().toLowerCase();
+    if (!q) return list;
+    // Exact-phrase matches (full query in title or product type) ALWAYS float to
+    // the top — the strongest relevance signal — even when no type rule fired
+    // (e.g. an incomplete word like "dummy batt", which matches no keyword). So
+    // "dummy batt(ery)" shows real dummy batteries before a "Battery"-type product
+    // that only has "battery" in its title/description. Type priority, if any, is
+    // only a secondary sort within each tier.
+    var hasPr = PRIORITY.length > 0;
     return list.map(function (p, i) {
-      var e = q && (((p.title || '').toLowerCase().indexOf(q) !== -1) || ((p.type || '').toLowerCase().indexOf(q) !== -1)) ? 0 : 1;
-      var r = PRIORITY.indexOf((p.type || '').toLowerCase());
+      var e = (((p.title || '').toLowerCase().indexOf(q) !== -1) || ((p.type || '').toLowerCase().indexOf(q) !== -1)) ? 0 : 1;
+      var r = hasPr ? PRIORITY.indexOf((p.type || '').toLowerCase()) : -1;
       return { p: p, i: i, e: e, r: r === -1 ? 999 : r };
     }).sort(function (a, b) { return (a.e - b.e) || (a.r - b.r) || (a.i - b.i); }).map(function (o) { return o.p; });
   }
