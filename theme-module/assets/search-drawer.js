@@ -564,7 +564,13 @@
        (or null on failure, so the caller can fall back to predictive). */
     async fetchCardProducts(q, signal) {
       try {
-        const base = window.routes?.search_url || '/search';
+        // Build the search URL from Shopify's localized root so this AJAX request
+        // carries the visitor's market/locale (and thus presentment currency). A
+        // bare "/search" loses that context and Shopify renders the default market
+        // — which is why Safari (non-GBP session) showed a different currency than
+        // the page. Fall back to routes.search_url, then "/search".
+        const root = (window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || '';
+        const base = root ? (root.replace(/\/+$/, '') + '/search') : (window.routes?.search_url || '/search');
         // Append a trailing wildcard so the last (in-progress) term prefix-matches
         // — Shopify regular search otherwise matches whole words inconsistently for
         // short queries (e.g. "sim" returned 1 product, "sime" returned many).
