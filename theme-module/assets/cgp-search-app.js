@@ -57,6 +57,17 @@
     return String(CFG.priorityTypes || '').split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
   })();
 
+  // Current collection handle (collection pages only). Used to hide a custom badge
+  // whose link points back to THIS collection — e.g. a "Summer Sale" badge linking
+  // to /collections/summer-sale is redundant on the summer-sale collection page.
+  var collMatch = location.pathname.match(/\/collections\/([^\/?#]+)/);
+  var CUR_COLLECTION = collMatch ? decodeURIComponent(collMatch[1]).toLowerCase() : '';
+  function linkCollectionHandle(link) {
+    if (!link) return '';
+    var m = String(link).match(/\/collections\/([^\/?#]+)/);
+    return m ? decodeURIComponent(m[1]).toLowerCase() : '';
+  }
+
   var FACETS = [
     { key: 'brands', title: 'Brands' },
     { key: 'status', title: 'Availability' },
@@ -335,7 +346,10 @@
     var tags = p.tags || [];
     var items = BADGES.filter(function (b) {
       var s = /right/i.test(b.position || '') ? 'right' : 'left';
-      return s === side && tags.indexOf(b.tag) !== -1;
+      if (s !== side || tags.indexOf(b.tag) === -1) return false;
+      // Hide a badge that links back to the collection we're currently viewing.
+      if (CUR_COLLECTION && linkCollectionHandle(b.link) === CUR_COLLECTION) return false;
+      return true;
     });
     if (!items.length) return '';
     var inner = items.map(function (b) {
