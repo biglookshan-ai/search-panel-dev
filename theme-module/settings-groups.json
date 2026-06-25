@@ -930,6 +930,13 @@
         "default": 2
       },
       {
+        "type": "checkbox",
+        "id": "cgp_hide_self_collection_badge",
+        "label": "Hide a badge on its own collection page",
+        "info": "On a collection page, hide custom badges whose link points to that same collection (e.g. a 'Summer Sale' badge linking to /collections/summer-sale, on the summer-sale page). Other collections & search are unaffected.",
+        "default": true
+      },
+      {
         "type": "header",
         "content": "Product status badge style (global)"
       },

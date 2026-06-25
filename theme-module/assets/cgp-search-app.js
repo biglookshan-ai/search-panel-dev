@@ -347,8 +347,9 @@
     var items = BADGES.filter(function (b) {
       var s = /right/i.test(b.position || '') ? 'right' : 'left';
       if (s !== side || tags.indexOf(b.tag) === -1) return false;
-      // Hide a badge that links back to the collection we're currently viewing.
-      if (CUR_COLLECTION && linkCollectionHandle(b.link) === CUR_COLLECTION) return false;
+      // Hide a badge that links back to the collection we're currently viewing
+      // (when the setting is enabled).
+      if (CFG.hideSelfCollectionBadge !== false && CUR_COLLECTION && linkCollectionHandle(b.link) === CUR_COLLECTION) return false;
       return true;
     });
     if (!items.length) return '';

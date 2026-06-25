@@ -36,8 +36,8 @@
               {%- assign bhref = b.link.value -%}
             {%- endif -%}
             {%- assign bhref = bhref | strip -%}
-            {%- comment -%} On a collection page, hide a badge that links back to THIS collection (redundant). {%- endcomment -%}
-            {%- if collection.handle != blank and bhref contains '/collections/' -%}
+            {%- comment -%} On a collection page, hide a badge that links back to THIS collection (redundant) — when the setting is on. {%- endcomment -%}
+            {%- if settings.cgp_hide_self_collection_badge and collection.handle != blank and bhref contains '/collections/' -%}
               {%- assign b_coll = bhref | split: '/collections/' | last | split: '?' | first | split: '#' | first | split: '/' | first | downcase -%}
               {%- if b_coll == collection.handle -%}{%- continue -%}{%- endif -%}
             {%- endif -%}
