@@ -362,7 +362,11 @@
       // "jumps", and the drawer detaches from the box. Pad the body by the
       // scrollbar width and lock BEFORE measuring, so position() reads the
       // final (non-shifted) layout. Reset in close().
-      const sbw = window.innerWidth - document.documentElement.clientWidth;
+      // Mobile uses overlay scrollbars (no gutter to compensate); padding the
+      // body there instead CREATES horizontal overflow, which on iOS widens the
+      // layout viewport — making the fixed drawer (and the whole page) wider than
+      // the screen so cards/search box overflow. Only compensate on desktop.
+      const sbw = this.isMobile() ? 0 : (window.innerWidth - document.documentElement.clientWidth);
       this._prevBodyPad = document.body.style.paddingRight;
       if (sbw > 0) document.body.style.paddingRight = sbw + 'px';
       document.body.classList.add('search-drawer-open');
