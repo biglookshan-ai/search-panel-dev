@@ -259,6 +259,10 @@
   .cgp-card__price-actions { gap: 6px; }
   .cgp-card__actions { gap: 5px; }
   .cgp-action-btn svg { width: 15px; height: 15px; }
+  /* Smaller badges on mobile (discount / stock / custom / status). */
+  .cgp-card .cgp-badge { font-size: 9px; padding: 3px 6px; }
+  .cgp-card .cgp-cbadge { font-size: 9px; padding: 2px 6px; }
+  .cgp-card .cgp-statusbadge { font-size: 9px; padding: 3px 6px; }
 }
 .cgp-card__price {
   display: flex;
