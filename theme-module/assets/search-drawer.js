@@ -497,8 +497,19 @@
 
         if (panelHTML != null) {
           this.panel.innerHTML = panelHTML;
-          const ul = this.panel.querySelector('.search-drawer__products');
-          if (ul && products && products.length) {
+          let ul = this.panel.querySelector('.search-drawer__products');
+          if (products && products.length) {
+            // The engine matched products (incl. collection / sale-tag matches that
+            // Shopify predictive misses), so drop the predictive "no results"
+            // message and show the products — a query like "summer" / "sale" /
+            // "clearance" shouldn't imply a typo when relevant products exist.
+            this.panel.querySelectorAll('.search-drawer__empty').forEach((el) => el.remove());
+            if (!ul) {
+              const col = this.panel.querySelector('.search-drawer__col--right') || this.panel.querySelector('.search-drawer__columns') || this.panel;
+              ul = document.createElement('ul');
+              ul.className = 'search-drawer__products';
+              col.appendChild(ul);
+            }
             ul.innerHTML = products.slice(0, this.productQty).map((p) => `<li>${this.sdCard(p)}</li>`).join('');
           }
           this.capProductRows(ul);
