@@ -266,6 +266,10 @@ body.search-drawer-open { overflow: hidden; }
 }
 .sd-card__media {
   position: relative;
+  /* Explicit width: Safari sizes an aspect-ratio flex child from the ratio (not
+     the stretched card width) without it, making the media overflow and the
+     absolutely-positioned badges sit flush to the card edge. */
+  width: 100%;
   aspect-ratio: 1 / 1;
   /* Same as the card background so mix-blend-mode: multiply makes the product's
      white photo background blend seamlessly (no grey box behind the image). */
