@@ -33,7 +33,7 @@
   endif
 -%}
 
-<a class="sd-card" href="{{ product.url }}" data-track="product" data-product-id="{{ product.id }}">
+<a class="sd-card" href="{{ product.url | split: '?' | first }}" data-track="product" data-product-id="{{ product.id }}">
   <div class="sd-card__media">
     {%- if product.featured_image -%}
       {{ product.featured_image | image_url: width: 320 | image_tag: loading: 'lazy', class: 'sd-card__img', alt: product.featured_image.alt | default: product.title }}

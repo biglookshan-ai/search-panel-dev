@@ -41,7 +41,7 @@
 {
 "id": {{ p.id }},
 "title": {{ p.title | json }},
-"url": {{ p.url | json }},
+"url": {{ p.url | split: '?' | first | json }},
 "vendor": {{ p.vendor | json }},
 "type": {{ p.type | default: '' | json }},
 "tags": {{ p.tags | json }},

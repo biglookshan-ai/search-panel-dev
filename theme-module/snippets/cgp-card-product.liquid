@@ -67,7 +67,7 @@
 
   {%- comment -%} ---------- Image + badges ---------- {%- endcomment -%}
   <div class="cgp-card__media">
-    <a href="{{ p.url | within: collection }}" class="cgp-card__media-link" tabindex="-1" aria-hidden="true">
+    <a href="{{ p.url | within: collection | split: '?' | first }}" class="cgp-card__media-link" tabindex="-1" aria-hidden="true">
       {%- if p.featured_image -%}
         <img class="cgp-card__img"
              data-cgp-main-image="{{ p.featured_image | image_url: width: 600 }}"
@@ -140,7 +140,7 @@
         {%- endfor -%}
       </div>
     {%- endif -%}
-    <a href="{{ p.url | within: collection }}" class="cgp-card__title-link">
+    <a href="{{ p.url | within: collection | split: '?' | first }}" class="cgp-card__title-link">
       <h3 class="cgp-card__title">{{ p.title | escape }}</h3>
     </a>
 
