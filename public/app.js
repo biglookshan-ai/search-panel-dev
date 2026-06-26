@@ -7,7 +7,7 @@ const PIN_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentCo
 // ---- i18n (per-user language, persisted in localStorage) ----
 const I18N = {
   zh: {
-    'tab.custom': '自定义', 'tab.boosts': 'Boosts / 设置', 'tab.system': '系统设置',
+    'tab.custom': '自定义', 'tab.boosts': 'Boosts / 同义词', 'tab.system': '系统设置',
     'sub.promo': '促销活动标签', 'sub.attr': '产品属性标签', 'sub.sort': '产品排序规则',
     'sub.featured': '热门推荐', 'sub.banner': '促销 Banner',
     'loading': '加载中…',
@@ -61,7 +61,7 @@ const I18N = {
     'init.embedErr': '此 app 是嵌入式的,需在 Shopify 后台 → Apps → Search Panel Dev 里打开,不要直接开 Railway 网址。',
   },
   en: {
-    'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Settings', 'tab.system': 'System',
+    'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Synonyms', 'tab.system': 'System',
     'sub.promo': 'Promotion Labels', 'sub.attr': 'Product Attribute Labels', 'sub.sort': 'Product Sort Rules',
     'sub.featured': 'Recommendations', 'sub.banner': 'Promo Banner',
     'loading': 'Loading…',
