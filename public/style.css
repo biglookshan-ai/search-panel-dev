@@ -332,6 +332,17 @@ main { max-width: 960px; margin: 0 auto; }
 .chip-pin.on { filter: none; background: #fffbe6; border-color: #f0e3a0; }
 .chip.is-pinned { border-color: #f0c000; box-shadow: 0 0 0 1px var(--brand) inset; background: #fffdf2; }
 
+/* ---------- System settings ---------- */
+.sys-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.sys-label { font-size: 12px; font-weight: 600; color: var(--text-sub); min-width: 84px; }
+.sys-val { font-size: 13px; font-weight: 600; }
+.sys-sep { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
+.sys-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+.langtoggle { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 999px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.langtoggle button { border: 0; background: var(--surface); color: var(--text-sub); padding: 6px 18px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 550; transition: background .15s, color .15s; }
+.langtoggle button + button { border-left: 1px solid var(--border); }
+.langtoggle button.is-active { background: var(--dark); color: #fff; }
+
 /* ---------- Small screens ---------- */
 @media (max-width: 600px) {
   .topbar, .tabs { padding-left: 16px; padding-right: 16px; }

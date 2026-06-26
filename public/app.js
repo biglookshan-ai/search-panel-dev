@@ -2,6 +2,140 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let STORE = '';
 
+// ---- i18n (per-user language, persisted in localStorage) ----
+const I18N = {
+  zh: {
+    'tab.custom': '自定义', 'tab.boosts': 'Boosts / 设置', 'tab.system': '系统设置',
+    'sub.promo': '促销活动标签', 'sub.attr': '产品属性标签', 'sub.sort': '产品排序规则',
+    'sub.featured': '热门推荐', 'sub.banner': '促销 Banner',
+    'loading': '加载中…',
+    'boosts.intro': '搜索结果的 Boosts / 同义词 / 筛选器在官方 Search & Discovery app 里设置:',
+    'boosts.product': 'Product boosts 排名提升', 'boosts.syn': 'Synonyms 同义词',
+    'boosts.open': '打开 Search & Discovery',
+    'boosts.note': '官方界面受 Shopify 限制无法内嵌到本 app,点击会在 Shopify 后台新标签打开。',
+    'sys.store': '当前店铺', 'sys.lang': '界面语言',
+    'apply.title': '写入主题',
+    'apply.desc': '把搜索引擎模块写入选定主题(建议只选草稿/未发布主题)。先「试运行」看清单,确认无误再「正式写入」。',
+    'apply.theme': '主题', 'apply.refresh': '刷新', 'apply.dry': '试运行 (dry run)', 'apply.go': '正式写入',
+    'edit': '编辑', 'close': '关闭', 'expand': '展开', 'save': '保存', 'create': '创建', 'del': '删除',
+    'enable': '启用', 'addEntry': '+ 新增', 'addLabel': '+ 新增标签', 'addRule': '+ 新增规则',
+    'saved': '已保存 ✓', 'deleted': '已删除 ✓', 'enabledMsg': '已启用', 'disabledMsg': '已停用',
+    'confirmDel': '确定删除这个条目?', 'confirmDelLabel': '确定删除这个标签?', 'confirmDelRule': '确定删除这条排序规则?',
+    'noResult': '无结果', 'empty': '(空)', 'none': '(无)', 'newEntry': '新条目',
+    'emptyType': '这个类型还没有条目,也读不到字段。请先在 Shopify 后台给它加一条,再回来这里管理。',
+    'badge.over.right': '右', 'badge.over.left': '左', 'badge.bottomRight': '图片右下角',
+    'labelFallback': '(标签)', 'newBadge': '新标签', 'noTag': '(未设 tag)',
+    'attr.note': '产品属性标签:按 tag 匹配,显示在图片右下角(叠在图上)。',
+    'label.tagHint': '(产品标签,用于匹配;可下拉选或自己输入)',
+    'label.imageHint': '(图片 gid,留空用文字)',
+    'label.posHint': '(图片下方:左 / 右)',
+    'label.linkHint': '(字段用 URL 类型;填了才可点击跳转,留空则为纯展示徽章)',
+    'pos.left': '左 left', 'pos.right': '右 right',
+    'sr.kw': '关键词', 'sr.types': '类型',
+    'sr.filter': '搜索关键词或类型…', 'sr.order.recent': '默认顺序', 'sr.order.alpha': '关键词 A-Z',
+    'sr.order.kwDesc': '关键词数 多→少', 'sr.order.typeDesc': '类型数 多→少',
+    'sr.import': '⬆ 批量导入规则(从表格粘贴)',
+    'sr.importHint': '每行一条规则。直接从 Excel 复制「Keywords」「Priority Types」两列粘贴(Tab 分隔即可,有没有 Category 列都行);关键词/类型各自用逗号分隔。会自动忽略表头行。',
+    'sr.importBtn': '导入', 'sr.noMatch': '没有匹配的规则。',
+    'sr.importNone': '没解析到有效规则(每行需 关键词<Tab>类型)',
+    'sr.importConfirm': '将新建 %n 条规则,确定?', 'sr.importDone': '导入完成:',
+    'sr.kwFieldHint': '(每行一个,匹配任意一个即应用此规则)',
+    'sr.typeFieldHint': '(每行一个,产品类型按这个顺序排在前面)',
+    'sp.noEntry': '还没有 search_panel 条目。请在 Shopify 后台新建一条(handle 通常为 main)。',
+    'sp.popular': '热门搜索词', 'sp.popularHint': '(每行一个,搜索框聚焦时显示)',
+    'sp.products': '热门产品', 'sp.collections': '热门合集',
+    'sp.bannerImg': 'Banner 图片', 'sp.bannerImgHint': '(gid://shopify/MediaImage/…;建议在 Shopify 后台选)',
+    'sp.bannerLink': 'Banner 链接', 'sp.bannerAlt': 'Banner 替代文字',
+    'sp.searchProduct': '搜索产品添加…', 'sp.searchCollection': '搜索集合添加…',
+    'sp.refresh': '随机刷新间隔:', 'sp.now': '立即(每次打开都换)', 'sp.min': '分钟', 'sp.hour': '小时', 'sp.day': '天',
+    'sp.pinHint': '📌 置顶项不参与随机,始终排在最前', 'sp.emptyAdd': '还没有添加。用上面搜索框添加。',
+    'sp.savedNoCfg': '已保存(刷新间隔/置顶未存:metaobject 缺 %s 字段)',
+    'items': '个',
+    'bulk.sel': '已选 %n 项', 'bulk.up': '↑ 上移', 'bulk.down': '↓ 下移', 'bulk.del': '删除选中', 'bulk.clr': '取消选择',
+    'theme.loading': '加载中…', 'theme.online': '线上',
+    'apply.running': '运行中…', 'apply.dryDone': '试运行完成', 'apply.doneToast': '写入完成 ✓',
+    'apply.dryHead': '【试运行,未实际写入】\n', 'apply.doneHead': '【已写入】\n',
+    'apply.onlineWarn': '这是线上主题!确定要直接写入线上吗?建议改用草稿主题。仍要继续?',
+    'init.embedErr': '此 app 是嵌入式的,需在 Shopify 后台 → Apps → Search Panel Dev 里打开,不要直接开 Railway 网址。',
+  },
+  en: {
+    'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Settings', 'tab.system': 'System',
+    'sub.promo': 'Promotion Labels', 'sub.attr': 'Product Attribute Labels', 'sub.sort': 'Product Sort Rules',
+    'sub.featured': 'Featured', 'sub.banner': 'Promo Banner',
+    'loading': 'Loading…',
+    'boosts.intro': 'Boosts / synonyms / filters for search results are configured in the official Search & Discovery app:',
+    'boosts.product': 'Product boosts', 'boosts.syn': 'Synonyms',
+    'boosts.open': 'Open Search & Discovery',
+    'boosts.note': "The official UI can't be embedded here (Shopify restriction); it opens in a new Shopify admin tab.",
+    'sys.store': 'Store', 'sys.lang': 'Language',
+    'apply.title': 'Apply to theme',
+    'apply.desc': 'Write the search-engine modules into the selected theme (prefer a draft/unpublished theme). Run "Dry run" first to review, then "Apply".',
+    'apply.theme': 'Theme', 'apply.refresh': 'Refresh', 'apply.dry': 'Dry run', 'apply.go': 'Apply',
+    'edit': 'Edit', 'close': 'Close', 'expand': 'Expand', 'save': 'Save', 'create': 'Create', 'del': 'Delete',
+    'enable': 'Enabled', 'addEntry': '+ Add', 'addLabel': '+ Add label', 'addRule': '+ Add rule',
+    'saved': 'Saved ✓', 'deleted': 'Deleted ✓', 'enabledMsg': 'Enabled', 'disabledMsg': 'Disabled',
+    'confirmDel': 'Delete this entry?', 'confirmDelLabel': 'Delete this label?', 'confirmDelRule': 'Delete this sort rule?',
+    'noResult': 'No results', 'empty': '(empty)', 'none': '(none)', 'newEntry': 'New entry',
+    'emptyType': 'No entries and no readable fields for this type yet. Add one in the Shopify admin first, then manage it here.',
+    'badge.over.right': 'right', 'badge.over.left': 'left', 'badge.bottomRight': 'image bottom-right',
+    'labelFallback': '(label)', 'newBadge': 'New label', 'noTag': '(no tag)',
+    'attr.note': 'Product attribute label: matched by tag, shown over the image bottom-right.',
+    'label.tagHint': '(product tag used to match; pick from the list or type your own)',
+    'label.imageHint': '(image gid; leave empty to use text)',
+    'label.posHint': '(below the image: left / right)',
+    'label.linkHint': '(use a URL field type; if set the badge is clickable, otherwise display-only)',
+    'pos.left': 'left', 'pos.right': 'right',
+    'sr.kw': 'Keywords', 'sr.types': 'Types',
+    'sr.filter': 'Search keywords or types…', 'sr.order.recent': 'Default order', 'sr.order.alpha': 'Keyword A-Z',
+    'sr.order.kwDesc': 'Keyword count ↓', 'sr.order.typeDesc': 'Type count ↓',
+    'sr.import': '⬆ Bulk import rules (paste from a sheet)',
+    'sr.importHint': 'One rule per line. Paste the "Keywords" and "Priority Types" columns straight from Excel (Tab-separated; a Category column is fine too). Separate keywords/types with commas. The header row is skipped automatically.',
+    'sr.importBtn': 'Import', 'sr.noMatch': 'No matching rules.',
+    'sr.importNone': 'No valid rules parsed (each line needs keywords<Tab>types)',
+    'sr.importConfirm': 'Create %n rules?', 'sr.importDone': 'Imported: ',
+    'sr.kwFieldHint': '(one per line; matching any one applies this rule)',
+    'sr.typeFieldHint': '(one per line; product types float to the front in this order)',
+    'sp.noEntry': 'No search_panel entry yet. Create one in the Shopify admin (handle is usually "main").',
+    'sp.popular': 'Popular terms', 'sp.popularHint': '(one per line; shown when the search box is focused)',
+    'sp.products': 'Featured products', 'sp.collections': 'Featured collections',
+    'sp.bannerImg': 'Banner image', 'sp.bannerImgHint': '(gid://shopify/MediaImage/…; pick in the Shopify admin)',
+    'sp.bannerLink': 'Banner link', 'sp.bannerAlt': 'Banner alt text',
+    'sp.searchProduct': 'Search products to add…', 'sp.searchCollection': 'Search collections to add…',
+    'sp.refresh': 'Random refresh interval:', 'sp.now': 'Instant (reshuffle every open)', 'sp.min': 'minutes', 'sp.hour': 'hours', 'sp.day': 'days',
+    'sp.pinHint': '📌 Pinned items skip the shuffle and always stay first', 'sp.emptyAdd': 'Nothing added yet. Use the search box above.',
+    'sp.savedNoCfg': 'Saved (refresh interval / pin not stored: metaobject is missing the %s field)',
+    'items': '',
+    'bulk.sel': '%n selected', 'bulk.up': '↑ Up', 'bulk.down': '↓ Down', 'bulk.del': 'Remove selected', 'bulk.clr': 'Clear selection',
+    'theme.loading': 'Loading…', 'theme.online': 'live',
+    'apply.running': 'Running…', 'apply.dryDone': 'Dry run complete', 'apply.doneToast': 'Applied ✓',
+    'apply.dryHead': '[Dry run — nothing written]\n', 'apply.doneHead': '[Applied]\n',
+    'apply.onlineWarn': 'This is the LIVE theme! Write directly to live? A draft theme is recommended. Continue anyway?',
+    'init.embedErr': 'This app is embedded — open it from Shopify admin → Apps → Search Panel Dev, not the Railway URL directly.',
+  },
+};
+let LANG = localStorage.getItem('cgp-admin-lang') || 'zh';
+function t(k, n) {
+  let s = (I18N[LANG] && I18N[LANG][k]);
+  if (s == null) s = I18N.zh[k];
+  if (s == null) s = k;
+  if (n != null) s = String(s).replace('%n', n).replace('%s', n);
+  return s;
+}
+function applyI18n() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+}
+function setLang(l) {
+  LANG = l;
+  localStorage.setItem('cgp-admin-lang', l);
+  document.querySelectorAll('#lang-toggle button').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === l));
+  applyI18n();
+  // Re-render the dynamic panel in the new language.
+  const sub = document.querySelector('#tab-meta.is-active') && document.querySelector('.subtab.is-active');
+  if (sub) loadType(sub.dataset.type);
+}
+
 async function sessionToken() {
   if (!window.shopify || !window.shopify.idToken) throw new Error('请在 Shopify 后台里打开此 app(嵌入式)');
   return await window.shopify.idToken();
@@ -35,7 +169,7 @@ function toast(msg, ok = true) {
 document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('is-active', x === b));
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + b.dataset.tab));
-  if (b.dataset.tab === 'apply') loadThemes();
+  if (b.dataset.tab === 'system') loadThemes();
 }));
 document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('.subtab').forEach((x) => x.classList.toggle('is-active', x === b));
@@ -53,7 +187,7 @@ function fieldInput(field, value) {
   if (field.kind === 'list') {
     let lines = '';
     try { lines = (JSON.parse(value || '[]') || []).join('\n'); } catch { lines = value || ''; }
-    return `<label>${label} <span class="hint">(每行一个)</span>
+    return `<label>${label}
       <textarea data-key="${key}" data-kind="list" rows="3">${esc(lines)}</textarea></label>`;
   }
   if (field.kind === 'color') {
@@ -63,7 +197,7 @@ function fieldInput(field, value) {
       <input type="text" data-key="${key}" data-kind="text" value="${esc(v)}"/></span></label>`;
   }
   if (field.kind === 'ref') {
-    return `<label>${label} <span class="hint">(引用/图片:gid://… 多个用逗号或每行一个;建议在 Shopify 后台设)</span>
+    return `<label>${label} <span class="hint">(gid://…)</span>
       <input type="text" data-key="${key}" data-kind="text" value="${esc(value || '')}" placeholder="gid://..."/></label>`;
   }
   return `<label>${label}<input type="text" data-key="${key}" data-kind="text" value="${esc(value || '')}"/></label>`;
@@ -95,21 +229,24 @@ let FIELDS = [], TYPE = '';
 async function loadType(type) {
   TYPE = type;
   const body = $('#meta-body');
-  body.innerHTML = '<p class="muted">加载中…</p>';
+  body.innerHTML = '<p class="muted">' + t('loading') + '</p>';
+  // The search panel is split into two subtabs (Featured / Banner) that both
+  // read the same search_panel metaobject.
+  const fetchType = (type === 'search_panel_featured' || type === 'search_panel_banner') ? 'search_panel' : type;
   try {
-    const { entries, fields } = await api('GET', '/api/metaobjects/' + type);
+    const { entries, fields } = await api('GET', '/api/metaobjects/' + fetchType);
     FIELDS = fields || [];
-    if (type === 'cgp_badge') return renderBadges(entries, 'cgp_badge');
-    if (type === 'cgp_status_badge') return renderBadges(entries, 'cgp_status_badge');
+    if (type === 'cgp_badge' || type === 'cgp_status_badge') return renderBadges(entries, type);
     if (type === 'cgp_sort_rule') return renderSortRules(entries);
-    if (type === 'search_panel') return renderSearchPanel(entries);
+    if (type === 'search_panel_featured') return renderSearchPanelFeatured(entries);
+    if (type === 'search_panel_banner') return renderSearchPanelBanner(entries);
     if (!FIELDS.length && !entries.length) {
-      body.innerHTML = '<p class="muted">这个类型还没有条目,也读不到字段。请先在 Shopify 后台给它加一条,再回来这里管理。</p>';
+      body.innerHTML = '<p class="muted">' + t('emptyType') + '</p>';
       return;
     }
     let html = `<div class="rows">`;
     entries.forEach((e) => { html += entryCard(FIELDS, e); });
-    html += `</div><button class="btn btn-primary" id="add-entry">+ 新增</button>`;
+    html += `</div><button class="btn btn-primary" id="add-entry">${t('addEntry')}</button>`;
     body.innerHTML = html;
     body.querySelectorAll('[data-entry]').forEach(bindEntry);
     $('#add-entry').addEventListener('click', () => {
@@ -123,13 +260,13 @@ async function loadType(type) {
 
 function entryCard(fields, entry, isNew = false) {
   const inner = fields.map((f) => fieldInput(f, entry.fields[f.key])).join('');
-  const title = isNew ? '新条目' : esc(entry.displayName || entry.handle || entry.id);
+  const title = isNew ? t('newEntry') : esc(entry.displayName || entry.handle || entry.id);
   return `<form class="entry" data-entry data-id="${esc(entry.id)}">
     <div class="entry-head"><b>${title}</b></div>
     ${inner}
     <div class="entry-actions">
-      <button type="button" class="btn btn-primary" data-act="save">${isNew ? '创建' : '保存'}</button>
-      ${entry.id ? '<button type="button" class="btn btn-danger" data-act="del">删除</button>' : ''}
+      <button type="button" class="btn btn-primary" data-act="save">${isNew ? t('create') : t('save')}</button>
+      ${entry.id ? `<button type="button" class="btn btn-danger" data-act="del">${t('del')}</button>` : ''}
     </div>
   </form>`;
 }
@@ -141,25 +278,20 @@ function bindEntry(form) {
       const id = form.dataset.id;
       if (id) await api('PUT', '/api/metaobjects/' + TYPE, { id, fields });
       else await api('POST', '/api/metaobjects/' + TYPE, { fields });
-      toast('已保存 ✓');
+      toast(t('saved'));
       loadType(TYPE);
     } catch (e) { toast(e.message, false); }
   });
   const del = form.querySelector('[data-act="del"]');
   if (del) del.addEventListener('click', async () => {
-    if (!confirm('确定删除这个条目?')) return;
-    try { await api('DELETE', '/api/metaobjects/' + TYPE, { id: form.dataset.id }); toast('已删除 ✓'); loadType(TYPE); }
+    if (!confirm(t('confirmDel'))) return;
+    try { await api('DELETE', '/api/metaobjects/' + TYPE, { id: form.dataset.id }); toast(t('deleted')); loadType(TYPE); }
     catch (e) { toast(e.message, false); }
   });
 }
 
-// ---- cgp_badge + cgp_status_badge: list view + quick enable toggle + detail ----
-// cgp_badge = custom badges below the image (left/right, optional link/image).
-// cgp_status_badge = product-status badges over the image bottom-right (text only).
-// position is a Choice-list field restricted to the 4 corner values, so we store
-// bottom-left/bottom-right (valid choices) but only offer 左/右 — the theme maps
-// any value containing "right" to the right side, below the image.
-const BADGE_POS = [['bottom-left', '左 left'], ['bottom-right', '右 right']];
+// ---- cgp_badge (promotion labels) + cgp_status_badge (product attribute labels) ----
+const BADGE_POS_VALUES = ['bottom-left', 'bottom-right'];
 
 // Load all store product tags once into a shared <datalist> for tag pickers.
 let TAGS_LOADED = false;
@@ -178,7 +310,7 @@ function renderBadges(entries, type) {
   type = type || 'cgp_badge';
   loadTags();
   const body = $('#meta-body');
-  body.innerHTML = '<div class="list"></div><button class="btn btn-primary" id="add-entry">+ 新增角标</button>';
+  body.innerHTML = `<div class="list"></div><button class="btn btn-primary" id="add-entry">${t('addLabel')}</button>`;
   const list = $('.list');
   entries.forEach((e) => list.appendChild(badgeCardEl(e, false, type)));
   $('#add-entry').addEventListener('click', () => {
@@ -194,24 +326,24 @@ function renderBadges(entries, type) {
 function badgeCardEl(entry, isNew = false, type = 'cgp_badge') {
   const f = entry.fields || {};
   const bg = f.background || '#1c222d', tc = f.text_color || '#ffffff';
-  const label = f.label || f.tag || '(角标)';
+  const label = f.label || f.tag || t('labelFallback');
   const on = f.enabled !== 'false';
-  const meta = type === 'cgp_status_badge' ? '图片右下角' : (/right/i.test(f.position || '') ? '右' : '左');
+  const meta = type === 'cgp_status_badge' ? t('badge.bottomRight') : (/right/i.test(f.position || '') ? t('badge.over.right') : t('badge.over.left'));
   const el = document.createElement('div');
   el.className = 'card';
   el.dataset.id = entry.id || '';
   el.innerHTML = `
     <div class="summary">
       <span class="swatch" style="background:${esc(bg)};color:${esc(tc)}">${esc(label)}</span>
-      <span class="grow"><b>${esc(f.tag || (isNew ? '新角标' : '(未设 tag)'))}</b> <span class="muted">· ${esc(meta)}</span></span>
-      <label class="inline"><input type="checkbox" data-toggle ${on ? 'checked' : ''}/> 启用</label>
-      <button type="button" class="btn btn-sm" data-edit>${isNew ? '展开' : '编辑'}</button>
+      <span class="grow"><b>${esc(f.tag || (isNew ? t('newBadge') : t('noTag')))}</b> <span class="muted">· ${esc(meta)}</span></span>
+      <label class="inline"><input type="checkbox" data-toggle ${on ? 'checked' : ''}/> ${t('enable')}</label>
+      <button type="button" class="btn btn-sm" data-edit>${isNew ? t('expand') : t('edit')}</button>
     </div>
     <div class="detail" data-detail hidden></div>`;
   const toggle = el.querySelector('[data-toggle]');
   toggle.addEventListener('change', async () => {
     if (!el.dataset.id) return; // unsaved new row
-    try { await api('PUT', '/api/metaobjects/' + type, { id: el.dataset.id, fields: { enabled: toggle.checked ? 'true' : 'false' } }); toast(toggle.checked ? '已启用' : '已停用'); }
+    try { await api('PUT', '/api/metaobjects/' + type, { id: el.dataset.id, fields: { enabled: toggle.checked ? 'true' : 'false' } }); toast(toggle.checked ? t('enabledMsg') : t('disabledMsg')); }
     catch (e) { toggle.checked = !toggle.checked; toast(e.message, false); }
   });
   const detail = el.querySelector('[data-detail]');
@@ -221,7 +353,7 @@ function badgeCardEl(entry, isNew = false, type = 'cgp_badge') {
       if (!detail.dataset.loaded) { detail.innerHTML = badgeDetailHtml(entry, type); detail.dataset.loaded = '1'; bindBadgeDetail(el, type); }
       detail.hidden = false;
     } else detail.hidden = true;
-    editBtn.textContent = detail.hidden ? '编辑' : '关闭';
+    editBtn.textContent = detail.hidden ? t('edit') : t('close');
     editBtn.classList.toggle('btn-primary', !detail.hidden);
   });
   return el;
@@ -231,21 +363,22 @@ function badgeDetailHtml(entry, type) {
   const f = entry.fields || {};
   const isStatus = type === 'cgp_status_badge';
   const curPos = /right/i.test(f.position || '') ? 'bottom-right' : 'bottom-left';
-  const sel = BADGE_POS.map(([v, lbl]) => `<option value="${v}" ${curPos === v ? 'selected' : ''}>${lbl}</option>`).join('');
+  const posLbl = { 'bottom-left': t('pos.left'), 'bottom-right': t('pos.right') };
+  const sel = BADGE_POS_VALUES.map((v) => `<option value="${v}" ${curPos === v ? 'selected' : ''}>${posLbl[v]}</option>`).join('');
   const colorRow = (key, def) => `<span class="colorrow"><input type="color" value="${esc(f[key] || def)}" oninput="this.nextElementSibling.value=this.value"/><input type="text" data-key="${key}" data-kind="text" value="${esc(f[key] || def)}"/></span>`;
   return `
-    ${isStatus ? '<p class="hint">产品状态角标:按 tag 匹配,显示在图片右下角(叠在图上)。</p>' : ''}
-    <label>Tag <span class="hint">(产品标签,用于匹配;可下拉选或自己输入)</span><input type="text" data-key="tag" data-kind="text" list="all-tags" value="${esc(f.tag || '')}"/></label>
-    <label>Label <span class="hint">(显示文字)</span><input type="text" data-key="label" data-kind="text" value="${esc(f.label || '')}"/></label>
-    ${isStatus ? '' : `<label>Image <span class="hint">(图片 gid,留空用文字)</span><input type="text" data-key="image" data-kind="text" value="${esc(f.image || '')}"/></label>`}
-    <label>Background 背景色 ${colorRow('background', '#1c222d')}</label>
-    <label>Text color 文字色 ${colorRow('text_color', '#ffffff')}</label>
-    ${isStatus ? '' : `<label>Position 位置 <span class="hint">(图片下方:左 / 右)</span><select data-key="position" data-kind="text">${sel}</select></label>`}
-    ${isStatus ? '' : `<label>Link 链接 <span class="hint">(字段用 URL 类型;填了才可点击跳转,留空则为纯展示徽章)</span><input type="text" data-key="link" data-kind="text" value="${esc(linkUrl(f.link))}" placeholder="https://...../collections/..."/></label>`}
-    <label class="inline"><input type="checkbox" data-key="enabled" data-kind="bool" ${f.enabled !== 'false' ? 'checked' : ''}/> Enabled 启用</label>
+    ${isStatus ? `<p class="hint">${t('attr.note')}</p>` : ''}
+    <label>Tag <span class="hint">${t('label.tagHint')}</span><input type="text" data-key="tag" data-kind="text" list="all-tags" value="${esc(f.tag || '')}"/></label>
+    <label>Label<input type="text" data-key="label" data-kind="text" value="${esc(f.label || '')}"/></label>
+    ${isStatus ? '' : `<label>Image <span class="hint">${t('label.imageHint')}</span><input type="text" data-key="image" data-kind="text" value="${esc(f.image || '')}"/></label>`}
+    <label>Background ${colorRow('background', '#1c222d')}</label>
+    <label>Text color ${colorRow('text_color', '#ffffff')}</label>
+    ${isStatus ? '' : `<label>Position <span class="hint">${t('label.posHint')}</span><select data-key="position" data-kind="text">${sel}</select></label>`}
+    ${isStatus ? '' : `<label>Link <span class="hint">${t('label.linkHint')}</span><input type="text" data-key="link" data-kind="text" value="${esc(linkUrl(f.link))}" placeholder="https://...../collections/..."/></label>`}
+    <label class="inline"><input type="checkbox" data-key="enabled" data-kind="bool" ${f.enabled !== 'false' ? 'checked' : ''}/> ${t('enable')}</label>
     <div class="entry-actions">
-      <button type="button" class="btn btn-primary" data-act="save">保存</button>
-      ${entry.id ? '<button type="button" class="btn btn-danger" data-act="del">删除</button>' : ''}
+      <button type="button" class="btn btn-primary" data-act="save">${t('save')}</button>
+      ${entry.id ? `<button type="button" class="btn btn-danger" data-act="del">${t('del')}</button>` : ''}
     </div>`;
 }
 
@@ -258,14 +391,14 @@ function bindBadgeDetail(card, type) {
       const id = card.dataset.id;
       if (id) await api('PUT', '/api/metaobjects/' + type, { id, fields });
       else await api('POST', '/api/metaobjects/' + type, { fields });
-      toast('已保存 ✓');
+      toast(t('saved'));
       loadType(type);
     } catch (e) { toast(e.message, false); }
   });
   const del = detail.querySelector('[data-act="del"]');
   if (del) del.addEventListener('click', async () => {
-    if (!confirm('确定删除这个角标?')) return;
-    try { await api('DELETE', '/api/metaobjects/' + type, { id: card.dataset.id }); toast('已删除 ✓'); loadType(type); }
+    if (!confirm(t('confirmDelLabel'))) return;
+    try { await api('DELETE', '/api/metaobjects/' + type, { id: card.dataset.id }); toast(t('deleted')); loadType(type); }
     catch (e) { toast(e.message, false); }
   });
 }
@@ -288,22 +421,22 @@ function renderSortRules(entries) {
   const body = $('#meta-body');
   body.innerHTML = `
     <div class="toolbar">
-      <input type="search" id="sr-filter" placeholder="搜索关键词或类型…" value="${esc(SR_FILTER)}" />
+      <input type="search" id="sr-filter" placeholder="${t('sr.filter')}" value="${esc(SR_FILTER)}" />
       <select id="sr-order">
-        <option value="recent">默认顺序</option>
-        <option value="alpha">关键词 A-Z</option>
-        <option value="kw_desc">关键词数 多→少</option>
-        <option value="type_desc">类型数 多→少</option>
+        <option value="recent">${t('sr.order.recent')}</option>
+        <option value="alpha">${t('sr.order.alpha')}</option>
+        <option value="kw_desc">${t('sr.order.kwDesc')}</option>
+        <option value="type_desc">${t('sr.order.typeDesc')}</option>
       </select>
     </div>
     <div class="list" id="sr-list"></div>
-    <button class="btn btn-primary" id="add-entry">+ 新增规则</button>
+    <button class="btn btn-primary" id="add-entry">${t('addRule')}</button>
     <details class="card" style="margin-top:14px">
-      <summary style="padding:12px 14px;cursor:pointer;font-weight:600">⬆ 批量导入规则(从表格粘贴)</summary>
+      <summary style="padding:12px 14px;cursor:pointer;font-weight:600">${t('sr.import')}</summary>
       <div class="detail" style="display:block">
-        <p class="hint">每行一条规则。直接从 Excel 复制「Keywords」「Priority Types」两列粘贴(Tab 分隔即可,有没有 Category 列都行);关键词/类型各自用逗号分隔。会自动忽略表头行。</p>
+        <p class="hint">${t('sr.importHint')}</p>
         <textarea id="sr-import" rows="6" placeholder="dzofilm, nisi, cine, lens&#9;Cine Lens, Lens Adapter"></textarea>
-        <div class="entry-actions"><button class="btn btn-primary" id="sr-import-btn">导入</button></div>
+        <div class="entry-actions"><button class="btn btn-primary" id="sr-import-btn">${t('sr.importBtn')}</button></div>
       </div>
     </details>`;
   $('#sr-order').value = SR_ORDER;
@@ -327,14 +460,14 @@ function renderSortRules(entries) {
       const types = typesStr.split(',').map((s) => s.trim()).filter(Boolean);
       if (keywords.length && types.length) rules.push({ keywords, types });
     }
-    if (!rules.length) { toast('没解析到有效规则(每行需 关键词<Tab>类型)', false); return; }
-    if (!confirm('将新建 ' + rules.length + ' 条规则,确定?')) return;
+    if (!rules.length) { toast(t('sr.importNone'), false); return; }
+    if (!confirm(t('sr.importConfirm', rules.length))) return;
     let ok = 0;
     for (const r of rules) {
       try { await api('POST', '/api/metaobjects/cgp_sort_rule', { fields: { keywords: JSON.stringify(r.keywords), priority_types: JSON.stringify(r.types) } }); ok++; }
       catch (e) { console.error('import rule failed', r, e); }
     }
-    toast('导入完成:' + ok + '/' + rules.length + ' 条');
+    toast(t('sr.importDone') + ok + '/' + rules.length);
     loadType('cgp_sort_rule');
   });
   paintSortRules();
@@ -350,7 +483,7 @@ function paintSortRules() {
   else if (SR_ORDER === 'type_desc') view = view.slice().sort((a, b) => b.types.length - a.types.length);
   const list = $('#sr-list');
   list.innerHTML = '';
-  if (!view.length) { list.innerHTML = '<p class="muted">没有匹配的规则。</p>'; return; }
+  if (!view.length) { list.innerHTML = `<p class="muted">${t('sr.noMatch')}</p>`; return; }
   view.forEach((r) => list.appendChild(sortRuleCardEl(r)));
 }
 
@@ -361,10 +494,10 @@ function sortRuleCardEl(rule, isNew = false) {
   el.innerHTML = `
     <div class="summary">
       <span class="grow">
-        <b>关键词:</b> ${esc(joinPreview(rule.keywords) || '(空)')}
-        <br><span class="muted"><b>类型:</b> ${esc(joinPreview(rule.types) || '(空)')}</span>
+        <b>${t('sr.kw')}:</b> ${esc(joinPreview(rule.keywords) || t('empty'))}
+        <br><span class="muted"><b>${t('sr.types')}:</b> ${esc(joinPreview(rule.types) || t('empty'))}</span>
       </span>
-      <button type="button" class="btn btn-sm" data-edit>${isNew ? '展开' : '编辑'}</button>
+      <button type="button" class="btn btn-sm" data-edit>${isNew ? t('expand') : t('edit')}</button>
     </div>
     <div class="detail" data-detail hidden></div>`;
   const detail = el.querySelector('[data-detail]');
@@ -374,7 +507,7 @@ function sortRuleCardEl(rule, isNew = false) {
       if (!detail.dataset.loaded) { detail.innerHTML = sortRuleDetailHtml(rule); detail.dataset.loaded = '1'; bindSortRuleDetail(el); }
       detail.hidden = false;
     } else detail.hidden = true;
-    btn.textContent = detail.hidden ? '编辑' : '关闭';
+    btn.textContent = detail.hidden ? t('edit') : t('close');
     btn.classList.toggle('btn-primary', !detail.hidden);
   });
   return el;
@@ -382,13 +515,13 @@ function sortRuleCardEl(rule, isNew = false) {
 
 function sortRuleDetailHtml(rule) {
   return `
-    <label>Keywords 关键词 <span class="hint">(每行一个,匹配任意一个即应用此规则)</span>
+    <label>Keywords <span class="hint">${t('sr.kwFieldHint')}</span>
       <textarea data-key="keywords" data-kind="list" rows="4">${esc(rule.keywords.join('\n'))}</textarea></label>
-    <label>Priority types 优先类型 <span class="hint">(每行一个,产品类型按这个顺序排在前面)</span>
+    <label>Priority types <span class="hint">${t('sr.typeFieldHint')}</span>
       <textarea data-key="priority_types" data-kind="list" rows="4">${esc(rule.types.join('\n'))}</textarea></label>
     <div class="entry-actions">
-      <button type="button" class="btn btn-primary" data-act="save">保存</button>
-      ${rule.id ? '<button type="button" class="btn btn-danger" data-act="del">删除</button>' : ''}
+      <button type="button" class="btn btn-primary" data-act="save">${t('save')}</button>
+      ${rule.id ? `<button type="button" class="btn btn-danger" data-act="del">${t('del')}</button>` : ''}
     </div>`;
 }
 
@@ -400,53 +533,53 @@ function bindSortRuleDetail(card) {
       const id = card.dataset.id;
       if (id) await api('PUT', '/api/metaobjects/cgp_sort_rule', { id, fields });
       else await api('POST', '/api/metaobjects/cgp_sort_rule', { fields });
-      toast('已保存 ✓');
+      toast(t('saved'));
       loadType('cgp_sort_rule');
     } catch (e) { toast(e.message, false); }
   });
   const del = detail.querySelector('[data-act="del"]');
   if (del) del.addEventListener('click', async () => {
-    if (!confirm('确定删除这条排序规则?')) return;
-    try { await api('DELETE', '/api/metaobjects/cgp_sort_rule', { id: card.dataset.id }); toast('已删除 ✓'); loadType('cgp_sort_rule'); }
+    if (!confirm(t('confirmDelRule'))) return;
+    try { await api('DELETE', '/api/metaobjects/cgp_sort_rule', { id: card.dataset.id }); toast(t('deleted')); loadType('cgp_sort_rule'); }
     catch (e) { toast(e.message, false); }
   });
 }
 
-// ---- search_panel: per-field modules, save independently ----
-function renderSearchPanel(entries) {
+// ---- search_panel: split into Featured (terms/products/collections) + Banner ----
+function renderSearchPanelFeatured(entries) {
   const body = $('#meta-body');
-  if (!entries.length) {
-    body.innerHTML = '<p class="muted">还没有 search_panel 条目。请在 Shopify 后台新建一条(handle 通常为 main)。</p>';
-    return;
-  }
+  if (!entries.length) { body.innerHTML = `<p class="muted">${t('sp.noEntry')}</p>`; return; }
   body.innerHTML = '';
-  entries.forEach((e) => body.appendChild(searchPanelEl(e)));
+  entries.forEach((e) => {
+    const f = e.fields || {};
+    const wrap = document.createElement('div');
+    wrap.className = 'panel-entry';
+    wrap.appendChild(simpleModuleEl(e.id, 'Popular Terms · ' + t('sp.popular'), joinPreview(parseList(f.popular_terms), 8) || t('empty'),
+      `<label>${t('sp.popular')} <span class="hint">${t('sp.popularHint')}</span>
+        <textarea data-key="popular_terms" data-kind="list" rows="6">${esc(parseList(f.popular_terms).join('\n'))}</textarea></label>`));
+    wrap.appendChild(refModuleEl(e.id, 'featured_products', 'Featured Products · ' + t('sp.products'), parseList(f.featured_products), 'product', 'featured_products_config', f.featured_products_config));
+    wrap.appendChild(refModuleEl(e.id, 'featured_collections', 'Featured Collections · ' + t('sp.collections'), parseList(f.featured_collections), 'collection', 'featured_collections_config', f.featured_collections_config));
+    body.appendChild(wrap);
+  });
 }
 
-function searchPanelEl(entry) {
-  const f = entry.fields || {};
-  const wrap = document.createElement('div');
-  wrap.className = 'panel-entry';
-  const h = document.createElement('h3');
-  h.className = 'panel-title';
-  h.textContent = entry.handle || entry.id;
-  wrap.appendChild(h);
-
-  wrap.appendChild(simpleModuleEl(entry.id, 'Popular Terms 热门搜索词', joinPreview(parseList(f.popular_terms), 8) || '(空)',
-    `<label>热门搜索词 <span class="hint">(每行一个,搜索框聚焦时显示)</span>
-      <textarea data-key="popular_terms" data-kind="list" rows="6">${esc(parseList(f.popular_terms).join('\n'))}</textarea></label>`));
-
-  wrap.appendChild(refModuleEl(entry.id, 'featured_products', 'Featured Products 热门产品', parseList(f.featured_products), 'product', 'featured_products_config', f.featured_products_config));
-  wrap.appendChild(refModuleEl(entry.id, 'featured_collections', 'Featured Collections 热门集合', parseList(f.featured_collections), 'collection', 'featured_collections_config', f.featured_collections_config));
-
-  wrap.appendChild(simpleModuleEl(entry.id, 'Banner Image 横幅图片', f.banner_image || '(无)',
-    `<label>Banner image GID <span class="hint">(gid://shopify/MediaImage/…;建议在 Shopify 后台选)</span>
-      <input type="text" data-key="banner_image" data-kind="text" value="${esc(f.banner_image || '')}"/></label>`));
-  wrap.appendChild(simpleModuleEl(entry.id, 'Banner Link 横幅链接', f.banner_link || '(无)',
-    `<label>Banner link<input type="text" data-key="banner_link" data-kind="text" value="${esc(f.banner_link || '')}"/></label>`));
-  wrap.appendChild(simpleModuleEl(entry.id, 'Banner Alt 替代文字', f.banner_alt || '(无)',
-    `<label>Banner alt<input type="text" data-key="banner_alt" data-kind="text" value="${esc(f.banner_alt || '')}"/></label>`));
-  return wrap;
+function renderSearchPanelBanner(entries) {
+  const body = $('#meta-body');
+  if (!entries.length) { body.innerHTML = `<p class="muted">${t('sp.noEntry')}</p>`; return; }
+  body.innerHTML = '';
+  entries.forEach((e) => {
+    const f = e.fields || {};
+    const wrap = document.createElement('div');
+    wrap.className = 'panel-entry';
+    wrap.appendChild(simpleModuleEl(e.id, t('sp.bannerImg'), f.banner_image || t('none'),
+      `<label>${t('sp.bannerImg')} <span class="hint">${t('sp.bannerImgHint')}</span>
+        <input type="text" data-key="banner_image" data-kind="text" value="${esc(f.banner_image || '')}"/></label>`));
+    wrap.appendChild(simpleModuleEl(e.id, t('sp.bannerLink'), f.banner_link || t('none'),
+      `<label>${t('sp.bannerLink')}<input type="text" data-key="banner_link" data-kind="text" value="${esc(f.banner_link || '')}"/></label>`));
+    wrap.appendChild(simpleModuleEl(e.id, t('sp.bannerAlt'), f.banner_alt || t('none'),
+      `<label>${t('sp.bannerAlt')}<input type="text" data-key="banner_alt" data-kind="text" value="${esc(f.banner_alt || '')}"/></label>`));
+    body.appendChild(wrap);
+  });
 }
 
 function moduleToggle(card) {
@@ -454,7 +587,7 @@ function moduleToggle(card) {
   const btn = card.querySelector('[data-edit]');
   btn.addEventListener('click', () => {
     detail.hidden = !detail.hidden;
-    btn.textContent = detail.hidden ? '编辑' : '关闭';
+    btn.textContent = detail.hidden ? t('edit') : t('close');
     btn.classList.toggle('btn-primary', !detail.hidden);
     if (!detail.hidden && card._onOpen && !card._opened) { card._opened = true; card._onOpen(); }
   });
@@ -465,12 +598,12 @@ function simpleModuleEl(entryId, title, preview, detailHtml) {
   card.className = 'card';
   card.innerHTML = `
     <div class="summary"><span class="grow"><b>${esc(title)}</b> <span class="muted">· ${esc(String(preview))}</span></span>
-      <button type="button" class="btn btn-sm" data-edit>编辑</button></div>
+      <button type="button" class="btn btn-sm" data-edit>${t('edit')}</button></div>
     <div class="detail" data-detail hidden>${detailHtml}
-      <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div></div>`;
+      <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">${t('save')}</button></div></div>`;
   moduleToggle(card);
   card.querySelector('[data-act="save"]').addEventListener('click', async () => {
-    try { await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields: collectFields(card.querySelector('[data-detail]')) }); toast('已保存 ✓'); }
+    try { await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields: collectFields(card.querySelector('[data-detail]')) }); toast(t('saved')); }
     catch (e) { toast(e.message, false); }
   });
   return card;
@@ -489,28 +622,29 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
   let dragGid = null;
   const cfg = parseCfg(cfgValue);
   const pinned = new Set(gids.slice(0, cfg.pin)); // first `pin` items are pinned
+  const itemsSuffix = t('items') ? (' ' + t('items')) : '';
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `
-    <div class="summary"><span class="grow"><b>${esc(title)}</b> <span class="muted" data-count>· ${gids.length} 个</span></span>
-      <button type="button" class="btn btn-sm" data-edit>编辑</button></div>
+    <div class="summary"><span class="grow"><b>${esc(title)}</b> <span class="muted" data-count>· ${gids.length}${itemsSuffix}</span></span>
+      <button type="button" class="btn btn-sm" data-edit>${t('edit')}</button></div>
     <div class="detail" data-detail hidden>
-      <div class="picker"><input type="search" data-search placeholder="搜索${kind === 'product' ? '产品' : '集合'}添加…"/>
+      <div class="picker"><input type="search" data-search placeholder="${kind === 'product' ? t('sp.searchProduct') : t('sp.searchCollection')}"/>
         <div class="picker-results" data-results hidden></div></div>
       <div class="refresh-row">
-        <span>随机刷新间隔:</span>
+        <span>${t('sp.refresh')}</span>
         <input type="number" min="0" data-rn style="width:70px"/>
         <select data-runit>
-          <option value="0">立即(每次打开都换)</option>
-          <option value="60">分钟</option>
-          <option value="3600">小时</option>
-          <option value="86400">天</option>
+          <option value="0">${t('sp.now')}</option>
+          <option value="60">${t('sp.min')}</option>
+          <option value="3600">${t('sp.hour')}</option>
+          <option value="86400">${t('sp.day')}</option>
         </select>
-        <span class="hint">📌 置顶项不参与随机,始终排在最前</span>
+        <span class="hint">${t('sp.pinHint')}</span>
       </div>
       <div class="bulkbar" data-bulk hidden></div>
       <div class="chips" data-chips></div>
-      <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">保存</button></div>
+      <div class="entry-actions"><button type="button" class="btn btn-primary" data-act="save">${t('save')}</button></div>
     </div>`;
   const chipsEl = card.querySelector('[data-chips]');
   const countEl = card.querySelector('[data-count]');
@@ -536,11 +670,11 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
   function paintBulk() {
     if (!selected.size) { bulkEl.hidden = true; bulkEl.innerHTML = ''; return; }
     bulkEl.hidden = false;
-    bulkEl.innerHTML = `<span>已选 ${selected.size} 项</span>
-      <button type="button" class="btn btn-sm" data-bup>↑ 上移</button>
-      <button type="button" class="btn btn-sm" data-bdown>↓ 下移</button>
-      <button type="button" class="btn btn-sm btn-danger" data-bdel>删除选中</button>
-      <button type="button" class="btn btn-sm" data-bclr>取消选择</button>`;
+    bulkEl.innerHTML = `<span>${t('bulk.sel', selected.size)}</span>
+      <button type="button" class="btn btn-sm" data-bup>${t('bulk.up')}</button>
+      <button type="button" class="btn btn-sm" data-bdown>${t('bulk.down')}</button>
+      <button type="button" class="btn btn-sm btn-danger" data-bdel>${t('bulk.del')}</button>
+      <button type="button" class="btn btn-sm" data-bclr>${t('bulk.clr')}</button>`;
     bulkEl.querySelector('[data-bup]').onclick = () => moveSelected('up');
     bulkEl.querySelector('[data-bdown]').onclick = () => moveSelected('down');
     bulkEl.querySelector('[data-bdel]').onclick = () => { gids = gids.filter((g) => !selected.has(g)); selected.clear(); paint(); };
@@ -548,19 +682,19 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
   }
 
   function paint() {
-    countEl.textContent = '· ' + gids.length + ' 个';
+    countEl.textContent = '· ' + gids.length + itemsSuffix;
     chipsEl.innerHTML = gids.length ? gids.map((g, i) => {
       const m = meta[g] || {};
       const img = m.image ? `<img src="${esc(m.image)}" alt=""/>` : '<span class="noimg"></span>';
       return `<div class="chip${pinned.has(g) ? ' is-pinned' : ''}" draggable="true" data-gid="${esc(g)}">
         <input type="checkbox" class="chip-sel" data-sel ${selected.has(g) ? 'checked' : ''}/>
-        <span class="drag" title="拖动排序">⠿</span>
+        <span class="drag">⠿</span>
         ${img}<span class="chip-name" title="${esc(g)}">${esc(m.title || g)}</span>
-        <button type="button" class="chip-btn chip-pin${pinned.has(g) ? ' on' : ''}" data-pin title="置顶/取消置顶">📌</button>
+        <button type="button" class="chip-btn chip-pin${pinned.has(g) ? ' on' : ''}" data-pin title="📌">📌</button>
         <button type="button" class="chip-btn" data-up ${i === 0 ? 'disabled' : ''}>↑</button>
         <button type="button" class="chip-btn" data-down ${i === gids.length - 1 ? 'disabled' : ''}>↓</button>
         <button type="button" class="chip-btn chip-x" data-remove>✕</button></div>`;
-    }).join('') : '<p class="muted">还没有添加。用上面搜索框添加。</p>';
+    }).join('') : `<p class="muted">${t('sp.emptyAdd')}</p>`;
     chipsEl.querySelectorAll('.chip').forEach((chip) => {
       const g = chip.dataset.gid;
       chip.querySelector('[data-sel]').addEventListener('change', (e) => { if (e.target.checked) selected.add(g); else selected.delete(g); paintBulk(); });
@@ -595,7 +729,7 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
         const { items } = await api('GET', path);
         resultsEl.innerHTML = items.length ? items.map((it) =>
           `<div class="result" data-id="${esc(it.id)}" data-title="${esc(it.title)}" data-image="${esc(it.image)}">${it.image ? `<img src="${esc(it.image)}"/>` : '<span class="noimg"></span>'}<span>${esc(it.title)}</span></div>`
-        ).join('') : '<div class="result muted">无结果</div>';
+        ).join('') : `<div class="result muted">${t('noResult')}</div>`;
         resultsEl.hidden = false;
         resultsEl.querySelectorAll('.result[data-id]').forEach((r) => r.addEventListener('click', () => {
           const id = r.dataset.id;
@@ -617,17 +751,17 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
       if (cfgField) fields[cfgField] = JSON.stringify({ refreshSec, pin: gids.filter((g) => pinned.has(g)).length });
       try {
         await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields });
-        toast('已保存 ✓');
+        toast(t('saved'));
       } catch (err) {
         // The *_config field is optional — if the metaobject doesn't have it,
         // still save the product/collection list (just without refresh/pin config).
         if (cfgField && /does not exist/i.test(err.message || '')) {
           delete fields[cfgField];
           await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields });
-          toast('已保存(刷新间隔/置顶未存:metaobject 缺 ' + cfgField + ' 字段)');
+          toast(t('sp.savedNoCfg', cfgField));
         } else { throw err; }
       }
-      countEl.textContent = '· ' + gids.length + ' 个';
+      countEl.textContent = '· ' + gids.length + itemsSuffix;
       paint();
     } catch (e) { toast(e.message, false); }
   });
@@ -637,10 +771,10 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
 // ---- themes / apply ----
 async function loadThemes() {
   const sel = $('#theme-select');
-  sel.innerHTML = '<option>加载中…</option>';
+  sel.innerHTML = `<option>${t('theme.loading')}</option>`;
   try {
     const { themes } = await api('GET', '/api/themes');
-    sel.innerHTML = themes.map((t) => `<option value="${t.id}">${esc(t.name)} ${t.role === 'main' ? '(线上)' : '(' + t.role + ')'}</option>`).join('');
+    sel.innerHTML = themes.map((th) => `<option value="${th.id}">${esc(th.name)} ${th.role === 'main' ? '(' + t('theme.online') + ')' : '(' + th.role + ')'}</option>`).join('');
   } catch (e) { sel.innerHTML = `<option>${esc(e.message)}</option>`; }
 }
 $('#theme-refresh').addEventListener('click', loadThemes);
@@ -649,13 +783,13 @@ async function runApply(dryRun) {
   const id = $('#theme-select').value;
   const opt = $('#theme-select').selectedOptions[0];
   if (!id) return;
-  if (!dryRun && /线上|main/.test(opt.textContent) && !confirm('这是线上主题!确定要直接写入线上吗?建议改用草稿主题。仍要继续?')) return;
+  if (!dryRun && /线上|live|main/.test(opt.textContent) && !confirm(t('apply.onlineWarn'))) return;
   const log = $('#apply-log');
-  log.textContent = '运行中…';
+  log.textContent = t('apply.running');
   try {
     const r = await api('POST', `/api/themes/${id}/apply`, { dryRun });
-    log.textContent = (dryRun ? '【试运行,未实际写入】\n' : '【已写入】\n') + r.log.join('\n');
-    toast(dryRun ? '试运行完成' : '写入完成 ✓');
+    log.textContent = (dryRun ? t('apply.dryHead') : t('apply.doneHead')) + r.log.join('\n');
+    toast(dryRun ? t('apply.dryDone') : t('apply.doneToast'));
   } catch (e) { log.textContent = e.message; toast(e.message, false); }
 }
 $('#btn-dryrun').addEventListener('click', () => runApply(true));
@@ -663,9 +797,15 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
 
 // ---- init ----
 (async () => {
+  // Language toggle (works even before the Shopify session resolves).
+  document.querySelectorAll('#lang-toggle button').forEach((b) => {
+    b.classList.toggle('is-active', b.dataset.lang === LANG);
+    b.addEventListener('click', () => setLang(b.dataset.lang));
+  });
+  applyI18n();
   try {
-    const t = await sessionToken();
-    STORE = (decodeJwtPayload(t).dest || '').replace(/^https?:\/\//, '');
+    const tk = await sessionToken();
+    STORE = (decodeJwtPayload(tk).dest || '').replace(/^https?:\/\//, '');
     const handle = STORE.replace('.myshopify.com', '');
     const sd = `https://admin.shopify.com/store/${handle}/apps/search-and-discovery`;
     $('#sd-link').href = sd;
@@ -676,6 +816,6 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
   } catch (e) {
     $('#store').textContent = String(e.message || e);
     $('#meta-body').innerHTML = '<p class="err">' + esc(String(e.message || e)) + '</p>' +
-      '<p class="muted">此 app 是嵌入式的,需在 <b>Shopify 后台 → Apps → Search Panel Dev</b> 里打开,不要直接开 Railway 网址。</p>';
+      '<p class="muted">' + t('init.embedErr') + '</p>';
   }
 })();
