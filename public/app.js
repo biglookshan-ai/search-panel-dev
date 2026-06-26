@@ -63,7 +63,7 @@ const I18N = {
   en: {
     'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Settings', 'tab.system': 'System',
     'sub.promo': 'Promotion Labels', 'sub.attr': 'Product Attribute Labels', 'sub.sort': 'Product Sort Rules',
-    'sub.featured': 'Featured', 'sub.banner': 'Promo Banner',
+    'sub.featured': 'Recommendations', 'sub.banner': 'Promo Banner',
     'loading': 'Loading…',
     'boosts.intro': 'Boosts / synonyms / filters for search results are configured in the official Search & Discovery app:',
     'boosts.product': 'Product boosts', 'boosts.syn': 'Synonyms',
@@ -592,11 +592,11 @@ function renderSearchPanelFeatured(entries) {
     const f = e.fields || {};
     const wrap = document.createElement('div');
     wrap.className = 'panel-entry';
-    wrap.appendChild(simpleModuleEl(e.id, 'Popular Terms · ' + t('sp.popular'), joinPreview(parseList(f.popular_terms), 8) || t('empty'),
+    wrap.appendChild(simpleModuleEl(e.id, t('sp.popular'), joinPreview(parseList(f.popular_terms), 8) || t('empty'),
       `<label>${t('sp.popular')} <span class="hint">${t('sp.popularHint')}</span>
         <textarea data-key="popular_terms" data-kind="list" rows="6">${esc(parseList(f.popular_terms).join('\n'))}</textarea></label>`));
-    wrap.appendChild(refModuleEl(e.id, 'featured_products', 'Featured Products · ' + t('sp.products'), parseList(f.featured_products), 'product', 'featured_products_config', f.featured_products_config));
-    wrap.appendChild(refModuleEl(e.id, 'featured_collections', 'Featured Collections · ' + t('sp.collections'), parseList(f.featured_collections), 'collection', 'featured_collections_config', f.featured_collections_config));
+    wrap.appendChild(refModuleEl(e.id, 'featured_products', t('sp.products'), parseList(f.featured_products), 'product', 'featured_products_config', f.featured_products_config));
+    wrap.appendChild(refModuleEl(e.id, 'featured_collections', t('sp.collections'), parseList(f.featured_collections), 'collection', 'featured_collections_config', f.featured_collections_config));
     body.appendChild(wrap);
   });
 }
