@@ -33,69 +33,81 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- Top bar ---------- */
-.topbar {
+.connect { color: var(--brand); font-weight: 600; }
+
+/* ---------- App shell: left nav + right content ---------- */
+.app { display: flex; min-height: 100vh; align-items: stretch; }
+
+.sidebar {
+  flex: 0 0 220px;
+  background: var(--dark);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  transition: flex-basis .18s ease;
+}
+.sidebar__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.sidebar__toggle {
+  flex: 0 0 auto;
+  width: 32px; height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background .15s;
+}
+.sidebar__toggle:hover { background: rgba(255, 255, 255, .2); }
+.sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 15px; white-space: nowrap; overflow: hidden; }
+.sidebar__nav { display: flex; flex-direction: column; gap: 4px; padding: 10px 8px; }
+
+/* nav items reuse the .tab class so the existing JS handler keeps working */
+.sidebar .tab {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 24px;
-  background: var(--dark);
-  color: #fff;
-  box-shadow: var(--shadow-sm);
-}
-.topbar h1 {
-  font-size: 16px;
-  font-weight: 650;
-  letter-spacing: .2px;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.topbar h1::before {
-  content: "";
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--brand);
-  box-shadow: 0 0 0 3px rgba(249, 207, 19, .25);
-}
-.store { font-size: 12px; opacity: .65; margin-left: auto; }
-.connect { color: var(--brand); font-weight: 600; }
-
-/* ---------- Top-level tabs (underline) ---------- */
-.tabs {
-  display: flex;
-  gap: 2px;
-  padding: 0 24px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-.tab {
+  width: 100%;
+  text-align: left;
   border: 0;
+  margin: 0;
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-sub);
-  padding: 13px 14px 12px;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  color: #c8cdd6;
+  padding: 11px 12px;
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 550;
-  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
 }
-.tab:hover { color: var(--text); }
-.tab.is-active {
-  color: var(--text);
-  border-bottom-color: var(--brand);
-  font-weight: 650;
-}
+.sidebar .tab:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+.sidebar .tab.is-active { background: var(--brand); color: var(--dark); font-weight: 650; }
+.navicon { flex: 0 0 auto; width: 20px; text-align: center; font-size: 16px; }
+
+.content { flex: 1 1 auto; min-width: 0; padding: 24px 28px 48px; }
+
+/* collapsed sidebar → icons only */
+.app.is-collapsed .sidebar { flex-basis: 60px; }
+.app.is-collapsed .navtxt,
+.app.is-collapsed .sidebar__brandtxt { display: none; }
+.app.is-collapsed .sidebar__brand { justify-content: center; gap: 0; }
+.app.is-collapsed .sidebar__head { justify-content: center; flex-wrap: wrap; }
+.app.is-collapsed .sidebar .tab { justify-content: center; padding: 11px 0; }
 
 /* ---------- Sub tabs (pills) ---------- */
 .subtabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 18px 0 4px;
+  margin-bottom: 20px;
 }
 .subtab {
   border: 1px solid var(--border);
@@ -118,9 +130,8 @@ body {
 }
 
 /* ---------- Layout ---------- */
-.panel { display: none; padding: 22px 24px 40px; }
+.panel { display: none; }
 .panel.is-active { display: block; }
-main { max-width: 960px; margin: 0 auto; }
 
 .muted { color: var(--text-sub); }
 .err { color: var(--red); }
@@ -319,20 +330,27 @@ main { max-width: 960px; margin: 0 auto; }
   padding: 9px 11px; background: #fffbe6; border: 1px solid #f0e3a0;
   border-radius: var(--radius-sm); margin-bottom: 10px; font-size: 13px; flex-wrap: wrap;
 }
+/* .bulkbar sets display:flex, which would override the [hidden] UA rule — so it
+   stayed visible (empty yellow bar) when nothing was selected. Re-assert hidden. */
+.bulkbar[hidden] { display: none; }
 
-/* refresh interval row + pinned chips */
+/* refresh interval row + pinned chips — keep interval + unit on one line */
 .refresh-row {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   margin-bottom: 12px; font-size: 13px; color: var(--text-sub);
 }
+.refresh-row .rr-ctl { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .refresh-row input[type=number] { width: 72px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; }
-.refresh-row select { border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; background: var(--surface); }
+.refresh-row select { flex: 0 0 auto; min-width: 150px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; background: var(--surface); }
 .refresh-row .hint { margin-left: auto; }
 .chip-pin { filter: grayscale(1) opacity(.45); }
 .chip-pin.on { filter: none; background: #fffbe6; border-color: #f0e3a0; }
 .chip.is-pinned { border-color: #f0c000; box-shadow: 0 0 0 1px var(--brand) inset; background: #fffdf2; }
 
 /* ---------- System settings ---------- */
+.sys-card { padding: 16px 18px; margin-bottom: 14px; }
+.sys-card .panel-title { margin-top: 0; }
+.sys-card > .sys-row:last-child, .sys-card > .apply-actions:last-child, .sys-card > .log:last-child { margin-bottom: 0; }
 .sys-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .sys-label { font-size: 12px; font-weight: 600; color: var(--text-sub); min-width: 84px; }
 .sys-val { font-size: 13px; font-weight: 600; }
@@ -343,9 +361,12 @@ main { max-width: 960px; margin: 0 auto; }
 .langtoggle button + button { border-left: 1px solid var(--border); }
 .langtoggle button.is-active { background: var(--dark); color: #fff; }
 
-/* ---------- Small screens ---------- */
-@media (max-width: 600px) {
-  .topbar, .tabs { padding-left: 16px; padding-right: 16px; }
-  .panel { padding: 18px 16px 32px; }
-  .store { display: none; }
+/* ---------- Small screens: collapse the sidebar to icons ---------- */
+@media (max-width: 720px) {
+  .sidebar { flex-basis: 60px; }
+  .navtxt, .sidebar__brandtxt { display: none; }
+  .sidebar__brand { justify-content: center; gap: 0; }
+  .sidebar__head { justify-content: center; flex-wrap: wrap; }
+  .sidebar .tab { justify-content: center; padding: 11px 0; }
+  .content { padding: 18px 16px 36px; }
 }

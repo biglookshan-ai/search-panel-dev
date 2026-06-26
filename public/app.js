@@ -13,7 +13,7 @@ const I18N = {
     'boosts.product': 'Product boosts 排名提升', 'boosts.syn': 'Synonyms 同义词',
     'boosts.open': '打开 Search & Discovery',
     'boosts.note': '官方界面受 Shopify 限制无法内嵌到本 app,点击会在 Shopify 后台新标签打开。',
-    'sys.store': '当前店铺', 'sys.lang': '界面语言',
+    'sys.store': '当前店铺', 'sys.lang': '语言', 'sys.storeTitle': '店铺信息', 'sys.langTitle': '界面语言',
     'apply.title': '写入主题',
     'apply.desc': '把搜索引擎模块写入选定主题(建议只选草稿/未发布主题)。先「试运行」看清单,确认无误再「正式写入」。',
     'apply.theme': '主题', 'apply.refresh': '刷新', 'apply.dry': '试运行 (dry run)', 'apply.go': '正式写入',
@@ -67,7 +67,7 @@ const I18N = {
     'boosts.product': 'Product boosts', 'boosts.syn': 'Synonyms',
     'boosts.open': 'Open Search & Discovery',
     'boosts.note': "The official UI can't be embedded here (Shopify restriction); it opens in a new Shopify admin tab.",
-    'sys.store': 'Store', 'sys.lang': 'Language',
+    'sys.store': 'Store', 'sys.lang': 'Language', 'sys.storeTitle': 'Store', 'sys.langTitle': 'Language',
     'apply.title': 'Apply to theme',
     'apply.desc': 'Write the search-engine modules into the selected theme (prefer a draft/unpublished theme). Run "Dry run" first to review, then "Apply".',
     'apply.theme': 'Theme', 'apply.refresh': 'Refresh', 'apply.dry': 'Dry run', 'apply.go': 'Apply',
@@ -633,13 +633,15 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
         <div class="picker-results" data-results hidden></div></div>
       <div class="refresh-row">
         <span>${t('sp.refresh')}</span>
-        <input type="number" min="0" data-rn style="width:70px"/>
-        <select data-runit>
-          <option value="0">${t('sp.now')}</option>
-          <option value="60">${t('sp.min')}</option>
-          <option value="3600">${t('sp.hour')}</option>
-          <option value="86400">${t('sp.day')}</option>
-        </select>
+        <span class="rr-ctl">
+          <input type="number" min="0" data-rn/>
+          <select data-runit>
+            <option value="0">${t('sp.now')}</option>
+            <option value="60">${t('sp.min')}</option>
+            <option value="3600">${t('sp.hour')}</option>
+            <option value="86400">${t('sp.day')}</option>
+          </select>
+        </span>
         <span class="hint">${t('sp.pinHint')}</span>
       </div>
       <div class="bulkbar" data-bulk hidden></div>
@@ -797,6 +799,14 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
 
 // ---- init ----
 (async () => {
+  // Sidebar collapse (persisted per user).
+  const appEl = document.getElementById('app');
+  if (localStorage.getItem('cgp-admin-collapsed') === '1') appEl.classList.add('is-collapsed');
+  const sbToggle = document.getElementById('sidebar-toggle');
+  if (sbToggle) sbToggle.addEventListener('click', () => {
+    appEl.classList.toggle('is-collapsed');
+    localStorage.setItem('cgp-admin-collapsed', appEl.classList.contains('is-collapsed') ? '1' : '0');
+  });
   // Language toggle (works even before the Shopify session resolves).
   document.querySelectorAll('#lang-toggle button').forEach((b) => {
     b.classList.toggle('is-active', b.dataset.lang === LANG);

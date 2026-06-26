@@ -9,69 +9,85 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>🔎 Search Admin</h1>
-  </header>
-
-  <nav class="tabs">
-    <button class="tab is-active" data-tab="meta" data-i18n="tab.custom">自定义</button>
-    <button class="tab" data-tab="links" data-i18n="tab.boosts">Boosts / 设置</button>
-    <button class="tab" data-tab="system" data-i18n="tab.system">系统设置</button>
-  </nav>
-
-  <main>
-    <!-- Customization (all search-engine custom settings) -->
-    <section id="tab-meta" class="panel is-active">
-      <div class="subtabs">
-        <button class="subtab is-active" data-type="cgp_badge" data-i18n="sub.promo">促销活动标签</button>
-        <button class="subtab" data-type="cgp_status_badge" data-i18n="sub.attr">产品属性标签</button>
-        <button class="subtab" data-type="cgp_sort_rule" data-i18n="sub.sort">产品排序规则</button>
-        <button class="subtab" data-type="search_panel_featured" data-i18n="sub.featured">热门推荐</button>
-        <button class="subtab" data-type="search_panel_banner" data-i18n="sub.banner">促销 Banner</button>
+  <div class="app" id="app">
+    <!-- Left vertical nav (collapsible) -->
+    <aside class="sidebar">
+      <div class="sidebar__head">
+        <button class="sidebar__toggle" id="sidebar-toggle" type="button" aria-label="collapse">☰</button>
+        <span class="sidebar__brand">🔎 <span class="sidebar__brandtxt">Search Admin</span></span>
       </div>
-      <div id="meta-body"><p class="muted" data-i18n="loading">加载中…</p></div>
-    </section>
+      <nav class="sidebar__nav">
+        <button class="tab is-active" data-tab="meta" type="button">
+          <span class="navicon">🎛️</span><span class="navtxt" data-i18n="tab.custom">自定义</span>
+        </button>
+        <button class="tab" data-tab="links" type="button">
+          <span class="navicon">🚀</span><span class="navtxt" data-i18n="tab.boosts">Boosts / 设置</span>
+        </button>
+        <button class="tab" data-tab="system" type="button">
+          <span class="navicon">⚙️</span><span class="navtxt" data-i18n="tab.system">系统设置</span>
+        </button>
+      </nav>
+    </aside>
 
-    <!-- Boosts / Synonyms (official Search & Discovery) -->
-    <section id="tab-links" class="panel">
-      <p data-i18n="boosts.intro">搜索结果的 Boosts / 同义词 / 筛选器在官方 Search &amp; Discovery app 里设置:</p>
-      <div class="apply-actions">
-        <a id="boosts-link" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="boosts.product">Product boosts 排名提升</a>
-        <a id="synonyms-link" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="boosts.syn">Synonyms 同义词</a>
-        <a id="sd-link" class="btn" target="_blank" rel="noopener" data-i18n="boosts.open">打开 Search &amp; Discovery</a>
-      </div>
-      <p class="hint" data-i18n="boosts.note">官方界面受 Shopify 限制无法内嵌到本 app,点击会在 Shopify 后台新标签打开。</p>
-    </section>
-
-    <!-- System settings -->
-    <section id="tab-system" class="panel">
-      <div class="sys-row">
-        <span class="sys-label" data-i18n="sys.store">当前店铺</span>
-        <span id="store" class="sys-val"></span>
-      </div>
-      <div class="sys-row">
-        <span class="sys-label" data-i18n="sys.lang">界面语言</span>
-        <div class="langtoggle" id="lang-toggle">
-          <button type="button" data-lang="zh" class="is-active">中文</button>
-          <button type="button" data-lang="en">English</button>
+    <!-- Right content -->
+    <main class="content">
+      <!-- Customization -->
+      <section id="tab-meta" class="panel is-active">
+        <div class="subtabs">
+          <button class="subtab is-active" data-type="cgp_badge" data-i18n="sub.promo">促销活动标签</button>
+          <button class="subtab" data-type="cgp_status_badge" data-i18n="sub.attr">产品属性标签</button>
+          <button class="subtab" data-type="cgp_sort_rule" data-i18n="sub.sort">产品排序规则</button>
+          <button class="subtab" data-type="search_panel_featured" data-i18n="sub.featured">热门推荐</button>
+          <button class="subtab" data-type="search_panel_banner" data-i18n="sub.banner">促销 Banner</button>
         </div>
-      </div>
+        <div id="meta-body"><p class="muted" data-i18n="loading">加载中…</p></div>
+      </section>
 
-      <hr class="sys-sep" />
+      <!-- Boosts / Synonyms -->
+      <section id="tab-links" class="panel">
+        <p data-i18n="boosts.intro">搜索结果的 Boosts / 同义词 / 筛选器在官方 Search &amp; Discovery app 里设置:</p>
+        <div class="apply-actions">
+          <a id="boosts-link" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="boosts.product">Product boosts 排名提升</a>
+          <a id="synonyms-link" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="boosts.syn">Synonyms 同义词</a>
+          <a id="sd-link" class="btn" target="_blank" rel="noopener" data-i18n="boosts.open">打开 Search &amp; Discovery</a>
+        </div>
+        <p class="hint" data-i18n="boosts.note">官方界面受 Shopify 限制无法内嵌到本 app,点击会在 Shopify 后台新标签打开。</p>
+      </section>
 
-      <h3 class="panel-title" data-i18n="apply.title">写入主题</h3>
-      <p class="muted" data-i18n="apply.desc">把搜索引擎模块写入选定主题(建议只选草稿/未发布主题)。先「试运行」看清单,确认无误再「正式写入」。</p>
-      <label class="sys-field"><span data-i18n="apply.theme">主题</span>
-        <select id="theme-select"></select>
-        <button id="theme-refresh" class="btn btn-sm" data-i18n="apply.refresh">刷新</button>
-      </label>
-      <div class="apply-actions">
-        <button id="btn-dryrun" class="btn" data-i18n="apply.dry">试运行 (dry run)</button>
-        <button id="btn-apply" class="btn btn-primary" data-i18n="apply.go">正式写入</button>
-      </div>
-      <pre id="apply-log" class="log"></pre>
-    </section>
-  </main>
+      <!-- System settings -->
+      <section id="tab-system" class="panel">
+        <div class="card sys-card">
+          <h3 class="panel-title" data-i18n="sys.storeTitle">店铺信息</h3>
+          <div class="sys-row"><span class="sys-label" data-i18n="sys.store">当前店铺</span><span id="store" class="sys-val"></span></div>
+        </div>
+
+        <div class="card sys-card">
+          <h3 class="panel-title" data-i18n="sys.langTitle">界面语言</h3>
+          <div class="sys-row">
+            <span class="sys-label" data-i18n="sys.lang">语言</span>
+            <div class="langtoggle" id="lang-toggle">
+              <button type="button" data-lang="zh" class="is-active">中文</button>
+              <button type="button" data-lang="en">English</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card sys-card">
+          <h3 class="panel-title" data-i18n="apply.title">写入主题</h3>
+          <p class="muted" data-i18n="apply.desc">把搜索引擎模块写入选定主题(建议只选草稿/未发布主题)。先「试运行」看清单,确认无误再「正式写入」。</p>
+          <label class="sys-field"><span data-i18n="apply.theme">主题</span>
+            <select id="theme-select"></select>
+            <button id="theme-refresh" class="btn btn-sm" data-i18n="apply.refresh">刷新</button>
+          </label>
+          <div class="apply-actions">
+            <button id="btn-dryrun" class="btn" data-i18n="apply.dry">试运行 (dry run)</button>
+            <button id="btn-apply" class="btn btn-primary" data-i18n="apply.go">正式写入</button>
+          </div>
+          <pre id="apply-log" class="log"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <div id="toast" class="toast" hidden></div>
   <script src="app.js"></script>
