@@ -91,7 +91,7 @@ body {
 }
 .sidebar .tab:hover { background: var(--bg); color: var(--text); }
 .sidebar .tab.is-active { background: #eef0f2; color: var(--text); font-weight: 650; box-shadow: inset 3px 0 0 var(--brand); }
-.navicon { flex: 0 0 auto; width: 20px; text-align: center; font-size: 16px; }
+.navicon { flex: 0 0 auto; width: 18px; height: 18px; }
 
 .content { flex: 1 1 auto; min-width: 0; padding: 24px 28px 48px; }
 
@@ -131,8 +131,8 @@ body {
   font-weight: 650;
 }
 
-/* ---------- Layout ---------- */
-.panel { display: none; }
+/* ---------- Layout (centered window, not full-width) ---------- */
+.panel { display: none; max-width: 860px; margin: 0 auto; }
 .panel.is-active { display: block; }
 
 .muted { color: var(--text-sub); }
@@ -314,6 +314,7 @@ body {
   border: 1px solid var(--border-strong); background: var(--surface);
   border-radius: 7px; cursor: pointer; width: 30px; height: 30px;
   flex: 0 0 auto; font-size: 13px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
   transition: background .12s, border-color .12s;
 }
 .chip-btn:hover:not(:disabled) { background: var(--surface-2); }
@@ -345,8 +346,8 @@ body {
 .refresh-row input[type=number] { width: 72px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; }
 .refresh-row select { flex: 0 0 auto; min-width: 150px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; background: var(--surface); }
 .refresh-row .hint { margin-left: auto; }
-.chip-pin { filter: grayscale(1) opacity(.45); }
-.chip-pin.on { filter: none; background: #fffbe6; border-color: #f0e3a0; }
+.chip-pin { color: #b0b6bf; }
+.chip-pin.on { color: #b8860b; background: #fffbe6; border-color: #f0e3a0; }
 .chip.is-pinned { border-color: #f0c000; box-shadow: 0 0 0 1px var(--brand) inset; background: #fffdf2; }
 
 /* ---------- System settings ---------- */

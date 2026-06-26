@@ -14,17 +14,20 @@
     <aside class="sidebar">
       <div class="sidebar__head">
         <button class="sidebar__toggle" id="sidebar-toggle" type="button" aria-label="collapse">☰</button>
-        <span class="sidebar__brand">🔎 <span class="sidebar__brandtxt">Search Admin</span></span>
+        <span class="sidebar__brand"><span class="sidebar__brandtxt">Search Admin</span></span>
       </div>
       <nav class="sidebar__nav">
         <button class="tab is-active" data-tab="meta" type="button">
-          <span class="navicon">🎛️</span><span class="navtxt" data-i18n="tab.custom">自定义</span>
+          <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h7M14 6h3M3 14h3M10 14h7"/><circle cx="12" cy="6" r="2"/><circle cx="8" cy="14" r="2"/></svg>
+          <span class="navtxt" data-i18n="tab.custom">自定义</span>
         </button>
         <button class="tab" data-tab="links" type="button">
-          <span class="navicon">🚀</span><span class="navtxt" data-i18n="tab.boosts">Boosts / 设置</span>
+          <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l4-4 3 3 6-6"/><path d="M12 6h4v4"/></svg>
+          <span class="navtxt" data-i18n="tab.boosts">Boosts / 设置</span>
         </button>
         <button class="tab" data-tab="system" type="button">
-          <span class="navicon">⚙️</span><span class="navtxt" data-i18n="tab.system">系统设置</span>
+          <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.6"/><path d="M10 2.5v2.2M10 15.3v2.2M2.5 10h2.2M15.3 10h2.2M4.7 4.7l1.6 1.6M13.7 13.7l1.6 1.6M15.3 4.7l-1.6 1.6M6.3 13.7l-1.6 1.6"/></svg>
+          <span class="navtxt" data-i18n="tab.system">系统设置</span>
         </button>
       </nav>
     </aside>
@@ -34,10 +37,10 @@
       <!-- Customization -->
       <section id="tab-meta" class="panel is-active">
         <div class="subtabs">
-          <button class="subtab is-active" data-type="cgp_badge" data-i18n="sub.promo">促销活动标签</button>
-          <button class="subtab" data-type="cgp_status_badge" data-i18n="sub.attr">产品属性标签</button>
+          <button class="subtab is-active" data-type="search_panel_featured" data-i18n="sub.featured">热门推荐</button>
           <button class="subtab" data-type="cgp_sort_rule" data-i18n="sub.sort">产品排序规则</button>
-          <button class="subtab" data-type="search_panel_featured" data-i18n="sub.featured">热门推荐</button>
+          <button class="subtab" data-type="cgp_badge" data-i18n="sub.promo">促销活动标签</button>
+          <button class="subtab" data-type="cgp_status_badge" data-i18n="sub.attr">产品属性标签</button>
           <button class="subtab" data-type="search_panel_banner" data-i18n="sub.banner">促销 Banner</button>
         </div>
         <div id="meta-body"><p class="muted" data-i18n="loading">加载中…</p></div>

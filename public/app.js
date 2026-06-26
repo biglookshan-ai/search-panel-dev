@@ -1,6 +1,8 @@
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 let STORE = '';
+// Pin glyph as an inline SVG (no emoji).
+const PIN_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M12 2l2.6 5.9 6.4.5-4.9 4.2 1.5 6.3L12 15.9 6.4 18.9l1.5-6.3L3 8.4l6.4-.5z"/></svg>';
 
 // ---- i18n (per-user language, persisted in localStorage) ----
 const I18N = {
@@ -48,7 +50,7 @@ const I18N = {
     'sp.bannerLink': 'Banner 链接', 'sp.bannerAlt': 'Banner 替代文字',
     'sp.searchProduct': '搜索产品添加…', 'sp.searchCollection': '搜索集合添加…',
     'sp.refresh': '随机刷新间隔:', 'sp.now': '立即(每次打开都换)', 'sp.min': '分钟', 'sp.hour': '小时', 'sp.day': '天',
-    'sp.pinHint': '📌 置顶项不参与随机,始终排在最前', 'sp.emptyAdd': '还没有添加。用上面搜索框添加。',
+    'sp.pinHint': '置顶项不参与随机,始终排在最前', 'sp.emptyAdd': '还没有添加。用上面搜索框添加。', 'pin': '置顶',
     'sp.savedNoCfg': '已保存(刷新间隔/置顶未存:metaobject 缺 %s 字段)',
     'items': '个',
     'bulk.sel': '已选 %n 项', 'bulk.up': '↑ 上移', 'bulk.down': '↓ 下移', 'bulk.del': '删除选中', 'bulk.clr': '取消选择',
@@ -102,7 +104,7 @@ const I18N = {
     'sp.bannerLink': 'Banner link', 'sp.bannerAlt': 'Banner alt text',
     'sp.searchProduct': 'Search products to add…', 'sp.searchCollection': 'Search collections to add…',
     'sp.refresh': 'Random refresh interval:', 'sp.now': 'Instant (reshuffle every open)', 'sp.min': 'minutes', 'sp.hour': 'hours', 'sp.day': 'days',
-    'sp.pinHint': '📌 Pinned items skip the shuffle and always stay first', 'sp.emptyAdd': 'Nothing added yet. Use the search box above.',
+    'sp.pinHint': 'Pinned items skip the shuffle and always stay first', 'sp.emptyAdd': 'Nothing added yet. Use the search box above.', 'pin': 'Pin',
     'sp.savedNoCfg': 'Saved (refresh interval / pin not stored: metaobject is missing the %s field)',
     'items': '',
     'bulk.sel': '%n selected', 'bulk.up': '↑ Up', 'bulk.down': '↓ Down', 'bulk.del': 'Remove selected', 'bulk.clr': 'Clear selection',
@@ -692,7 +694,7 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
         <input type="checkbox" class="chip-sel" data-sel ${selected.has(g) ? 'checked' : ''}/>
         <span class="drag">⠿</span>
         ${img}<span class="chip-name" title="${esc(g)}">${esc(m.title || g)}</span>
-        <button type="button" class="chip-btn chip-pin${pinned.has(g) ? ' on' : ''}" data-pin title="📌">📌</button>
+        <button type="button" class="chip-btn chip-pin${pinned.has(g) ? ' on' : ''}" data-pin title="${t('pin')}">${PIN_SVG}</button>
         <button type="button" class="chip-btn" data-up ${i === 0 ? 'disabled' : ''}>↑</button>
         <button type="button" class="chip-btn" data-down ${i === gids.length - 1 ? 'disabled' : ''}>↓</button>
         <button type="button" class="chip-btn chip-x" data-remove>✕</button></div>`;
@@ -822,7 +824,7 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
     $('#boosts-link').href = sd + '/search/product-boosts';
     $('#synonyms-link').href = sd + '/search/synonyms';
     $('#store').textContent = STORE + ' ✓';
-    loadType('cgp_badge');
+    loadType('search_panel_featured');
   } catch (e) {
     $('#store').textContent = String(e.message || e);
     $('#meta-body').innerHTML = '<p class="err">' + esc(String(e.message || e)) + '</p>' +
