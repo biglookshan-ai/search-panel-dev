@@ -167,15 +167,51 @@ function toast(msg, ok = true) {
   setTimeout(() => { t.hidden = true; }, 3200);
 }
 
+// ---- routing (App Bridge ui-nav-menu paths ↔ tabs/subtabs) ----
+const ROUTES = {
+  '/': { tab: 'meta', sub: 'search_panel_featured' },
+  '/featured': { tab: 'meta', sub: 'search_panel_featured' },
+  '/sort': { tab: 'meta', sub: 'cgp_sort_rule' },
+  '/promo': { tab: 'meta', sub: 'cgp_badge' },
+  '/attributes': { tab: 'meta', sub: 'cgp_status_badge' },
+  '/banner': { tab: 'meta', sub: 'search_panel_banner' },
+  '/boosts': { tab: 'links', sub: null },
+  '/system': { tab: 'system', sub: null },
+};
+const SUB_PATH = { search_panel_featured: '/featured', cgp_sort_rule: '/sort', cgp_badge: '/promo', cgp_status_badge: '/attributes', search_panel_banner: '/banner' };
+function currentPath() {
+  const tabEl = document.querySelector('.tab.is-active');
+  const tab = tabEl && tabEl.dataset.tab;
+  if (tab === 'links') return '/boosts';
+  if (tab === 'system') return '/system';
+  const subEl = document.querySelector('.subtab.is-active');
+  const sub = subEl && subEl.dataset.type;
+  return SUB_PATH[sub] || '/';
+}
+// Keep the URL in sync so the Shopify admin nav highlights the active item.
+function syncUrl() { try { history.replaceState(null, '', currentPath() + location.search); } catch (e) {} }
+function applyRoute(pathname) {
+  const r = ROUTES[pathname] || ROUTES['/'];
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('is-active', x.dataset.tab === r.tab));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + r.tab));
+  if (r.tab === 'system') { loadThemes(); return; }
+  if (r.tab === 'links') return;
+  const sub = r.sub || 'search_panel_featured';
+  document.querySelectorAll('.subtab').forEach((x) => x.classList.toggle('is-active', x.dataset.type === sub));
+  loadType(sub);
+}
+
 // ---- tabs ----
 document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('is-active', x === b));
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + b.dataset.tab));
   if (b.dataset.tab === 'system') loadThemes();
+  syncUrl();
 }));
 document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('.subtab').forEach((x) => x.classList.toggle('is-active', x === b));
   loadType(b.dataset.type);
+  syncUrl();
 }));
 
 // ---- field rendering ----
@@ -824,7 +860,7 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
     $('#boosts-link').href = sd + '/search/product-boosts';
     $('#synonyms-link').href = sd + '/search/synonyms';
     $('#store').textContent = STORE + ' ✓';
-    loadType('search_panel_featured');
+    applyRoute(location.pathname);
   } catch (e) {
     $('#store').textContent = String(e.message || e);
     $('#meta-body').innerHTML = '<p class="err">' + esc(String(e.message || e)) + '</p>' +

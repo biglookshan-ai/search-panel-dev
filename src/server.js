@@ -107,5 +107,10 @@ api.post('/themes/:id/apply', wrap(async (req) => applyToTheme(req.ctx, req.para
 
 app.use('/api', api);
 
+// SPA fallback: App Bridge <ui-nav-menu> links (/featured, /sort, /promo, …)
+// navigate the embedded iframe to those paths — serve the same UI for any
+// non-/api, non-asset GET so the front-end can route to the right section.
+app.get(/^\/(?!api(?:\/|$)).*/, sendIndex);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`search-panel admin (embedded) on :${PORT}`));
