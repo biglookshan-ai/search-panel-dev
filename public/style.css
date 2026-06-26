@@ -27,6 +27,7 @@
 
 body {
   margin: 0;
+  padding: 24px;
   font: 14px/1.55 -apple-system, system-ui, "Segoe UI", Roboto, "PingFang SC", sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -35,12 +36,23 @@ body {
 
 .connect { color: var(--brand); font-weight: 600; }
 
-/* ---------- App shell: left nav + right content ---------- */
-.app { display: flex; min-height: 100vh; align-items: stretch; }
+/* ---------- App shell: a centered window (border + radius), nav + content ---------- */
+.app {
+  display: flex;
+  align-items: stretch;
+  max-width: 1280px;
+  margin: 0 auto;
+  min-height: calc(100vh - 48px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
 
 .sidebar {
   flex: 0 0 220px;
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text);
   border-right: 1px solid var(--border);
   display: flex;
@@ -131,8 +143,8 @@ body {
   font-weight: 650;
 }
 
-/* ---------- Layout (centered window, not full-width) ---------- */
-.panel { display: none; max-width: 860px; margin: 0 auto; }
+/* ---------- Layout ---------- */
+.panel { display: none; }
 .panel.is-active { display: block; }
 
 .muted { color: var(--text-sub); }
@@ -366,6 +378,8 @@ body {
 
 /* ---------- Small screens: collapse the sidebar to icons ---------- */
 @media (max-width: 720px) {
+  body { padding: 10px; }
+  .app { border-radius: 10px; min-height: calc(100vh - 20px); }
   .sidebar { flex-basis: 60px; }
   .navtxt, .sidebar__brandtxt { display: none; }
   .sidebar__brand { justify-content: center; gap: 0; }
