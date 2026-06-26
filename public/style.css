@@ -40,8 +40,9 @@ body {
 
 .sidebar {
   flex: 0 0 220px;
-  background: var(--dark);
-  color: #fff;
+  background: var(--surface);
+  color: var(--text);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   transition: flex-basis .18s ease;
@@ -51,20 +52,20 @@ body {
   align-items: center;
   gap: 10px;
   padding: 16px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  border-bottom: 1px solid var(--border);
 }
 .sidebar__toggle {
   flex: 0 0 auto;
   width: 32px; height: 32px;
   border: 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, .1);
-  color: #fff;
+  background: var(--bg);
+  color: var(--text);
   cursor: pointer;
   font-size: 15px;
   transition: background .15s;
 }
-.sidebar__toggle:hover { background: rgba(255, 255, 255, .2); }
+.sidebar__toggle:hover { background: var(--border); }
 .sidebar__brand { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 15px; white-space: nowrap; overflow: hidden; }
 .sidebar__nav { display: flex; flex-direction: column; gap: 4px; padding: 10px 8px; }
 
@@ -79,7 +80,7 @@ body {
   margin: 0;
   border-radius: 10px;
   background: transparent;
-  color: #c8cdd6;
+  color: var(--text-sub);
   padding: 11px 12px;
   cursor: pointer;
   font: inherit;
@@ -88,8 +89,8 @@ body {
   white-space: nowrap;
   transition: background .15s, color .15s;
 }
-.sidebar .tab:hover { background: rgba(255, 255, 255, .08); color: #fff; }
-.sidebar .tab.is-active { background: var(--brand); color: var(--dark); font-weight: 650; }
+.sidebar .tab:hover { background: var(--bg); color: var(--text); }
+.sidebar .tab.is-active { background: #eef0f2; color: var(--text); font-weight: 650; box-shadow: inset 3px 0 0 var(--brand); }
 .navicon { flex: 0 0 auto; width: 20px; text-align: center; font-size: 16px; }
 
 .content { flex: 1 1 auto; min-width: 0; padding: 24px 28px 48px; }
@@ -124,9 +125,10 @@ body {
 }
 .subtab:hover { border-color: var(--border-strong); color: var(--text); }
 .subtab.is-active {
-  background: var(--dark);
-  color: #fff;
-  border-color: var(--dark);
+  background: #eef0f2;
+  color: var(--text);
+  border-color: var(--border-strong);
+  font-weight: 650;
 }
 
 /* ---------- Layout ---------- */
@@ -359,7 +361,7 @@ body {
 .langtoggle { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 999px; overflow: hidden; box-shadow: var(--shadow-sm); }
 .langtoggle button { border: 0; background: var(--surface); color: var(--text-sub); padding: 6px 18px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 550; transition: background .15s, color .15s; }
 .langtoggle button + button { border-left: 1px solid var(--border); }
-.langtoggle button.is-active { background: var(--dark); color: #fff; }
+.langtoggle button.is-active { background: var(--brand); color: var(--dark); }
 
 /* ---------- Small screens: collapse the sidebar to icons ---------- */
 @media (max-width: 720px) {
