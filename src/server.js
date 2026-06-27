@@ -8,6 +8,7 @@ import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 import { clearToken } from './token-store.js';
 import { getProductTags, searchProducts, searchCollections, resolveNodes } from './catalog.js';
+import { initDb, insertEvent, rollupAndPrune, summary } from './db.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -43,6 +44,51 @@ app.use(express.static(path.join(ROOT, 'public')));
 
 // Public config (no token needed) — lets the UI render before it has a session.
 app.get('/api/config', (req, res) => res.json({ apiKey: API_KEY, version: process.env.SHOPIFY_API_VERSION || '2026-04' }));
+
+// ---- Public analytics ingest (storefront → here). Anonymous, no PII. ----
+// The storefront posts cross-origin, so reflect CORS for the shop's domains only.
+const ALLOWED_ORIGIN = /(?:\.myshopify\.com|cinegearpro\.co\.uk)$/i;
+function corsForCollect(req, res) {
+  const origin = req.headers.origin || '';
+  try {
+    if (ALLOWED_ORIGIN.test(new URL(origin).host)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+// Tiny in-memory rate limit (per IP; IP is used transiently here, never stored).
+const rl = new Map();
+function rateOk(ip) {
+  const now = Date.now();
+  let e = rl.get(ip);
+  if (!e || now > e.reset) { e = { n: 0, reset: now + 60000 }; rl.set(ip, e); }
+  return ++e.n <= 120;
+}
+app.options('/collect', (req, res) => { corsForCollect(req, res); res.status(204).end(); });
+app.post('/collect', (req, res) => {
+  if (!corsForCollect(req, res)) return res.status(403).end();
+  const ip = String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+  if (!rateOk(ip)) return res.status(429).end();
+  const b = req.body || {};
+  if (!['search', 'product_click', 'collection_click'].includes(b.type)) return res.status(400).end();
+  const ev = {
+    type: b.type,
+    query: typeof b.query === 'string' ? b.query.slice(0, 120) : null,
+    result_count: Number.isFinite(b.resultCount) ? Math.max(0, Math.min(100000, b.resultCount | 0)) : null,
+    target_type: b.type === 'product_click' ? 'product' : (b.type === 'collection_click' ? 'collection' : null),
+    target_id: typeof b.targetId === 'string' ? b.targetId.slice(0, 80) : null,
+    session: typeof b.session === 'string' ? b.session.slice(0, 64) : null,
+    source: typeof b.source === 'string' ? b.source.slice(0, 24) : null,
+  };
+  res.status(204).end();            // respond fast; persist async
+  insertEvent(ev).catch((e) => console.error('[analytics] insert failed:', e.message));
+});
 
 // Everything below requires a valid App Bridge session token.
 const api = express.Router();
@@ -102,6 +148,8 @@ api.get('/products/search', wrap(async (req) => ({ items: await searchProducts(r
 api.get('/collections/search', wrap(async (req) => ({ items: await searchCollections(req.ctx, req.query.q) })));
 api.post('/nodes', wrap(async (req) => ({ items: await resolveNodes(req.ctx, req.body.ids || []) })));
 
+api.get('/insights', wrap(async (req) => summary({ days: +req.query.days || 7 })));
+
 api.get('/themes', wrap(async (req) => ({ themes: await listThemes(req.ctx) })));
 api.post('/themes/:id/apply', wrap(async (req) => applyToTheme(req.ctx, req.params.id, { dryRun: !!req.body.dryRun })));
 
@@ -111,6 +159,12 @@ app.use('/api', api);
 // navigate the embedded iframe to those paths — serve the same UI for any
 // non-/api, non-asset GET so the front-end can route to the right section.
 app.get(/^\/(?!api(?:\/|$)).*/, sendIndex);
+
+// Analytics DB: connect, do a first rollup, then roll up + prune nightly.
+initDb().then(() => {
+  rollupAndPrune().catch(() => {});
+  setInterval(() => rollupAndPrune().catch(() => {}), 24 * 60 * 60 * 1000);
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`search-panel admin (embedded) on :${PORT}`));
