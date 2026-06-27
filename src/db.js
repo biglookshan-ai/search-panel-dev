@@ -82,21 +82,24 @@ function sinceSql(days) { const d = Math.max(1, Math.min(90, Number(days) || 7))
 export async function summary({ days = 7 } = {}) {
   if (!ready) return { enabled: false };
   const { d, sql } = sinceSql(days);
+  const click = `type IN ('product_click','collection_click')`;
   const [totals, top, clicks] = await Promise.all([
     pool.query(`SELECT
         count(*) FILTER (WHERE type='search')::int searches,
         count(*) FILTER (WHERE type='search' AND result_count=0)::int zero,
-        count(*) FILTER (WHERE type IN ('product_click','collection_click'))::int clicks,
-        count(*) FILTER (WHERE type IN ('product_click','collection_click') AND (query IS NULL OR query=''))::int rec_clicks,
-        count(*) FILTER (WHERE device='mobile')::int mobile,
-        count(*) FILTER (WHERE device='tablet')::int tablet,
-        count(*) FILTER (WHERE device='desktop')::int desktop
+        count(DISTINCT session) FILTER (WHERE session<>'')::int sessions,
+        count(*) FILTER (WHERE ${click})::int clicks,
+        count(*) FILTER (WHERE ${click} AND query<>'')::int search_clicks,
+        count(*) FILTER (WHERE ${click} AND (query IS NULL OR query=''))::int rec_clicks
       FROM search_events WHERE ts >= ${sql}`),
     pool.query(`SELECT query, count(*)::int n, count(*) FILTER (WHERE result_count=0)::int zero
       FROM search_events WHERE type='search' AND query<>'' AND ts >= ${sql}
       GROUP BY query ORDER BY n DESC, query LIMIT 50`),
-    pool.query(`SELECT target_type, target_id, count(*)::int n
-      FROM search_events WHERE type IN ('product_click','collection_click') AND target_id<>'' AND ts >= ${sql}
+    pool.query(`SELECT target_type, target_id,
+        count(*) FILTER (WHERE query<>'')::int search_n,
+        count(*) FILTER (WHERE query IS NULL OR query='')::int rec_n,
+        count(*)::int n
+      FROM search_events WHERE ${click} AND target_id<>'' AND ts >= ${sql}
       GROUP BY 1,2 ORDER BY n DESC LIMIT 50`),
   ]);
   return { enabled: true, days: d, totals: totals.rows[0], top: top.rows, clicks: clicks.rows };

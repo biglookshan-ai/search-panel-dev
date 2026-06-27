@@ -163,20 +163,10 @@
   // session id. Disabled if collectUrl is empty.
   window.CGP_ANALYTICS = (function () {
     var EP = (window.CGP_CONFIG && window.CGP_CONFIG.collectUrl) || '';
-    var LASTQ = '';
     // Load Shopify's consent API (if present) so an explicit decline is respected.
     try { if (window.Shopify && window.Shopify.loadFeatures) window.Shopify.loadFeatures([{ name: 'consent-tracking-api', version: '0.1' }], function () {}); } catch (e) {}
     function sid() {
       try { var k = 'cgp_sid', v = localStorage.getItem(k); if (!v) { v = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem(k, v); } return v; } catch (e) { return ''; }
-    }
-    function dev() {
-      try {
-        var w = window.innerWidth || document.documentElement.clientWidth || 0;
-        var ua = navigator.userAgent || '';
-        if (/Mobi|Android|iPhone|iPod/i.test(ua) || (w && w < 600)) return 'mobile';
-        if (/iPad|Tablet/i.test(ua) || (w && w < 1024)) return 'tablet';
-        return 'desktop';
-      } catch (e) { return ''; }
     }
     // Permissive: collect unless the visitor EXPLICITLY declined analytics.
     // currentVisitorConsent().analytics is '' when undecided (→ collect) and
@@ -193,17 +183,21 @@
       return true;
     }
     function track(type, data) {
-      if (type === 'search' && data && typeof data.query === 'string') LASTQ = data.query;
       if (!EP || !allowed()) return;
-      var body = { type: type, session: sid(), device: dev() };
+      var body = { type: type, session: sid() };
       if (data) for (var k in data) body[k] = data[k];
       try { fetch(EP + '/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true, mode: 'cors', credentials: 'omit' }); } catch (e) {}
     }
-    // Product clicks inside the search drawer (results-page clicks are tracked in cgp-search-app.js).
+    // Product clicks inside the search drawer. The LIVE query (from the drawer
+    // input) decides search-click vs recommendation: the empty-state drawer shows
+    // auto-recommendations, so an empty box at click time = recommendation click.
     document.addEventListener('click', function (e) {
       if (!e.target.closest) return;
       var card = e.target.closest('search-drawer .sd-card[data-product-id]');
-      if (card) track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: LASTQ, source: LASTQ ? 'drawer' : 'recommendation' });
+      if (!card) return;
+      var q = '';
+      try { var sd = document.querySelector('search-drawer'); q = ((sd && sd.input && sd.input.value) || '').trim(); } catch (e2) {}
+      track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: q, source: q ? 'drawer' : 'recommendation' });
     }, true);
     return { track: track, allowed: allowed };
   })();
