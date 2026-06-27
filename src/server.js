@@ -8,7 +8,7 @@ import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 import { clearToken } from './token-store.js';
 import { getProductTags, searchProducts, searchCollections, resolveNodes } from './catalog.js';
-import { initDb, insertEvent, rollupAndPrune, summary } from './db.js';
+import { initDb, insertEvent, rollupAndPrune, summary, events } from './db.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -77,6 +77,8 @@ app.post('/collect', (req, res) => {
   if (!rateOk(ip)) return res.status(429).end();
   const b = req.body || {};
   if (!['search', 'product_click', 'collection_click'].includes(b.type)) return res.status(400).end();
+  const DEV = ['mobile', 'tablet', 'desktop'];
+  const SRC = ['drawer', 'results', 'recommendation'];
   const ev = {
     type: b.type,
     query: typeof b.query === 'string' ? b.query.slice(0, 120) : null,
@@ -84,7 +86,9 @@ app.post('/collect', (req, res) => {
     target_type: b.type === 'product_click' ? 'product' : (b.type === 'collection_click' ? 'collection' : null),
     target_id: typeof b.targetId === 'string' ? b.targetId.slice(0, 80) : null,
     session: typeof b.session === 'string' ? b.session.slice(0, 64) : null,
-    source: typeof b.source === 'string' ? b.source.slice(0, 24) : null,
+    source: SRC.includes(b.source) ? b.source : null,
+    device: DEV.includes(b.device) ? b.device : null,
+    submitted: typeof b.submitted === 'boolean' ? b.submitted : null,
   };
   res.status(204).end();            // respond fast; persist async
   insertEvent(ev).catch((e) => console.error('[analytics] insert failed:', e.message));
@@ -148,18 +152,28 @@ api.get('/products/search', wrap(async (req) => ({ items: await searchProducts(r
 api.get('/collections/search', wrap(async (req) => ({ items: await searchCollections(req.ctx, req.query.q) })));
 api.post('/nodes', wrap(async (req) => ({ items: await resolveNodes(req.ctx, req.body.ids || []) })));
 
-api.get('/insights', wrap(async (req) => {
+// Resolve product/collection titles for rows carrying target_type + target_id.
+async function resolveTitles(ctx, rows) {
+  const gid = (r) => String(r.target_id).startsWith('gid://') ? r.target_id
+    : 'gid://shopify/' + (r.target_type === 'collection' ? 'Collection' : 'Product') + '/' + r.target_id;
+  const need = (rows || []).filter((r) => r.target_id && (r.target_type === 'product' || r.target_type === 'collection'));
+  if (!need.length) return rows;
+  try {
+    const nodes = await resolveNodes(ctx, [...new Set(need.map(gid))]);
+    const by = {}; (nodes || []).forEach((n) => { by[n.id] = n; });
+    rows.forEach((r) => { if (r.target_id) { const n = by[gid(r)] || {}; r.title = n.title || r.target_id; r.image = n.image || ''; } });
+  } catch (e) { /* keep raw ids if resolution fails */ }
+  return rows;
+}
+api.get('/insights/summary', wrap(async (req) => {
   const s = await summary({ days: +req.query.days || 7 });
-  if (s.enabled && s.clicks && s.clicks.length) {
-    const gid = (c) => String(c.target_id).startsWith('gid://') ? c.target_id
-      : 'gid://shopify/' + (c.target_type === 'collection' ? 'Collection' : 'Product') + '/' + c.target_id;
-    try {
-      const nodes = await resolveNodes(req.ctx, s.clicks.map(gid));
-      const by = {}; (nodes || []).forEach((n) => { by[n.id] = n; });
-      s.clicks = s.clicks.map((c) => { const n = by[gid(c)] || {}; return { target_type: c.target_type, target_id: c.target_id, n: c.n, title: n.title || c.target_id, image: n.image || '' }; });
-    } catch (e) { /* keep raw ids if resolution fails */ }
-  }
+  if (s.enabled) await resolveTitles(req.ctx, s.clicks);
   return s;
+}));
+api.get('/insights/events', wrap(async (req) => {
+  const e = await events({ days: +req.query.days || 7, kind: req.query.kind, page: +req.query.page || 1, size: +req.query.size || 50 });
+  if (e.enabled && req.query.kind === 'clicks') await resolveTitles(req.ctx, e.rows);
+  return e;
 }));
 
 api.get('/themes', wrap(async (req) => ({ themes: await listThemes(req.ctx) })));

@@ -65,8 +65,15 @@
 
       <!-- Search Insights -->
       <section id="tab-insights" class="panel">
-        <div class="ins-toolbar">
-          <label class="sys-field"><span data-i18n="ins.range">时间范围</span>
+        <div class="ins-head">
+          <div class="subtabs">
+            <button class="subtab is-active" data-ins="overview" data-i18n="ins.overview">概览</button>
+            <button class="subtab" data-ins="searchHistory" data-i18n="ins.searchHistory">搜索历史</button>
+            <button class="subtab" data-ins="topSearches" data-i18n="ins.topSearches">热门搜索</button>
+            <button class="subtab" data-ins="clickHistory" data-i18n="ins.clickHistory">点击历史</button>
+            <button class="subtab" data-ins="topClicks" data-i18n="ins.topClicks">最常点击</button>
+          </div>
+          <label class="sys-field ins-range-wrap"><span data-i18n="ins.range">时间范围</span>
             <select id="ins-range">
               <option value="7" data-i18n="ins.7">近 7 天</option>
               <option value="30" data-i18n="ins.30">近 30 天</option>

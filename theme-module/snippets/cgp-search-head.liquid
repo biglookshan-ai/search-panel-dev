@@ -169,6 +169,15 @@
     function sid() {
       try { var k = 'cgp_sid', v = localStorage.getItem(k); if (!v) { v = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem(k, v); } return v; } catch (e) { return ''; }
     }
+    function dev() {
+      try {
+        var w = window.innerWidth || document.documentElement.clientWidth || 0;
+        var ua = navigator.userAgent || '';
+        if (/Mobi|Android|iPhone|iPod/i.test(ua) || (w && w < 600)) return 'mobile';
+        if (/iPad|Tablet/i.test(ua) || (w && w < 1024)) return 'tablet';
+        return 'desktop';
+      } catch (e) { return ''; }
+    }
     // Permissive: collect unless the visitor EXPLICITLY declined analytics.
     // currentVisitorConsent().analytics is '' when undecided (→ collect) and
     // 'no' only when the visitor actively declined (→ don't). No consent system
@@ -186,7 +195,7 @@
     function track(type, data) {
       if (type === 'search' && data && typeof data.query === 'string') LASTQ = data.query;
       if (!EP || !allowed()) return;
-      var body = { type: type, session: sid() };
+      var body = { type: type, session: sid(), device: dev() };
       if (data) for (var k in data) body[k] = data[k];
       try { fetch(EP + '/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true, mode: 'cors', credentials: 'omit' }); } catch (e) {}
     }
@@ -194,7 +203,7 @@
     document.addEventListener('click', function (e) {
       if (!e.target.closest) return;
       var card = e.target.closest('search-drawer .sd-card[data-product-id]');
-      if (card) track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: LASTQ, source: 'drawer' });
+      if (card) track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: LASTQ, source: LASTQ ? 'drawer' : 'recommendation' });
     }, true);
     return { track: track, allowed: allowed };
   })();

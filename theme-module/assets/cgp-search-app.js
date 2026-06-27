@@ -159,7 +159,7 @@
       window.CGP_DEBUG.pages = (first && first.pages) || 0;
       window.CGP_DEBUG.total = (first && first.total) || 0;
       // Analytics: one search event per results-page load (incl. zero results).
-      if (IS_SEARCH && QUERY) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: QUERY, resultCount: (first && typeof first.total === 'number') ? first.total : ALL.length, source: 'results' }); } catch (e) {} }
+      if (IS_SEARCH && QUERY) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: QUERY, resultCount: (first && typeof first.total === 'number') ? first.total : ALL.length, source: 'results', submitted: true }); } catch (e) {} }
       // A genuinely-empty collection/search still returns a valid JSON object
       // (numeric total/pages). Only fall back to the native layout when the fetch
       // or parse actually FAILED (fetchPage returns a bare {products:[]} then).

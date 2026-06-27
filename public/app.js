@@ -60,9 +60,13 @@ const I18N = {
     'apply.onlineWarn': '这是线上主题!确定要直接写入线上吗?建议改用草稿主题。仍要继续?',
     'init.embedErr': '此 app 是嵌入式的,需在 Shopify 后台 → Apps → Search Panel Dev 里打开,不要直接开 Railway 网址。',
     'tab.insights': '数据洞察', 'ins.range': '时间范围', 'ins.7': '近 7 天', 'ins.30': '近 30 天', 'ins.90': '近 90 天',
-    'ins.searches': '搜索次数', 'ins.zero': '零结果', 'ins.clicks': '点击数', 'ins.zeroRate': '零结果率',
-    'ins.topSearches': '热门搜索词', 'ins.zeroSearches': '零结果搜索(建议补同义词/商品)', 'ins.topClicks': '最常点击(产品/集合)',
-    'ins.empty': '这个时间段还没有数据。确认主题埋点已推送、且前台已同意分析 cookie。',
+    'ins.overview': '概览', 'ins.searchHistory': '搜索历史', 'ins.topSearches': '热门搜索', 'ins.clickHistory': '点击历史', 'ins.topClicks': '最常点击',
+    'ins.searches': '搜索次数', 'ins.zero': '零结果', 'ins.zeroRate': '零结果率', 'ins.clicks': '点击数', 'ins.recClicks': '推荐位点击', 'ins.devices': '设备占比',
+    'ins.mobile': '手机', 'ins.tablet': '平板', 'ins.desktop': '电脑',
+    'ins.colTime': '时间', 'ins.colQuery': '搜索词', 'ins.colResults': '结果数', 'ins.colSource': '来源', 'ins.colDevice': '设备', 'ins.colType': '类型', 'ins.colTarget': '目标', 'ins.colFromQuery': '来源搜索词', 'ins.colCount': '次数', 'ins.colZero': '其中零结果',
+    'ins.srcDrawer': '弹窗', 'ins.srcResults': '结果页', 'ins.srcRecommendation': '推荐位', 'ins.tProduct': '产品', 'ins.tCollection': '集合',
+    'ins.prev': '上一页', 'ins.next': '下一页', 'ins.pageOf': '第 %n 页', 'ins.total': '共 %n 条', 'ins.none': '—',
+    'ins.empty': '这个时间段还没有数据。确认主题埋点已推送、且前台未拒绝分析 cookie。',
     'ins.disabled': '分析未启用(后端未连数据库)。',
   },
   en: {
@@ -119,9 +123,13 @@ const I18N = {
     'apply.onlineWarn': 'This is the LIVE theme! Write directly to live? A draft theme is recommended. Continue anyway?',
     'init.embedErr': 'This app is embedded — open it from Shopify admin → Apps → Search Panel Dev, not the Railway URL directly.',
     'tab.insights': 'Insights', 'ins.range': 'Range', 'ins.7': 'Last 7 days', 'ins.30': 'Last 30 days', 'ins.90': 'Last 90 days',
-    'ins.searches': 'Searches', 'ins.zero': 'Zero-result', 'ins.clicks': 'Clicks', 'ins.zeroRate': 'Zero-result rate',
-    'ins.topSearches': 'Top searches', 'ins.zeroSearches': 'Zero-result searches (add synonyms/products)', 'ins.topClicks': 'Most clicked (products/collections)',
-    'ins.empty': 'No data for this range yet. Make sure the theme instrumentation is pushed and visitors accepted analytics cookies.',
+    'ins.overview': 'Overview', 'ins.searchHistory': 'Search history', 'ins.topSearches': 'Top searches', 'ins.clickHistory': 'Click history', 'ins.topClicks': 'Most clicked',
+    'ins.searches': 'Searches', 'ins.zero': 'Zero-result', 'ins.zeroRate': 'Zero-result rate', 'ins.clicks': 'Clicks', 'ins.recClicks': 'Recommendation clicks', 'ins.devices': 'Device split',
+    'ins.mobile': 'Mobile', 'ins.tablet': 'Tablet', 'ins.desktop': 'Desktop',
+    'ins.colTime': 'Time', 'ins.colQuery': 'Query', 'ins.colResults': 'Results', 'ins.colSource': 'Source', 'ins.colDevice': 'Device', 'ins.colType': 'Type', 'ins.colTarget': 'Target', 'ins.colFromQuery': 'From query', 'ins.colCount': 'Count', 'ins.colZero': 'Of which zero',
+    'ins.srcDrawer': 'Drawer', 'ins.srcResults': 'Results', 'ins.srcRecommendation': 'Recommendation', 'ins.tProduct': 'Product', 'ins.tCollection': 'Collection',
+    'ins.prev': 'Prev', 'ins.next': 'Next', 'ins.pageOf': 'Page %n', 'ins.total': '%n total', 'ins.none': '—',
+    'ins.empty': 'No data for this range yet. Make sure the theme instrumentation is pushed and visitors have not declined analytics cookies.',
     'ins.disabled': 'Analytics not enabled (backend has no database).',
   },
 };
@@ -143,9 +151,13 @@ function setLang(l) {
   localStorage.setItem('cgp-admin-lang', l);
   document.querySelectorAll('#lang-toggle button').forEach((b) => b.classList.toggle('is-active', b.dataset.lang === l));
   applyI18n();
-  // Re-render the dynamic panel in the new language.
-  const sub = document.querySelector('#tab-meta.is-active') && document.querySelector('.subtab.is-active');
-  if (sub) loadType(sub.dataset.type);
+  // Re-render the active dynamic panel in the new language.
+  if (document.querySelector('#tab-meta.is-active')) {
+    const sub = document.querySelector('#tab-meta .subtab.is-active');
+    if (sub) loadType(sub.dataset.type);
+  } else if (document.querySelector('#tab-insights.is-active')) {
+    loadInsights();
+  }
 }
 
 async function sessionToken() {
@@ -222,8 +234,8 @@ document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () 
   if (b.dataset.tab === 'insights') loadInsights();
   syncUrl();
 }));
-document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', () => {
-  document.querySelectorAll('.subtab').forEach((x) => x.classList.toggle('is-active', x === b));
+document.querySelectorAll('#tab-meta .subtab').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('#tab-meta .subtab').forEach((x) => x.classList.toggle('is-active', x === b));
   loadType(b.dataset.type);
   syncUrl();
 }));
@@ -850,37 +862,86 @@ $('#btn-dryrun').addEventListener('click', () => runApply(true));
 $('#btn-apply').addEventListener('click', () => runApply(false));
 
 // ---- search insights ----
-let INS_DAYS = 7;
+let INS_DAYS = 7, INS_SUB = 'overview', INS_PAGE = 1;
+function insSub(sub) {
+  INS_SUB = sub; INS_PAGE = 1;
+  document.querySelectorAll('#tab-insights [data-ins]').forEach((b) => b.classList.toggle('is-active', b.dataset.ins === sub));
+  loadInsights();
+}
 async function loadInsights() {
   const body = $('#insights-body');
   if (!body) return;
   body.innerHTML = '<p class="muted">' + t('loading') + '</p>';
   try {
-    const s = await api('GET', '/api/insights?days=' + INS_DAYS);
+    if (INS_SUB === 'searchHistory' || INS_SUB === 'clickHistory') return renderInsHistory(body);
+    const s = await api('GET', '/api/insights/summary?days=' + INS_DAYS);
     if (!s.enabled) { body.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
-    const tt = s.totals || {};
-    const zeroRate = tt.searches ? Math.round((tt.zero / tt.searches) * 100) : 0;
-    let h = '<div class="ins-stats">';
-    h += insStat(t('ins.searches'), tt.searches || 0);
-    h += insStat(t('ins.zero'), (tt.zero || 0) + ' · ' + zeroRate + '%');
-    h += insStat(t('ins.clicks'), tt.clicks || 0);
-    h += '</div>';
-    h += insList(t('ins.topSearches'), s.top, (r) => esc(r.query), (r) => r.n);
-    h += insList(t('ins.zeroSearches'), s.zero, (r) => esc(r.query), (r) => r.n);
-    h += insList(t('ins.topClicks'), s.clicks, (r) => esc(r.title || r.target_id) + ' <span class="muted">· ' + esc(r.target_type || '') + '</span>', (r) => r.n);
-    body.innerHTML = h;
+    if (INS_SUB === 'topSearches') return renderInsTopSearches(body, s);
+    if (INS_SUB === 'topClicks') return renderInsTopClicks(body, s);
+    return renderInsOverview(body, s);
   } catch (e) { body.innerHTML = '<p class="err">' + esc(e.message) + '</p>'; }
 }
-function insStat(label, val) {
-  return '<div class="card ins-stat"><div class="ins-stat__label">' + esc(label) + '</div><div class="ins-stat__val">' + esc(String(val)) + '</div></div>';
+function insStat(label, val) { return '<div class="card ins-stat"><div class="ins-stat__label">' + esc(label) + '</div><div class="ins-stat__val">' + esc(String(val)) + '</div></div>'; }
+function insBar(label, n, total) {
+  const pct = total ? Math.round(n / total * 100) : 0;
+  return '<div class="ins-bar"><span class="ins-bar__l">' + esc(label) + '</span><span class="ins-bar__track"><span class="ins-bar__fill" style="width:' + pct + '%"></span></span><span class="ins-bar__n">' + n + ' · ' + pct + '%</span></div>';
 }
-function insList(title, rows, fmt, num) {
-  let h = '<div class="panel-entry"><h3 class="panel-title">' + esc(title) + '</h3>';
-  if (!rows || !rows.length) return h + '<p class="muted">' + t('ins.empty') + '</p></div>';
-  h += '<div class="list">';
-  rows.forEach((r) => { h += '<div class="card ins-row"><span class="grow">' + fmt(r) + '</span><span class="ins-n">' + num(r) + '</span></div>'; });
-  return h + '</div></div>';
+function renderInsOverview(body, s) {
+  const tt = s.totals || {};
+  const zr = tt.searches ? Math.round((tt.zero / tt.searches) * 100) : 0;
+  let h = '<div class="ins-stats">';
+  h += insStat(t('ins.searches'), tt.searches || 0);
+  h += insStat(t('ins.zeroRate'), (tt.zero || 0) + ' · ' + zr + '%');
+  h += insStat(t('ins.clicks'), tt.clicks || 0);
+  h += insStat(t('ins.recClicks'), tt.rec_clicks || 0);
+  h += '</div>';
+  const dev = (tt.mobile || 0) + (tt.tablet || 0) + (tt.desktop || 0);
+  h += '<div class="panel-entry"><h3 class="panel-title">' + t('ins.devices') + '</h3><div class="ins-bars">';
+  h += insBar(t('ins.mobile'), tt.mobile || 0, dev) + insBar(t('ins.tablet'), tt.tablet || 0, dev) + insBar(t('ins.desktop'), tt.desktop || 0, dev);
+  h += '</div></div>';
+  body.innerHTML = h;
 }
+function insTable(head, rowsHtml) { return '<table class="ins-table"><thead><tr>' + head + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>'; }
+function renderInsTopSearches(body, s) {
+  const rows = s.top || [];
+  if (!rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
+  const h = rows.map((r) => '<tr><td>' + esc(r.query) + '</td><td class="num">' + r.n + '</td><td class="num">' + (r.zero ? '<span class="ins-zero">' + r.zero + '</span>' : 0) + '</td></tr>').join('');
+  body.innerHTML = insTable('<th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colCount') + '</th><th class="num">' + t('ins.colZero') + '</th>', h);
+}
+function renderInsTopClicks(body, s) {
+  const rows = s.clicks || [];
+  if (!rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
+  const h = rows.map((r) => '<tr><td>' + esc(r.title || r.target_id) + '</td><td>' + insType(r.target_type) + '</td><td class="num">' + r.n + '</td></tr>').join('');
+  body.innerHTML = insTable('<th>' + t('ins.colTarget') + '</th><th>' + t('ins.colType') + '</th><th class="num">' + t('ins.colCount') + '</th>', h);
+}
+async function renderInsHistory(body) {
+  const kind = INS_SUB === 'clickHistory' ? 'clicks' : 'searches';
+  let e;
+  try { e = await api('GET', '/api/insights/events?kind=' + kind + '&days=' + INS_DAYS + '&page=' + INS_PAGE + '&size=50'); }
+  catch (err) { body.innerHTML = '<p class="err">' + esc(err.message) + '</p>'; return; }
+  if (!e.enabled) { body.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
+  if (!e.rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
+  let head, rowsHtml;
+  if (kind === 'searches') {
+    head = '<th>' + t('ins.colTime') + '</th><th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colResults') + '</th><th>' + t('ins.colSource') + '</th><th>' + t('ins.colDevice') + '</th>';
+    rowsHtml = e.rows.map((r) => '<tr><td class="ins-time">' + insTime(r.ts) + '</td><td>' + esc(r.query || t('ins.none')) + '</td><td class="num">' + (r.result_count === 0 ? '<span class="ins-zero">0</span>' : (r.result_count == null ? t('ins.none') : r.result_count)) + '</td><td>' + insSrc(r.source) + '</td><td>' + insDev(r.device) + '</td></tr>').join('');
+  } else {
+    head = '<th>' + t('ins.colTime') + '</th><th>' + t('ins.colType') + '</th><th>' + t('ins.colTarget') + '</th><th>' + t('ins.colSource') + '</th><th>' + t('ins.colFromQuery') + '</th><th>' + t('ins.colDevice') + '</th>';
+    rowsHtml = e.rows.map((r) => '<tr><td class="ins-time">' + insTime(r.ts) + '</td><td>' + insType(r.target_type) + '</td><td>' + esc(r.title || r.target_id || t('ins.none')) + '</td><td>' + insSrc(r.source) + '</td><td>' + esc(r.query || t('ins.none')) + '</td><td>' + insDev(r.device) + '</td></tr>').join('');
+  }
+  const pages = Math.max(1, Math.ceil(e.total / e.size));
+  let h = insTable(head, rowsHtml);
+  h += '<div class="ins-pager"><button class="btn btn-sm" data-ins-prev ' + (INS_PAGE <= 1 ? 'disabled' : '') + '>' + t('ins.prev') + '</button>'
+    + '<span class="muted">' + t('ins.pageOf', INS_PAGE) + ' / ' + pages + ' · ' + t('ins.total', e.total) + '</span>'
+    + '<button class="btn btn-sm" data-ins-next ' + (INS_PAGE >= pages ? 'disabled' : '') + '>' + t('ins.next') + '</button></div>';
+  body.innerHTML = h;
+  const pv = body.querySelector('[data-ins-prev]'); if (pv && INS_PAGE > 1) pv.addEventListener('click', () => { INS_PAGE--; renderInsHistory(body); });
+  const nx = body.querySelector('[data-ins-next]'); if (nx && INS_PAGE < pages) nx.addEventListener('click', () => { INS_PAGE++; renderInsHistory(body); });
+}
+function insTime(ts) { try { return new Date(ts).toLocaleString(LANG === 'zh' ? 'zh-CN' : 'en-GB', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return esc(String(ts)); } }
+function insType(tp) { return tp === 'collection' ? t('ins.tCollection') : t('ins.tProduct'); }
+function insSrc(s) { return s === 'results' ? t('ins.srcResults') : (s === 'recommendation' ? t('ins.srcRecommendation') : (s === 'drawer' ? t('ins.srcDrawer') : t('ins.none'))); }
+function insDev(d) { return d === 'mobile' ? t('ins.mobile') : (d === 'tablet' ? t('ins.tablet') : (d === 'desktop' ? t('ins.desktop') : t('ins.none'))); }
 
 // ---- init ----
 (async () => {
@@ -898,8 +959,9 @@ function insList(title, rows, fmt, num) {
     b.addEventListener('click', () => setLang(b.dataset.lang));
   });
   applyI18n();
+  document.querySelectorAll('#tab-insights [data-ins]').forEach((b) => b.addEventListener('click', () => insSub(b.dataset.ins)));
   const insRange = $('#ins-range');
-  if (insRange) insRange.addEventListener('change', (e) => { INS_DAYS = +e.target.value || 7; loadInsights(); });
+  if (insRange) insRange.addEventListener('change', (e) => { INS_DAYS = +e.target.value || 7; INS_PAGE = 1; loadInsights(); });
   try {
     const tk = await sessionToken();
     STORE = (decodeJwtPayload(tk).dest || '').replace(/^https?:\/\//, '');
