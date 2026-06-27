@@ -169,10 +169,18 @@
     function sid() {
       try { var k = 'cgp_sid', v = localStorage.getItem(k); if (!v) { v = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem(k, v); } return v; } catch (e) { return ''; }
     }
-    // Permissive: collect unless the visitor has EXPLICITLY declined analytics.
-    // No consent system / undecided → allowed (data is anonymous, no PII).
+    // Permissive: collect unless the visitor EXPLICITLY declined analytics.
+    // currentVisitorConsent().analytics is '' when undecided (→ collect) and
+    // 'no' only when the visitor actively declined (→ don't). No consent system
+    // / undecided → collect (data is anonymous, no PII).
     function allowed() {
-      try { var cp = window.Shopify && window.Shopify.customerPrivacy; if (cp && typeof cp.analyticsProcessingAllowed === 'function') return cp.analyticsProcessingAllowed() !== false; } catch (e) {}
+      try {
+        var cp = window.Shopify && window.Shopify.customerPrivacy;
+        if (cp && typeof cp.currentVisitorConsent === 'function') {
+          var c = cp.currentVisitorConsent() || {};
+          return c.analytics !== 'no' && c.analytics !== false;
+        }
+      } catch (e) {}
       return true;
     }
     function track(type, data) {
