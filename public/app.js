@@ -59,6 +59,11 @@ const I18N = {
     'apply.dryHead': '【试运行,未实际写入】\n', 'apply.doneHead': '【已写入】\n',
     'apply.onlineWarn': '这是线上主题!确定要直接写入线上吗?建议改用草稿主题。仍要继续?',
     'init.embedErr': '此 app 是嵌入式的,需在 Shopify 后台 → Apps → Search Panel Dev 里打开,不要直接开 Railway 网址。',
+    'tab.insights': '数据洞察', 'ins.range': '时间范围', 'ins.7': '近 7 天', 'ins.30': '近 30 天', 'ins.90': '近 90 天',
+    'ins.searches': '搜索次数', 'ins.zero': '零结果', 'ins.clicks': '点击数', 'ins.zeroRate': '零结果率',
+    'ins.topSearches': '热门搜索词', 'ins.zeroSearches': '零结果搜索(建议补同义词/商品)', 'ins.topClicks': '最常点击(产品/集合)',
+    'ins.empty': '这个时间段还没有数据。确认主题埋点已推送、且前台已同意分析 cookie。',
+    'ins.disabled': '分析未启用(后端未连数据库)。',
   },
   en: {
     'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Synonyms', 'tab.system': 'System',
@@ -113,6 +118,11 @@ const I18N = {
     'apply.dryHead': '[Dry run — nothing written]\n', 'apply.doneHead': '[Applied]\n',
     'apply.onlineWarn': 'This is the LIVE theme! Write directly to live? A draft theme is recommended. Continue anyway?',
     'init.embedErr': 'This app is embedded — open it from Shopify admin → Apps → Search Panel Dev, not the Railway URL directly.',
+    'tab.insights': 'Insights', 'ins.range': 'Range', 'ins.7': 'Last 7 days', 'ins.30': 'Last 30 days', 'ins.90': 'Last 90 days',
+    'ins.searches': 'Searches', 'ins.zero': 'Zero-result', 'ins.clicks': 'Clicks', 'ins.zeroRate': 'Zero-result rate',
+    'ins.topSearches': 'Top searches', 'ins.zeroSearches': 'Zero-result searches (add synonyms/products)', 'ins.topClicks': 'Most clicked (products/collections)',
+    'ins.empty': 'No data for this range yet. Make sure the theme instrumentation is pushed and visitors accepted analytics cookies.',
+    'ins.disabled': 'Analytics not enabled (backend has no database).',
   },
 };
 let LANG = localStorage.getItem('cgp-admin-lang') || 'zh';
@@ -175,6 +185,7 @@ const ROUTES = {
   '/promo': { tab: 'meta', sub: 'cgp_badge' },
   '/attributes': { tab: 'meta', sub: 'cgp_status_badge' },
   '/banner': { tab: 'meta', sub: 'search_panel_banner' },
+  '/insights': { tab: 'insights', sub: null },
   '/boosts': { tab: 'links', sub: null },
   '/system': { tab: 'system', sub: null },
 };
@@ -182,6 +193,7 @@ const SUB_PATH = { search_panel_featured: '/featured', cgp_sort_rule: '/sort', c
 function currentPath() {
   const tabEl = document.querySelector('.tab.is-active');
   const tab = tabEl && tabEl.dataset.tab;
+  if (tab === 'insights') return '/insights';
   if (tab === 'links') return '/boosts';
   if (tab === 'system') return '/system';
   const subEl = document.querySelector('.subtab.is-active');
@@ -195,6 +207,7 @@ function applyRoute(pathname) {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('is-active', x.dataset.tab === r.tab));
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + r.tab));
   if (r.tab === 'system') { loadThemes(); return; }
+  if (r.tab === 'insights') { loadInsights(); return; }
   if (r.tab === 'links') return;
   const sub = r.sub || 'search_panel_featured';
   document.querySelectorAll('.subtab').forEach((x) => x.classList.toggle('is-active', x.dataset.type === sub));
@@ -206,6 +219,7 @@ document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () 
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('is-active', x === b));
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + b.dataset.tab));
   if (b.dataset.tab === 'system') loadThemes();
+  if (b.dataset.tab === 'insights') loadInsights();
   syncUrl();
 }));
 document.querySelectorAll('.subtab').forEach((b) => b.addEventListener('click', () => {
@@ -835,6 +849,39 @@ async function runApply(dryRun) {
 $('#btn-dryrun').addEventListener('click', () => runApply(true));
 $('#btn-apply').addEventListener('click', () => runApply(false));
 
+// ---- search insights ----
+let INS_DAYS = 7;
+async function loadInsights() {
+  const body = $('#insights-body');
+  if (!body) return;
+  body.innerHTML = '<p class="muted">' + t('loading') + '</p>';
+  try {
+    const s = await api('GET', '/api/insights?days=' + INS_DAYS);
+    if (!s.enabled) { body.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
+    const tt = s.totals || {};
+    const zeroRate = tt.searches ? Math.round((tt.zero / tt.searches) * 100) : 0;
+    let h = '<div class="ins-stats">';
+    h += insStat(t('ins.searches'), tt.searches || 0);
+    h += insStat(t('ins.zero'), (tt.zero || 0) + ' · ' + zeroRate + '%');
+    h += insStat(t('ins.clicks'), tt.clicks || 0);
+    h += '</div>';
+    h += insList(t('ins.topSearches'), s.top, (r) => esc(r.query), (r) => r.n);
+    h += insList(t('ins.zeroSearches'), s.zero, (r) => esc(r.query), (r) => r.n);
+    h += insList(t('ins.topClicks'), s.clicks, (r) => esc(r.title || r.target_id) + ' <span class="muted">· ' + esc(r.target_type || '') + '</span>', (r) => r.n);
+    body.innerHTML = h;
+  } catch (e) { body.innerHTML = '<p class="err">' + esc(e.message) + '</p>'; }
+}
+function insStat(label, val) {
+  return '<div class="card ins-stat"><div class="ins-stat__label">' + esc(label) + '</div><div class="ins-stat__val">' + esc(String(val)) + '</div></div>';
+}
+function insList(title, rows, fmt, num) {
+  let h = '<div class="panel-entry"><h3 class="panel-title">' + esc(title) + '</h3>';
+  if (!rows || !rows.length) return h + '<p class="muted">' + t('ins.empty') + '</p></div>';
+  h += '<div class="list">';
+  rows.forEach((r) => { h += '<div class="card ins-row"><span class="grow">' + fmt(r) + '</span><span class="ins-n">' + num(r) + '</span></div>'; });
+  return h + '</div></div>';
+}
+
 // ---- init ----
 (async () => {
   // Sidebar collapse (persisted per user).
@@ -851,6 +898,8 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
     b.addEventListener('click', () => setLang(b.dataset.lang));
   });
   applyI18n();
+  const insRange = $('#ins-range');
+  if (insRange) insRange.addEventListener('change', (e) => { INS_DAYS = +e.target.value || 7; loadInsights(); });
   try {
     const tk = await sessionToken();
     STORE = (decodeJwtPayload(tk).dest || '').replace(/^https?:\/\//, '');

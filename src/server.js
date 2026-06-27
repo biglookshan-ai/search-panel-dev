@@ -148,7 +148,19 @@ api.get('/products/search', wrap(async (req) => ({ items: await searchProducts(r
 api.get('/collections/search', wrap(async (req) => ({ items: await searchCollections(req.ctx, req.query.q) })));
 api.post('/nodes', wrap(async (req) => ({ items: await resolveNodes(req.ctx, req.body.ids || []) })));
 
-api.get('/insights', wrap(async (req) => summary({ days: +req.query.days || 7 })));
+api.get('/insights', wrap(async (req) => {
+  const s = await summary({ days: +req.query.days || 7 });
+  if (s.enabled && s.clicks && s.clicks.length) {
+    const gid = (c) => String(c.target_id).startsWith('gid://') ? c.target_id
+      : 'gid://shopify/' + (c.target_type === 'collection' ? 'Collection' : 'Product') + '/' + c.target_id;
+    try {
+      const nodes = await resolveNodes(req.ctx, s.clicks.map(gid));
+      const by = {}; (nodes || []).forEach((n) => { by[n.id] = n; });
+      s.clicks = s.clicks.map((c) => { const n = by[gid(c)] || {}; return { target_type: c.target_type, target_id: c.target_id, n: c.n, title: n.title || c.target_id, image: n.image || '' }; });
+    } catch (e) { /* keep raw ids if resolution fails */ }
+  }
+  return s;
+}));
 
 api.get('/themes', wrap(async (req) => ({ themes: await listThemes(req.ctx) })));
 api.post('/themes/:id/apply', wrap(async (req) => applyToTheme(req.ctx, req.params.id, { dryRun: !!req.body.dryRun })));

@@ -17,6 +17,7 @@
     <a href="/promo" data-i18n="sub.promo">促销活动标签</a>
     <a href="/attributes" data-i18n="sub.attr">产品属性标签</a>
     <a href="/banner" data-i18n="sub.banner">促销 Banner</a>
+    <a href="/insights" data-i18n="tab.insights">数据洞察</a>
     <a href="/boosts" data-i18n="tab.boosts">Boosts / 同义词</a>
     <a href="/system" data-i18n="tab.system">系统设置</a>
   </ui-nav-menu>
@@ -32,6 +33,10 @@
         <button class="tab is-active" data-tab="meta" type="button">
           <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h7M14 6h3M3 14h3M10 14h7"/><circle cx="12" cy="6" r="2"/><circle cx="8" cy="14" r="2"/></svg>
           <span class="navtxt" data-i18n="tab.custom">自定义</span>
+        </button>
+        <button class="tab" data-tab="insights" type="button">
+          <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h14"/><rect x="4" y="9" width="3" height="6" rx="1"/><rect x="9" y="5" width="3" height="10" rx="1"/><rect x="14" y="11" width="3" height="4" rx="1"/></svg>
+          <span class="navtxt" data-i18n="tab.insights">数据洞察</span>
         </button>
         <button class="tab" data-tab="links" type="button">
           <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l4-4 3 3 6-6"/><path d="M12 6h4v4"/></svg>
@@ -56,6 +61,20 @@
           <button class="subtab" data-type="search_panel_banner" data-i18n="sub.banner">促销 Banner</button>
         </div>
         <div id="meta-body"><p class="muted" data-i18n="loading">加载中…</p></div>
+      </section>
+
+      <!-- Search Insights -->
+      <section id="tab-insights" class="panel">
+        <div class="ins-toolbar">
+          <label class="sys-field"><span data-i18n="ins.range">时间范围</span>
+            <select id="ins-range">
+              <option value="7" data-i18n="ins.7">近 7 天</option>
+              <option value="30" data-i18n="ins.30">近 30 天</option>
+              <option value="90" data-i18n="ins.90">近 90 天</option>
+            </select>
+          </label>
+        </div>
+        <div id="insights-body"><p class="muted" data-i18n="loading">加载中…</p></div>
       </section>
 
       <!-- Boosts / Synonyms -->

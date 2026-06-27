@@ -376,6 +376,17 @@ body {
 .langtoggle button + button { border-left: 1px solid var(--border); }
 .langtoggle button.is-active { background: var(--brand); color: var(--dark); }
 
+/* ---------- Search insights ---------- */
+.ins-toolbar { margin-bottom: 18px; }
+.ins-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+.ins-stat { padding: 14px 16px; }
+.ins-stat__label { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+.ins-stat__val { font-size: 24px; font-weight: 700; letter-spacing: -.3px; }
+.ins-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+.ins-row .grow { font-size: 13px; }
+.ins-n { flex: 0 0 auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .ins-stats { grid-template-columns: 1fr; } }
+
 /* ---------- Small screens: collapse the sidebar to icons ---------- */
 @media (max-width: 720px) {
   body { padding: 10px; }
