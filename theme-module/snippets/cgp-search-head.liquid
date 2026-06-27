@@ -164,11 +164,16 @@
   window.CGP_ANALYTICS = (function () {
     var EP = (window.CGP_CONFIG && window.CGP_CONFIG.collectUrl) || '';
     var LASTQ = '';
+    // Load Shopify's consent API (if present) so an explicit decline is respected.
+    try { if (window.Shopify && window.Shopify.loadFeatures) window.Shopify.loadFeatures([{ name: 'consent-tracking-api', version: '0.1' }], function () {}); } catch (e) {}
     function sid() {
       try { var k = 'cgp_sid', v = localStorage.getItem(k); if (!v) { v = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem(k, v); } return v; } catch (e) { return ''; }
     }
+    // Permissive: collect unless the visitor has EXPLICITLY declined analytics.
+    // No consent system / undecided → allowed (data is anonymous, no PII).
     function allowed() {
-      try { var cp = window.Shopify && window.Shopify.customerPrivacy; return !!(cp && cp.analyticsProcessingAllowed && cp.analyticsProcessingAllowed()); } catch (e) { return false; }
+      try { var cp = window.Shopify && window.Shopify.customerPrivacy; if (cp && typeof cp.analyticsProcessingAllowed === 'function') return cp.analyticsProcessingAllowed() !== false; } catch (e) {}
+      return true;
     }
     function track(type, data) {
       if (type === 'search' && data && typeof data.query === 'string') LASTQ = data.query;
