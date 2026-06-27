@@ -36,6 +36,15 @@
     : [['', 'Featured'], ['best-selling', 'Best selling'], ['created-descending', 'Newest'], ['created-ascending', 'Oldest'], ['price-ascending', 'Price: Low to High'], ['price-descending', 'Price: High to Low'], ['title-ascending', 'Title A–Z'], ['title-descending', 'Title Z–A']];
   // Current search term (empty on collection pages).
   var QUERY = (function () { var m = ENDPOINT.match(/[?&]q=([^&]*)/); return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : ''; })();
+  // Analytics: track product clicks on the SEARCH results page only (the same
+  // renderer runs on collection pages — don't attach there, to avoid false data).
+  if (IS_SEARCH) {
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest) return;
+      var card = e.target.closest('[data-cgp-card][data-product-id]');
+      if (card) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: QUERY, source: 'results' }); } catch (e2) {} }
+    }, true);
+  }
   // Which product types float above the rest, for THIS query. Rule-based
   // (CGP_CONFIG.sortRules: keyword→types) when rules exist; otherwise the single
   // cgp_search_priority_types setting. No rule match / no query → no reorder.
@@ -149,6 +158,8 @@
       window.CGP_DEBUG.fetched = ALL.length;
       window.CGP_DEBUG.pages = (first && first.pages) || 0;
       window.CGP_DEBUG.total = (first && first.total) || 0;
+      // Analytics: one search event per results-page load (incl. zero results).
+      if (IS_SEARCH && QUERY) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: QUERY, resultCount: (first && typeof first.total === 'number') ? first.total : ALL.length, source: 'results' }); } catch (e) {} }
       // A genuinely-empty collection/search still returns a valid JSON object
       // (numeric total/pages). Only fall back to the native layout when the fetch
       // or parse actually FAILED (fetchPage returns a bare {products:[]} then).

@@ -110,6 +110,13 @@
         "info": "Comma-separated product types shown first in SEARCH results & drawer (e.g. Cine Lens). Accessories/other types keep their relevance order after. Your S&D boosts still stay at the very top. Only affects the default sort; doesn't touch collection pages."
       },
       {
+        "type": "text",
+        "id": "cgp_analytics_endpoint",
+        "label": "Search analytics endpoint",
+        "default": "https://search-panel-dev-production.up.railway.app",
+        "info": "Search Admin app URL that anonymous search events are sent to (queries, result counts, clicks — consent-gated, no personal data). Leave empty to turn search analytics off."
+      },
+      {
         "type": "header",
         "content": "Search engine (beta)"
       },

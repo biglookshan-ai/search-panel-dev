@@ -524,6 +524,11 @@
         const resultsCount = this.countProducts();
         this.dispatchEvent(new CustomEvent('search-drawer:results', { detail: { query: q, results_count: resultsCount }, bubbles: true }));
         this.dispatchEvent(new CustomEvent('search_performed', { detail: { query: q, results_count: resultsCount }, bubbles: true }));
+        // Analytics: debounce so partial-keystroke queries collapse into the
+        // settled query; fires once ~1.2s after the user stops typing.
+        clearTimeout(this._aTimer);
+        const aq = q, ac = resultsCount;
+        this._aTimer = setTimeout(function () { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: aq, resultCount: ac, source: 'drawer' }); } catch (e) {} }, 1200);
         if (resultsCount === 0) {
           this.dispatchEvent(new CustomEvent('search_zero_results', { detail: { query: q }, bubbles: true }));
         }

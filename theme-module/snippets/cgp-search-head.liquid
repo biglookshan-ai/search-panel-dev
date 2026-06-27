@@ -119,6 +119,7 @@
     showWishlist: {{ settings.cgp_show_wishlist | json }},
     showAddCart: {{ settings.cgp_show_add_cart | json }},
     vatLabel: {{ settings.cgp_vat_label | json }},
+    collectUrl: {{ settings.cgp_analytics_endpoint | default: 'https://search-panel-dev-production.up.railway.app' | json }},
     priorityTypes: {{ settings.cgp_search_priority_types | default: '' | json }},
     hideSelfCollectionBadge: {{ settings.cgp_hide_self_collection_badge | json }},
     hideSelfCollectionStatusBadge: {{ settings.cgp_hide_self_collection_statusbadge | json }},
@@ -155,6 +156,35 @@
       {"tag": {{ b.tag.value | json }}, "label": {{ b.label.value | default: '' | json }}, "bg": {{ sb_bg | strip | default: '#1c222d' | json }}, "text": {{ sb_text | strip | default: '#ffffff' | json }}, "enabled": {% if b.enabled.value == false %}false{% else %}true{% endif %}}
     {%- endfor -%}
   ];
+
+  // ---- Search analytics: anonymous + consent-gated (UK GDPR safe) ----
+  // Sends nothing unless the visitor has allowed analytics (Shopify Customer
+  // Privacy API). No PII — only query text, result count, clicked id, a random
+  // session id. Disabled if collectUrl is empty.
+  window.CGP_ANALYTICS = (function () {
+    var EP = (window.CGP_CONFIG && window.CGP_CONFIG.collectUrl) || '';
+    var LASTQ = '';
+    function sid() {
+      try { var k = 'cgp_sid', v = localStorage.getItem(k); if (!v) { v = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem(k, v); } return v; } catch (e) { return ''; }
+    }
+    function allowed() {
+      try { var cp = window.Shopify && window.Shopify.customerPrivacy; return !!(cp && cp.analyticsProcessingAllowed && cp.analyticsProcessingAllowed()); } catch (e) { return false; }
+    }
+    function track(type, data) {
+      if (type === 'search' && data && typeof data.query === 'string') LASTQ = data.query;
+      if (!EP || !allowed()) return;
+      var body = { type: type, session: sid() };
+      if (data) for (var k in data) body[k] = data[k];
+      try { fetch(EP + '/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true, mode: 'cors', credentials: 'omit' }); } catch (e) {}
+    }
+    // Product clicks inside the search drawer (results-page clicks are tracked in cgp-search-app.js).
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest) return;
+      var card = e.target.closest('search-drawer .sd-card[data-product-id]');
+      if (card) track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: LASTQ, source: 'drawer' });
+    }, true);
+    return { track: track, allowed: allowed };
+  })();
 </script>
 {{ 'cgp-promo.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'cgp-promo.js' | asset_url }}" defer></script>
