@@ -182,10 +182,18 @@
       } catch (e) {}
       return true;
     }
+    var lastKey = '', lastAt = 0;
     function track(type, data) {
       if (!EP || !allowed()) return;
       var body = { type: type, session: sid() };
       if (data) for (var k in data) body[k] = data[k];
+      // De-dupe identical searches fired within 3s (debounce edge / re-render).
+      if (type === 'search') {
+        var key = type + '|' + (body.query || '') + '|' + (body.source || '') + '|' + body.resultCount;
+        var now = Date.now();
+        if (key === lastKey && now - lastAt < 3000) return;
+        lastKey = key; lastAt = now;
+      }
       try { fetch(EP + '/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true, mode: 'cors', credentials: 'omit' }); } catch (e) {}
     }
     // Product clicks inside the search drawer. The LIVE query (from the drawer

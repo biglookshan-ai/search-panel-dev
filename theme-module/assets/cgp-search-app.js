@@ -158,12 +158,13 @@
       window.CGP_DEBUG.fetched = ALL.length;
       window.CGP_DEBUG.pages = (first && first.pages) || 0;
       window.CGP_DEBUG.total = (first && first.total) || 0;
-      // Analytics: one search event per results-page load (incl. zero results).
-      if (IS_SEARCH && QUERY) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: QUERY, resultCount: (first && typeof first.total === 'number') ? first.total : ALL.length, source: 'results', submitted: true }); } catch (e) {} }
       // A genuinely-empty collection/search still returns a valid JSON object
       // (numeric total/pages). Only fall back to the native layout when the fetch
       // or parse actually FAILED (fetchPage returns a bare {products:[]} then).
       var realResponse = first && (typeof first.total === 'number' || typeof first.pages === 'number');
+      // Analytics: one search event per results-page load — ONLY for a real
+      // response, so a transient/failed fetch isn't logged as a false 0-result.
+      if (IS_SEARCH && QUERY && realResponse) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: QUERY, resultCount: (typeof first.total === 'number') ? first.total : ALL.length, source: 'results', submitted: true }); } catch (e) {} }
       if (!ALL.length) {
         if (!realResponse) { fallback('no products from ' + ENDPOINT); return; }
         if (!safeRun('build', build)) { fallback('build threw'); return; }
