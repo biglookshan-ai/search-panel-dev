@@ -45,6 +45,11 @@
       if (card) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: QUERY, source: 'results' }); } catch (e2) {} }
     }, true);
   }
+  // Log a results-page search, skipping speculative prerenders (phantom loads).
+  function cgpLogSearch(total) {
+    if (document.prerendering) return;
+    try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: QUERY, resultCount: total, source: 'results', submitted: true }); } catch (e) {}
+  }
   // Which product types float above the rest, for THIS query. Rule-based
   // (CGP_CONFIG.sortRules: keyword→types) when rules exist; otherwise the single
   // cgp_search_priority_types setting. No rule match / no query → no reorder.
@@ -162,9 +167,14 @@
       // (numeric total/pages). Only fall back to the native layout when the fetch
       // or parse actually FAILED (fetchPage returns a bare {products:[]} then).
       var realResponse = first && (typeof first.total === 'number' || typeof first.pages === 'number');
-      // Analytics: one search event per results-page load — ONLY for a real
-      // response, so a transient/failed fetch isn't logged as a false 0-result.
-      if (IS_SEARCH && QUERY && realResponse) { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: QUERY, resultCount: (typeof first.total === 'number') ? first.total : ALL.length, source: 'results', submitted: true }); } catch (e) {} }
+      // Analytics: one search event per results-page load. Only for a real
+      // response; and if it reports 0, re-fetch once to confirm — a lone 0 is
+      // usually a transient cold/throttled/prefetch hit (real count is non-zero).
+      if (IS_SEARCH && QUERY && realResponse) {
+        var tot0 = (typeof first.total === 'number') ? first.total : ALL.length;
+        if (tot0 > 0) cgpLogSearch(tot0);
+        else fetchPage(1).then(function (v) { var vt = (v && typeof v.total === 'number') ? v.total : null; if (vt != null) cgpLogSearch(vt); }).catch(function () {});
+      }
       if (!ALL.length) {
         if (!realResponse) { fallback('no products from ' + ENDPOINT); return; }
         if (!safeRun('build', build)) { fallback('build threw'); return; }
