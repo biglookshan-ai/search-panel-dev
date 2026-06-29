@@ -66,6 +66,7 @@ const I18N = {
     'ins.colTime': '时间', 'ins.colQuery': '搜索词', 'ins.colResults': '结果数', 'ins.colSource': '来源', 'ins.colType': '类型', 'ins.colTarget': '目标', 'ins.colFromQuery': '来源搜索词', 'ins.colCount': '次数', 'ins.colZero': '其中零结果', 'ins.colDrawerN': '弹窗', 'ins.colResultsN': '结果页', 'ins.colRecN': '推荐位', 'ins.colTotal': '合计', 'ins.navTotal': '分类导航',
     'ins.srcDrawer': '弹窗', 'ins.srcResults': '结果页', 'ins.srcRecommendation': '推荐位', 'ins.tProduct': '产品', 'ins.tCollection': '集合',
     'ins.prev': '上一页', 'ins.next': '下一页', 'ins.pageOf': '第 %n 页', 'ins.total': '共 %n 条', 'ins.none': '—',
+    'ins.search': '搜索关键词 / 产品…', 'ins.filterAll': '全部', 'ins.fZero': '仅零结果', 'ins.shown': '显示 %n 条', 'ins.noMatch': '没有匹配的结果。',
     'ins.empty': '这个时间段还没有数据。确认主题埋点已推送、且前台未拒绝分析 cookie。',
     'ins.disabled': '分析未启用(后端未连数据库)。',
     'ins.reset': '清空数据', 'ins.resetConfirm': '确定清空所有搜索分析数据?此操作不可恢复,用于在修复埋点后从干净的数据重新开始。', 'ins.resetDone': '已清空 ✓',
@@ -130,6 +131,7 @@ const I18N = {
     'ins.colTime': 'Time', 'ins.colQuery': 'Query', 'ins.colResults': 'Results', 'ins.colSource': 'Source', 'ins.colType': 'Type', 'ins.colTarget': 'Target', 'ins.colFromQuery': 'From query', 'ins.colCount': 'Count', 'ins.colZero': 'Of which zero', 'ins.colDrawerN': 'Drawer', 'ins.colResultsN': 'Results', 'ins.colRecN': 'Recommendation', 'ins.colTotal': 'Total', 'ins.navTotal': 'Category nav',
     'ins.srcDrawer': 'Drawer', 'ins.srcResults': 'Results', 'ins.srcRecommendation': 'Recommendation', 'ins.tProduct': 'Product', 'ins.tCollection': 'Collection',
     'ins.prev': 'Prev', 'ins.next': 'Next', 'ins.pageOf': 'Page %n', 'ins.total': '%n total', 'ins.none': '—',
+    'ins.search': 'Search keyword / product…', 'ins.filterAll': 'All', 'ins.fZero': 'Zero-result only', 'ins.shown': '%n shown', 'ins.noMatch': 'No matching rows.',
     'ins.empty': 'No data for this range yet. Make sure the theme instrumentation is pushed and visitors have not declined analytics cookies.',
     'ins.disabled': 'Analytics not enabled (backend has no database).',
     'ins.reset': 'Clear data', 'ins.resetConfirm': 'Clear ALL search analytics data? This cannot be undone — use it to start fresh after fixing instrumentation.', 'ins.resetDone': 'Cleared ✓',
@@ -865,11 +867,13 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
 
 // ---- search insights ----
 let INS_DAYS = 7, INS_SUB = 'overview', INS_PAGE = 1;
+let INS_Q = '', INS_FILTER = '', INS_SORT = null; // search text, filter value, {key,dir}
 function insSub(sub) {
-  INS_SUB = sub; INS_PAGE = 1;
+  INS_SUB = sub; INS_PAGE = 1; INS_Q = ''; INS_FILTER = ''; INS_SORT = null;
   document.querySelectorAll('#tab-insights [data-ins]').forEach((b) => b.classList.toggle('is-active', b.dataset.ins === sub));
   loadInsights();
 }
+function insDebounce(fn, ms) { let h; return function () { clearTimeout(h); const a = arguments, c = this; h = setTimeout(() => fn.apply(c, a), ms || 200); }; }
 async function loadInsights() {
   const body = $('#insights-body');
   if (!body) return;
@@ -902,47 +906,134 @@ function renderInsOverview(body, s) {
   body.innerHTML = h;
 }
 function insTable(head, rowsHtml) { return '<table class="ins-table"><thead><tr>' + head + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>'; }
+// Toolbar (search box + optional filter select). Rendered once, OUTSIDE the table
+// wrap, so typing never loses focus when only the table re-renders.
+function insToolbar(filters) {
+  let h = '<div class="ins-toolbar"><input type="search" class="ins-search" placeholder="' + esc(t('ins.search')) + '" value="' + esc(INS_Q) + '">';
+  if (filters && filters.length) {
+    h += '<select class="ins-filter"><option value="">' + esc(t('ins.filterAll')) + '</option>'
+      + filters.map((f) => '<option value="' + esc(f.v) + '"' + (INS_FILTER === f.v ? ' selected' : '') + '>' + esc(f.label) + '</option>').join('')
+      + '</select>';
+  }
+  return h + '</div>';
+}
+function insSortHead(cols) {
+  return cols.map((c) => {
+    if (c.sortable === false) return '<th' + (c.num ? ' class="num"' : '') + '>' + esc(c.label) + '</th>';
+    const on = INS_SORT && INS_SORT.key === c.key;
+    const arrow = on ? (INS_SORT.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    return '<th class="' + (c.num ? 'num ' : '') + 'ins-sortable' + (on ? ' is-sorted' : '') + '" data-sort="' + esc(c.key) + '">' + esc(c.label) + arrow + '</th>';
+  }).join('');
+}
+function insWireSort(wrap, draw) {
+  wrap.querySelectorAll('th[data-sort]').forEach((th) => th.addEventListener('click', () => {
+    const k = th.dataset.sort;
+    INS_SORT = (INS_SORT && INS_SORT.key === k) ? { key: k, dir: INS_SORT.dir === 'asc' ? 'desc' : 'asc' } : { key: k, dir: 'desc' };
+    draw();
+  }));
+}
+// Stats tables are fully loaded → search + sort + filter run client-side, instantly.
+function renderInsStats(body, allRows, cfg) {
+  body.innerHTML = insToolbar(cfg.filters) + '<div class="ins-tablewrap"></div>';
+  const wrap = body.querySelector('.ins-tablewrap');
+  const draw = () => {
+    let rows = (allRows || []).slice();
+    const q = INS_Q.trim().toLowerCase();
+    if (q) rows = rows.filter((r) => cfg.searchKeys.some((k) => String(r[k] == null ? '' : r[k]).toLowerCase().indexOf(q) !== -1));
+    if (INS_FILTER && cfg.filterFn) rows = rows.filter((r) => cfg.filterFn(r, INS_FILTER));
+    const sort = INS_SORT || cfg.defaultSort;
+    if (sort) {
+      const dir = sort.dir === 'asc' ? 1 : -1;
+      rows.sort((a, b) => {
+        const x = a[sort.key], y = b[sort.key];
+        if (typeof x === 'number' || typeof y === 'number') return ((+x || 0) - (+y || 0)) * dir;
+        return String(x == null ? '' : x).localeCompare(String(y == null ? '' : y)) * dir;
+      });
+    }
+    if (!rows.length) { wrap.innerHTML = '<p class="muted">' + t((allRows && allRows.length) ? 'ins.noMatch' : 'ins.empty') + '</p>'; return; }
+    const rh = rows.map((r) => '<tr>' + cfg.cols.map((c) => '<td' + (c.num ? ' class="num"' : '') + '>' + (c.fmt ? c.fmt(r) : esc(String(r[c.key] == null ? '' : r[c.key]))) + '</td>').join('') + '</tr>').join('');
+    wrap.innerHTML = insTable(insSortHead(cfg.cols), rh) + '<p class="muted ins-count">' + t('ins.shown', rows.length) + '</p>';
+    insWireSort(wrap, draw);
+  };
+  const si = body.querySelector('.ins-search');
+  if (si) si.addEventListener('input', insDebounce(() => { INS_Q = si.value; draw(); }, 180));
+  const fi = body.querySelector('.ins-filter');
+  if (fi) fi.addEventListener('change', () => { INS_FILTER = fi.value; draw(); });
+  draw();
+}
 function renderInsTopSearches(body, s) {
-  const rows = s.top || [];
-  if (!rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
-  const h = rows.map((r) => '<tr><td>' + esc(r.query) + '</td><td class="num">' + (r.searches || 0) + '</td><td class="num">' + (r.reached || 0) + '</td><td class="num">' + (r.results === 0 ? '<span class="ins-zero">0</span>' : (r.results == null ? '—' : r.results)) + '</td></tr>').join('');
-  body.innerHTML = insTable('<th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colSearches') + '</th><th class="num">' + t('ins.colReached') + '</th><th class="num">' + t('ins.colResults') + '</th>', h);
+  renderInsStats(body, s.top || [], {
+    cols: [
+      { key: 'query', label: t('ins.colQuery') },
+      { key: 'searches', label: t('ins.colSearches'), num: true },
+      { key: 'reached', label: t('ins.colReached'), num: true },
+      { key: 'results', label: t('ins.colResults'), num: true, fmt: (r) => r.results === 0 ? '<span class="ins-zero">0</span>' : (r.results == null ? '—' : r.results) },
+    ],
+    searchKeys: ['query'],
+    filters: [{ v: 'zero', label: t('ins.fZero') }],
+    filterFn: (r, v) => v === 'zero' ? r.results === 0 : true,
+    defaultSort: { key: 'searches', dir: 'desc' },
+  });
 }
 function renderInsNav(body, s) {
-  const rows = s.nav || [];
-  if (!rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
-  const h = rows.map((r) => '<tr><td>' + esc(r.query) + '</td><td class="num">' + (r.searches || 0) + '</td></tr>').join('');
-  body.innerHTML = insTable('<th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colSearches') + '</th>', h);
+  renderInsStats(body, s.nav || [], {
+    cols: [{ key: 'query', label: t('ins.colQuery') }, { key: 'searches', label: t('ins.colSearches'), num: true }],
+    searchKeys: ['query'],
+    filters: null,
+    defaultSort: { key: 'searches', dir: 'desc' },
+  });
 }
 function renderInsTopClicks(body, s) {
-  const rows = s.clicks || [];
-  if (!rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
-  const h = rows.map((r) => '<tr><td>' + esc(r.title || r.target_id) + '</td><td>' + insType(r.target_type) + '</td><td class="num">' + (r.drawer_n || 0) + '</td><td class="num">' + (r.results_n || 0) + '</td><td class="num">' + (r.rec_n || 0) + '</td><td class="num">' + r.n + '</td></tr>').join('');
-  body.innerHTML = insTable('<th>' + t('ins.colTarget') + '</th><th>' + t('ins.colType') + '</th><th class="num">' + t('ins.colDrawerN') + '</th><th class="num">' + t('ins.colResultsN') + '</th><th class="num">' + t('ins.colRecN') + '</th><th class="num">' + t('ins.colTotal') + '</th>', h);
+  renderInsStats(body, s.clicks || [], {
+    cols: [
+      { key: 'title', label: t('ins.colTarget'), fmt: (r) => esc(r.title || r.target_id) },
+      { key: 'target_type', label: t('ins.colType'), fmt: (r) => insType(r.target_type) },
+      { key: 'drawer_n', label: t('ins.colDrawerN'), num: true },
+      { key: 'results_n', label: t('ins.colResultsN'), num: true },
+      { key: 'rec_n', label: t('ins.colRecN'), num: true },
+      { key: 'n', label: t('ins.colTotal'), num: true },
+    ],
+    searchKeys: ['title', 'target_id'],
+    filters: [{ v: 'product', label: t('ins.tProduct') }, { v: 'collection', label: t('ins.tCollection') }],
+    filterFn: (r, v) => r.target_type === v,
+    defaultSort: { key: 'n', dir: 'desc' },
+  });
 }
-async function renderInsHistory(body) {
+// History tables are server-paginated → search + filter run server-side; page resets.
+function renderInsHistory(body) {
   const kind = INS_SUB === 'clickHistory' ? 'clicks' : 'searches';
-  let e;
-  try { e = await api('GET', '/api/insights/events?kind=' + kind + '&days=' + INS_DAYS + '&page=' + INS_PAGE + '&size=50'); }
-  catch (err) { body.innerHTML = '<p class="err">' + esc(err.message) + '</p>'; return; }
-  if (!e.enabled) { body.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
-  if (!e.rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
-  let head, rowsHtml;
-  if (kind === 'searches') {
-    head = '<th>' + t('ins.colTime') + '</th><th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colResults') + '</th><th>' + t('ins.colSource') + '</th>';
-    rowsHtml = e.rows.map((r) => '<tr><td class="ins-time">' + insTime(r.ts) + '</td><td>' + esc(r.query || t('ins.none')) + '</td><td class="num">' + (r.result_count === 0 ? '<span class="ins-zero">0</span>' : (r.result_count == null ? t('ins.none') : r.result_count)) + '</td><td>' + insSrc(r.source) + '</td></tr>').join('');
-  } else {
-    head = '<th>' + t('ins.colTime') + '</th><th>' + t('ins.colType') + '</th><th>' + t('ins.colTarget') + '</th><th>' + t('ins.colSource') + '</th><th>' + t('ins.colFromQuery') + '</th>';
-    rowsHtml = e.rows.map((r) => '<tr><td class="ins-time">' + insTime(r.ts) + '</td><td>' + insType(r.target_type) + '</td><td>' + esc(r.title || r.target_id || t('ins.none')) + '</td><td>' + insSrc(r.source) + '</td><td>' + esc(r.query || t('ins.none')) + '</td></tr>').join('');
-  }
-  const pages = Math.max(1, Math.ceil(e.total / e.size));
-  let h = insTable(head, rowsHtml);
-  h += '<div class="ins-pager"><button class="btn btn-sm" data-ins-prev ' + (INS_PAGE <= 1 ? 'disabled' : '') + '>' + t('ins.prev') + '</button>'
-    + '<span class="muted">' + t('ins.pageOf', INS_PAGE) + ' / ' + pages + ' · ' + t('ins.total', e.total) + '</span>'
-    + '<button class="btn btn-sm" data-ins-next ' + (INS_PAGE >= pages ? 'disabled' : '') + '>' + t('ins.next') + '</button></div>';
-  body.innerHTML = h;
-  const pv = body.querySelector('[data-ins-prev]'); if (pv && INS_PAGE > 1) pv.addEventListener('click', () => { INS_PAGE--; renderInsHistory(body); });
-  const nx = body.querySelector('[data-ins-next]'); if (nx && INS_PAGE < pages) nx.addEventListener('click', () => { INS_PAGE++; renderInsHistory(body); });
+  const filters = kind === 'clicks'
+    ? [{ v: 'product', label: t('ins.tProduct') }, { v: 'collection', label: t('ins.tCollection') }, { v: 'drawer', label: t('ins.srcDrawer') }, { v: 'results', label: t('ins.srcResults') }, { v: 'recommendation', label: t('ins.srcRecommendation') }]
+    : [{ v: 'zero', label: t('ins.fZero') }, { v: 'drawer', label: t('ins.srcDrawer') }, { v: 'results', label: t('ins.srcResults') }];
+  body.innerHTML = insToolbar(filters) + '<div class="ins-tablewrap"><p class="muted">' + t('loading') + '</p></div>';
+  const wrap = body.querySelector('.ins-tablewrap');
+  const draw = async () => {
+    let e;
+    try { e = await api('GET', '/api/insights/events?kind=' + kind + '&days=' + INS_DAYS + '&page=' + INS_PAGE + '&size=50&q=' + encodeURIComponent(INS_Q) + '&filter=' + encodeURIComponent(INS_FILTER)); }
+    catch (err) { wrap.innerHTML = '<p class="err">' + esc(err.message) + '</p>'; return; }
+    if (!e.enabled) { wrap.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
+    if (!e.rows.length) { wrap.innerHTML = '<p class="muted">' + t((INS_Q || INS_FILTER) ? 'ins.noMatch' : 'ins.empty') + '</p>'; return; }
+    let head, rh;
+    if (kind === 'searches') {
+      head = '<th>' + t('ins.colTime') + '</th><th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colResults') + '</th><th>' + t('ins.colSource') + '</th>';
+      rh = e.rows.map((r) => '<tr><td class="ins-time">' + insTime(r.ts) + '</td><td>' + esc(r.query || t('ins.none')) + '</td><td class="num">' + (r.result_count === 0 ? '<span class="ins-zero">0</span>' : (r.result_count == null ? t('ins.none') : r.result_count)) + '</td><td>' + insSrc(r.source) + '</td></tr>').join('');
+    } else {
+      head = '<th>' + t('ins.colTime') + '</th><th>' + t('ins.colType') + '</th><th>' + t('ins.colTarget') + '</th><th>' + t('ins.colSource') + '</th><th>' + t('ins.colFromQuery') + '</th>';
+      rh = e.rows.map((r) => '<tr><td class="ins-time">' + insTime(r.ts) + '</td><td>' + insType(r.target_type) + '</td><td>' + esc(r.title || r.target_id || t('ins.none')) + '</td><td>' + insSrc(r.source) + '</td><td>' + esc(r.query || t('ins.none')) + '</td></tr>').join('');
+    }
+    const pages = Math.max(1, Math.ceil(e.total / e.size));
+    wrap.innerHTML = insTable(head, rh)
+      + '<div class="ins-pager"><button class="btn btn-sm" data-ins-prev ' + (INS_PAGE <= 1 ? 'disabled' : '') + '>' + t('ins.prev') + '</button>'
+      + '<span class="muted">' + t('ins.pageOf', INS_PAGE) + ' / ' + pages + ' · ' + t('ins.total', e.total) + '</span>'
+      + '<button class="btn btn-sm" data-ins-next ' + (INS_PAGE >= pages ? 'disabled' : '') + '>' + t('ins.next') + '</button></div>';
+    const pv = wrap.querySelector('[data-ins-prev]'); if (pv && INS_PAGE > 1) pv.addEventListener('click', () => { INS_PAGE--; draw(); });
+    const nx = wrap.querySelector('[data-ins-next]'); if (nx && INS_PAGE < pages) nx.addEventListener('click', () => { INS_PAGE++; draw(); });
+  };
+  const si = body.querySelector('.ins-search');
+  if (si) si.addEventListener('input', insDebounce(() => { INS_Q = si.value; INS_PAGE = 1; draw(); }, 300));
+  const fi = body.querySelector('.ins-filter');
+  if (fi) fi.addEventListener('change', () => { INS_FILTER = fi.value; INS_PAGE = 1; draw(); });
+  draw();
 }
 function insTime(ts) { try { return new Date(ts).toLocaleString(LANG === 'zh' ? 'zh-CN' : 'en-GB', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return esc(String(ts)); } }
 function insType(tp) { return tp === 'collection' ? t('ins.tCollection') : t('ins.tProduct'); }

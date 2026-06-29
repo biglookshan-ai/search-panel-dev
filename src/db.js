@@ -120,15 +120,15 @@ export async function summary({ days = 7 } = {}) {
         count(*)::int searches,
         count(*) FILTER (WHERE source='results')::int reached,
         max(result_count)::int results
-      FROM (${TA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
-    pool.query(`SELECT query, count(*)::int searches FROM (${NA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
+      FROM (${TA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 1000`),
+    pool.query(`SELECT query, count(*)::int searches FROM (${NA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 1000`),
     pool.query(`SELECT target_type, target_id,
         count(*) FILTER (WHERE source='drawer')::int drawer_n,
         count(*) FILTER (WHERE source='results')::int results_n,
         count(*) FILTER (WHERE source='recommendation')::int rec_n,
         count(*)::int n
       FROM search_events WHERE ${CLICK} AND target_id<>'' AND ts >= ${sql}
-      GROUP BY 1,2 ORDER BY n DESC LIMIT 50`),
+      GROUP BY 1,2 ORDER BY n DESC LIMIT 1000`),
   ]);
   return { enabled: true, days: d, totals: totals.rows[0], top: top.rows, nav: nav.rows, clicks: clicks.rows };
 }
@@ -141,8 +141,11 @@ export async function resetEvents() {
   return { ok: true };
 }
 
-// Paginated raw history (chronological, newest first). kind: searches | clicks.
-export async function events({ days = 7, kind = 'searches', page = 1, size = 50 } = {}) {
+// Paginated raw history (chronological, newest first). kind: searches | clicks | nav.
+// Supports server-side search (q matches query OR target id) and a whitelisted
+// filter (clicks: product|collection|drawer|results|recommendation; searches/nav:
+// zero|drawer|results).
+export async function events({ days = 7, kind = 'searches', page = 1, size = 50, q = '', filter = '' } = {}) {
   if (!ready) return { enabled: false };
   const { sql } = sinceSql(days);
   const sz = Math.max(1, Math.min(200, Number(size) || 50));
@@ -150,13 +153,24 @@ export async function events({ days = 7, kind = 'searches', page = 1, size = 50 
   const off = (pg - 1) * sz;
   // Search history collapses one action to a single row (hide a drawer event that
   // a results event superseded), so "结果页" rows already imply the drawer step.
-  const cond = kind === 'clicks' ? CLICK
+  let cond = kind === 'clicks' ? CLICK
     : kind === 'nav' ? `type='search' AND ${IS_NAV} AND ${ACTION}`
     : `type='search' AND ${IS_TYPED} AND ${ACTION}`;
+  const args = [];
+  const term = String(q || '').trim().slice(0, 80);
+  if (term) { args.push('%' + term + '%'); cond += ` AND (query ILIKE $${args.length} OR COALESCE(target_id,'') ILIKE $${args.length})`; }
+  const f = String(filter || '');
+  if (kind === 'clicks') {
+    if (f === 'product' || f === 'collection') cond += ` AND target_type = '${f}'`;
+    else if (f === 'drawer' || f === 'results' || f === 'recommendation') cond += ` AND source = '${f}'`;
+  } else {
+    if (f === 'zero') cond += ` AND result_count = 0`;
+    else if (f === 'drawer' || f === 'results') cond += ` AND source = '${f}'`;
+  }
   const [rows, cnt] = await Promise.all([
     pool.query(`SELECT ts, type, query, result_count, target_type, target_id, source, device, submitted
-      FROM search_events WHERE ${cond} AND ts >= ${sql} ORDER BY ts DESC LIMIT ${sz} OFFSET ${off}`),
-    pool.query(`SELECT count(*)::int n FROM search_events WHERE ${cond} AND ts >= ${sql}`),
+      FROM search_events WHERE ${cond} AND ts >= ${sql} ORDER BY ts DESC LIMIT ${sz} OFFSET ${off}`, args),
+    pool.query(`SELECT count(*)::int n FROM search_events WHERE ${cond} AND ts >= ${sql}`, args),
   ]);
   return { enabled: true, kind, page: pg, size: sz, total: cnt.rows[0].n, rows: rows.rows };
 }
