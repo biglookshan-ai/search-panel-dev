@@ -8,7 +8,7 @@ import { applyToTheme } from './theme-apply.js';
 import { requireSession } from './auth-embedded.js';
 import { clearToken } from './token-store.js';
 import { getProductTags, searchProducts, searchCollections, resolveNodes } from './catalog.js';
-import { initDb, insertEvent, rollupAndPrune, summary, events } from './db.js';
+import { initDb, insertEvent, rollupAndPrune, summary, events, resetEvents } from './db.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -170,6 +170,7 @@ api.get('/insights/summary', wrap(async (req) => {
   if (s.enabled) await resolveTitles(req.ctx, s.clicks);
   return s;
 }));
+api.post('/insights/reset', wrap(async () => resetEvents()));
 api.get('/insights/events', wrap(async (req) => {
   const e = await events({ days: +req.query.days || 7, kind: req.query.kind, page: +req.query.page || 1, size: +req.query.size || 50 });
   if (e.enabled && req.query.kind === 'clicks') await resolveTitles(req.ctx, e.rows);

@@ -379,6 +379,7 @@ body {
 /* ---------- Search insights ---------- */
 .ins-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .ins-head .subtabs { margin-bottom: 0; }
+.ins-head__right { display: flex; align-items: center; gap: 12px; }
 .ins-range-wrap { margin-bottom: 0; }
 .ins-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .ins-stat { padding: 14px 16px; }

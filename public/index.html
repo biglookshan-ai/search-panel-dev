@@ -74,13 +74,16 @@
             <button class="subtab" data-ins="clickHistory" data-i18n="ins.clickHistory">点击历史</button>
             <button class="subtab" data-ins="topClicks" data-i18n="ins.topClicks">最常点击</button>
           </div>
-          <label class="sys-field ins-range-wrap"><span data-i18n="ins.range">时间范围</span>
-            <select id="ins-range">
-              <option value="7" data-i18n="ins.7">近 7 天</option>
-              <option value="30" data-i18n="ins.30">近 30 天</option>
-              <option value="90" data-i18n="ins.90">近 90 天</option>
-            </select>
-          </label>
+          <div class="ins-head__right">
+            <label class="sys-field ins-range-wrap"><span data-i18n="ins.range">时间范围</span>
+              <select id="ins-range">
+                <option value="7" data-i18n="ins.7">近 7 天</option>
+                <option value="30" data-i18n="ins.30">近 30 天</option>
+                <option value="90" data-i18n="ins.90">近 90 天</option>
+              </select>
+            </label>
+            <button id="ins-reset" class="btn btn-sm btn-danger" type="button" data-i18n="ins.reset">清空数据</button>
+          </div>
         </div>
         <div id="insights-body"><p class="muted" data-i18n="loading">加载中…</p></div>
       </section>

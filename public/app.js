@@ -67,6 +67,7 @@ const I18N = {
     'ins.prev': '上一页', 'ins.next': '下一页', 'ins.pageOf': '第 %n 页', 'ins.total': '共 %n 条', 'ins.none': '—',
     'ins.empty': '这个时间段还没有数据。确认主题埋点已推送、且前台未拒绝分析 cookie。',
     'ins.disabled': '分析未启用(后端未连数据库)。',
+    'ins.reset': '清空数据', 'ins.resetConfirm': '确定清空所有搜索分析数据?此操作不可恢复,用于在修复埋点后从干净的数据重新开始。', 'ins.resetDone': '已清空 ✓',
   },
   en: {
     'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Synonyms', 'tab.system': 'System',
@@ -129,6 +130,7 @@ const I18N = {
     'ins.prev': 'Prev', 'ins.next': 'Next', 'ins.pageOf': 'Page %n', 'ins.total': '%n total', 'ins.none': '—',
     'ins.empty': 'No data for this range yet. Make sure the theme instrumentation is pushed and visitors have not declined analytics cookies.',
     'ins.disabled': 'Analytics not enabled (backend has no database).',
+    'ins.reset': 'Clear data', 'ins.resetConfirm': 'Clear ALL search analytics data? This cannot be undone — use it to start fresh after fixing instrumentation.', 'ins.resetDone': 'Cleared ✓',
   },
 };
 let LANG = localStorage.getItem('cgp-admin-lang') || 'zh';
@@ -965,6 +967,12 @@ function insSrc(s) { return s === 'results' ? t('ins.srcResults') : (s === 'reco
   document.querySelectorAll('#tab-insights [data-ins]').forEach((b) => b.addEventListener('click', () => insSub(b.dataset.ins)));
   const insRange = $('#ins-range');
   if (insRange) insRange.addEventListener('change', (e) => { INS_DAYS = +e.target.value || 7; INS_PAGE = 1; loadInsights(); });
+  const insReset = $('#ins-reset');
+  if (insReset) insReset.addEventListener('click', async () => {
+    if (!confirm(t('ins.resetConfirm'))) return;
+    try { await api('POST', '/api/insights/reset'); toast(t('ins.resetDone')); INS_PAGE = 1; loadInsights(); }
+    catch (e) { toast(e.message, false); }
+  });
   try {
     const tk = await sessionToken();
     STORE = (decodeJwtPayload(tk).dest || '').replace(/^https?:\/\//, '');

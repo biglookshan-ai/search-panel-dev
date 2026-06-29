@@ -119,6 +119,14 @@ export async function summary({ days = 7 } = {}) {
   return { enabled: true, days: d, totals: totals.rows[0], top: top.rows, nav: nav.rows, clicks: clicks.rows };
 }
 
+// Wipe all analytics (events + rollups) — for a clean start after fixes.
+export async function resetEvents() {
+  if (!ready) return { enabled: false };
+  await pool.query('TRUNCATE search_events');
+  await pool.query('TRUNCATE search_daily');
+  return { ok: true };
+}
+
 // Paginated raw history (chronological, newest first). kind: searches | clicks.
 export async function events({ days = 7, kind = 'searches', page = 1, size = 50 } = {}) {
   if (!ready) return { enabled: false };
