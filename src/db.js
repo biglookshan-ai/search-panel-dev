@@ -95,29 +95,29 @@ function sinceSql(days) { const d = Math.max(1, Math.min(90, Number(days) || 7))
 export async function summary({ days = 7 } = {}) {
   if (!ready) return { enabled: false };
   const { d, sql } = sinceSql(days);
-  // Keep every input — no merging. Just classify each search event by source
-  // (drawer input vs results-page/Enter), and zero-result by its own count.
+  // STATS = one row per keyword. A keyword has a definitive result count, so a
+  // zero-result keyword is binary (results = 0). searches = distinct visitors who
+  // searched it; reached = how many of them progressed to the results page.
   const [totals, top, nav, clicks] = await Promise.all([
     pool.query(`SELECT
-        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND source='drawer')::int drawer_searches,
-        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND source='results')::int results_searches,
-        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND result_count=0)::int zero,
-        count(*) FILTER (WHERE type='search' AND ${IS_NAV})::int nav,
+        (SELECT count(*) FROM (SELECT 1 FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql} GROUP BY session, query) s)::int searches,
+        (SELECT count(*) FROM (SELECT query FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql} GROUP BY query HAVING max(result_count) = 0) z)::int zero_keywords,
+        (SELECT count(DISTINCT query) FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql})::int keywords,
+        (SELECT count(*) FROM (SELECT 1 FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql} GROUP BY session, query) n)::int nav,
         count(DISTINCT session) FILTER (WHERE session<>'')::int sessions,
         count(*) FILTER (WHERE ${CLICK} AND source='drawer')::int drawer_clicks,
         count(*) FILTER (WHERE ${CLICK} AND source='results')::int results_clicks,
         count(*) FILTER (WHERE ${CLICK} AND source='recommendation')::int rec_clicks
       FROM search_events WHERE ts >= ${sql}`),
     pool.query(`SELECT query,
-        count(*) FILTER (WHERE source='drawer')::int drawer_n,
-        count(*) FILTER (WHERE source='results')::int results_n,
-        count(*) FILTER (WHERE result_count=0)::int zero,
-        count(*)::int n
+        count(DISTINCT session)::int searches,
+        count(DISTINCT session) FILTER (WHERE source='results')::int reached,
+        max(result_count)::int results
       FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql}
-      GROUP BY query ORDER BY n DESC, query LIMIT 50`),
-    pool.query(`SELECT query, count(*)::int n
+      GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
+    pool.query(`SELECT query, count(DISTINCT session)::int searches
       FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql}
-      GROUP BY query ORDER BY n DESC, query LIMIT 50`),
+      GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
     pool.query(`SELECT target_type, target_id,
         count(*) FILTER (WHERE source='drawer')::int drawer_n,
         count(*) FILTER (WHERE source='results')::int results_n,
