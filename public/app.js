@@ -61,7 +61,7 @@ const I18N = {
     'init.embedErr': '此 app 是嵌入式的,需在 Shopify 后台 → Apps → Search Panel Dev 里打开,不要直接开 Railway 网址。',
     'tab.insights': '数据洞察', 'ins.range': '时间范围', 'ins.7': '近 7 天', 'ins.30': '近 30 天', 'ins.90': '近 90 天',
     'ins.overview': '概览', 'ins.searchHistory': '搜索历史', 'ins.topSearches': '热门搜索', 'ins.nav': '分类导航', 'ins.clickHistory': '点击历史', 'ins.topClicks': '最常点击',
-    'ins.searches': '搜索次数', 'ins.zero': '零结果', 'ins.zeroRate': '零结果率', 'ins.clicks': '点击数', 'ins.searchClicks': '搜索点击', 'ins.recClicks': '推荐位点击', 'ins.sessions': '独立访客', 'ins.ctr': '搜索点击率',
+    'ins.searches': '搜索次数', 'ins.submitted': '提交次数', 'ins.zero': '零结果', 'ins.zeroRate': '零结果率', 'ins.clicks': '点击数', 'ins.searchClicks': '搜索点击', 'ins.recClicks': '推荐位点击', 'ins.sessions': '独立访客', 'ins.ctr': '搜索点击率',
     'ins.colTime': '时间', 'ins.colQuery': '搜索词', 'ins.colResults': '结果数', 'ins.colSource': '来源', 'ins.colType': '类型', 'ins.colTarget': '目标', 'ins.colFromQuery': '来源搜索词', 'ins.colCount': '次数', 'ins.colZero': '其中零结果', 'ins.colSearchN': '搜索', 'ins.colNavN': '分类', 'ins.colRecN': '推荐位', 'ins.colTotal': '合计', 'ins.navTotal': '分类导航',
     'ins.srcDrawer': '弹窗', 'ins.srcResults': '结果页', 'ins.srcRecommendation': '推荐位', 'ins.tProduct': '产品', 'ins.tCollection': '集合',
     'ins.prev': '上一页', 'ins.next': '下一页', 'ins.pageOf': '第 %n 页', 'ins.total': '共 %n 条', 'ins.none': '—',
@@ -124,7 +124,7 @@ const I18N = {
     'init.embedErr': 'This app is embedded — open it from Shopify admin → Apps → Search Panel Dev, not the Railway URL directly.',
     'tab.insights': 'Insights', 'ins.range': 'Range', 'ins.7': 'Last 7 days', 'ins.30': 'Last 30 days', 'ins.90': 'Last 90 days',
     'ins.overview': 'Overview', 'ins.searchHistory': 'Search history', 'ins.topSearches': 'Top searches', 'ins.nav': 'Category nav', 'ins.clickHistory': 'Click history', 'ins.topClicks': 'Most clicked',
-    'ins.searches': 'Searches', 'ins.zero': 'Zero-result', 'ins.zeroRate': 'Zero-result rate', 'ins.clicks': 'Clicks', 'ins.searchClicks': 'Search clicks', 'ins.recClicks': 'Recommendation clicks', 'ins.sessions': 'Unique visitors', 'ins.ctr': 'Search CTR',
+    'ins.searches': 'Searches', 'ins.submitted': 'Submitted', 'ins.zero': 'Zero-result', 'ins.zeroRate': 'Zero-result rate', 'ins.clicks': 'Clicks', 'ins.searchClicks': 'Search clicks', 'ins.recClicks': 'Recommendation clicks', 'ins.sessions': 'Unique visitors', 'ins.ctr': 'Search CTR',
     'ins.colTime': 'Time', 'ins.colQuery': 'Query', 'ins.colResults': 'Results', 'ins.colSource': 'Source', 'ins.colType': 'Type', 'ins.colTarget': 'Target', 'ins.colFromQuery': 'From query', 'ins.colCount': 'Count', 'ins.colZero': 'Of which zero', 'ins.colSearchN': 'Search', 'ins.colNavN': 'Category', 'ins.colRecN': 'Recommendation', 'ins.colTotal': 'Total', 'ins.navTotal': 'Category nav',
     'ins.srcDrawer': 'Drawer', 'ins.srcResults': 'Results', 'ins.srcRecommendation': 'Recommendation', 'ins.tProduct': 'Product', 'ins.tCollection': 'Collection',
     'ins.prev': 'Prev', 'ins.next': 'Next', 'ins.pageOf': 'Page %n', 'ins.total': '%n total', 'ins.none': '—',
@@ -888,11 +888,13 @@ function insStat(label, val, sub) {
 }
 function renderInsOverview(body, s) {
   const tt = s.totals || {};
-  const zr = tt.searches ? Math.round((tt.zero / tt.searches) * 100) : 0;
+  const sub = tt.submitted || 0;
+  const zr = sub ? Math.round((tt.zero / sub) * 100) : 0;   // zero-result rate over SUBMITTED searches
   const ctr = tt.searches ? Math.round(((tt.search_clicks || 0) / tt.searches) * 100) : 0;
   let h = '<div class="ins-stats">';
   h += insStat(t('ins.searches'), tt.searches || 0);
-  h += insStat(t('ins.zeroRate'), zr + '%', (tt.zero || 0) + ' / ' + (tt.searches || 0));
+  h += insStat(t('ins.submitted'), sub);
+  h += insStat(t('ins.zeroRate'), zr + '%', (tt.zero || 0) + ' / ' + sub);
   h += insStat(t('ins.navTotal'), tt.nav || 0);
   h += insStat(t('ins.sessions'), tt.sessions || 0);
   h += insStat(t('ins.searchClicks'), tt.search_clicks || 0);

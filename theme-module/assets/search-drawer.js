@@ -524,16 +524,13 @@
         const resultsCount = this.countProducts();
         this.dispatchEvent(new CustomEvent('search-drawer:results', { detail: { query: q, results_count: resultsCount }, bubbles: true }));
         this.dispatchEvent(new CustomEvent('search_performed', { detail: { query: q, results_count: resultsCount }, bubbles: true }));
-        // Analytics: debounce so partial-keystroke queries collapse into the
-        // settled query; fires ~1.2s after the user stops typing. Use the engine's
-        // TRUE total (search.results_count) and only when the fetch returned a real
-        // response — so a failed drawer fetch isn't logged as a false 0 and the
-        // count isn't the capped rendered number.
+        // Analytics: record WHAT the user typed in the drawer (intent), debounced
+        // to the settled query. The drawer always shows ~10 products (results OR
+        // fallback recommendations) so it never shows a true "0" — zero-result is
+        // judged ONLY on the submitted results page. So no result count here.
         clearTimeout(this._aTimer);
-        if (typeof this._lastTotal === 'number') {
-          const aq = q, ac = this._lastTotal;
-          this._aTimer = setTimeout(function () { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: aq, resultCount: ac, source: 'drawer', submitted: false }); } catch (e) {} }, 1200);
-        }
+        const aq = q;
+        this._aTimer = setTimeout(function () { try { window.CGP_ANALYTICS && window.CGP_ANALYTICS.track('search', { query: aq, source: 'drawer', submitted: false }); } catch (e) {} }, 1200);
         if (resultsCount === 0) {
           this.dispatchEvent(new CustomEvent('search_zero_results', { detail: { query: q }, bubbles: true }));
         }
@@ -577,7 +574,6 @@
        and apply the same priority ordering. Returns an ordered product array
        (or null on failure, so the caller can fall back to predictive). */
     async fetchCardProducts(q, signal) {
-      this._lastTotal = null;   // engine's true result_count for the last fetch (null = failed)
       try {
         // Build the search URL from Shopify's localized root so this AJAX request
         // carries the visitor's market/locale (and thus presentment currency). A
@@ -594,7 +590,6 @@
         const txt = await res.text();
         let data;
         try { data = JSON.parse(txt); } catch (_) { return null; }
-        this._lastTotal = (data && typeof data.total === 'number') ? data.total : null;
         return this.prioritise((data && data.products) || [], q);
       } catch (_) { return null; }
     }
