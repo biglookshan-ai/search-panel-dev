@@ -201,11 +201,13 @@
     // auto-recommendations, so an empty box at click time = recommendation click.
     document.addEventListener('click', function (e) {
       if (!e.target.closest) return;
-      var card = e.target.closest('search-drawer .sd-card[data-product-id]');
-      if (!card) return;
       var q = '';
       try { var sd = document.querySelector('search-drawer'); q = ((sd && sd.input && sd.input.value) || '').trim(); } catch (e2) {}
-      track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: q, source: q ? 'drawer' : 'recommendation' });
+      var src = q ? 'drawer' : 'recommendation';
+      var card = e.target.closest('search-drawer .sd-card[data-product-id]');
+      if (card) { track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: q, source: src }); return; }
+      var col = e.target.closest('search-drawer a[data-track="collection"]');
+      if (col) { track('collection_click', { targetId: String(col.getAttribute('data-collection-id') || ''), query: q, source: src }); }
     }, true);
     return { track: track, allowed: allowed };
   })();

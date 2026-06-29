@@ -101,14 +101,14 @@
               {%- for collection in predictive_search.resources.collections -%}
                 {%- assign ct = collection.title | downcase -%}
                 {%- if ct == cq and cshown < clim -%}
-                  <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection">{{ collection.title }}</a></li>
+                  <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection" data-collection-id="{{ collection.id }}">{{ collection.title }}</a></li>
                   {%- assign cshown = cshown | plus: 1 -%}
                 {%- endif -%}
               {%- endfor -%}
               {%- for collection in predictive_search.resources.collections -%}
                 {%- assign ct = collection.title | downcase -%}
                 {%- if ct != cq and ct contains cq and cshown < clim -%}
-                  <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection">{{ collection.title }}</a></li>
+                  <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection" data-collection-id="{{ collection.id }}">{{ collection.title }}</a></li>
                   {%- assign cshown = cshown | plus: 1 -%}
                 {%- endif -%}
               {%- endfor -%}
@@ -116,7 +116,7 @@
                 {%- assign ct = collection.title | downcase -%}
                 {%- unless ct contains cq -%}
                   {%- if cshown < clim -%}
-                    <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection">{{ collection.title }}</a></li>
+                    <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection" data-collection-id="{{ collection.id }}">{{ collection.title }}</a></li>
                     {%- assign cshown = cshown | plus: 1 -%}
                   {%- endif -%}
                 {%- endunless -%}
@@ -222,7 +222,7 @@
             <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Collections' }}</h3>
             <ul class="search-drawer__collections" data-cgp-shuffle="{{ s.cgp_sd_featured_collection_qty }}" data-cgp-key="featured_collections" data-cgp-cfg="{{ featured_collections_cfg | escape }}">
               {%- for collection in featured_collections -%}
-                <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection">{{ collection.title }}</a></li>
+                <li><a href="{{ collection.url | split: '?' | first }}" data-track="collection" data-collection-id="{{ collection.id }}">{{ collection.title }}</a></li>
               {%- endfor -%}
             </ul>
           {%- endif -%}
