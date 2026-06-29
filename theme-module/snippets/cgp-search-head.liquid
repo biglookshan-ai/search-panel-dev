@@ -207,7 +207,11 @@
       var card = e.target.closest('search-drawer .sd-card[data-product-id]');
       if (card) { track('product_click', { targetId: String(card.getAttribute('data-product-id')), query: q, source: src }); return; }
       var col = e.target.closest('search-drawer a[data-track="collection"]');
-      if (col) { track('collection_click', { targetId: String(col.getAttribute('data-collection-id') || ''), query: q, source: src }); }
+      if (col) {
+        var cid = col.getAttribute('data-collection-id') || '';
+        if (!cid) { var ch = (col.getAttribute('href') || '').match(/\/collections\/([^/?#]+)/); cid = ch ? ch[1] : ''; } // fallback: handle, never empty
+        track('collection_click', { targetId: String(cid), query: q, source: src });
+      }
     }, true);
     return { track: track, allowed: allowed };
   })();
