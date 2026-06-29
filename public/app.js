@@ -889,12 +889,12 @@ function insStat(label, val, sub) {
 function renderInsOverview(body, s) {
   const tt = s.totals || {};
   const sub = tt.submitted || 0;
-  const zr = sub ? Math.round((tt.zero / sub) * 100) : 0;   // zero-result rate over SUBMITTED searches
+  const zr = tt.searches ? Math.round((tt.zero / tt.searches) * 100) : 0;   // zero-result rate over all typed searches
   const ctr = tt.searches ? Math.round(((tt.search_clicks || 0) / tt.searches) * 100) : 0;
   let h = '<div class="ins-stats">';
   h += insStat(t('ins.searches'), tt.searches || 0);
   h += insStat(t('ins.submitted'), sub);
-  h += insStat(t('ins.zeroRate'), zr + '%', (tt.zero || 0) + ' / ' + sub);
+  h += insStat(t('ins.zeroRate'), zr + '%', (tt.zero || 0) + ' / ' + (tt.searches || 0));
   h += insStat(t('ins.navTotal'), tt.nav || 0);
   h += insStat(t('ins.sessions'), tt.sessions || 0);
   h += insStat(t('ins.searchClicks'), tt.search_clicks || 0);

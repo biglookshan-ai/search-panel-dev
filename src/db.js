@@ -99,7 +99,7 @@ export async function summary({ days = 7 } = {}) {
     pool.query(`SELECT
         count(*) FILTER (WHERE type='search' AND ${IS_TYPED})::int searches,
         count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND ${SUBMITTED})::int submitted,
-        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND ${SUBMITTED} AND result_count=0)::int zero,
+        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND result_count=0)::int zero,
         count(*) FILTER (WHERE type='search' AND ${IS_NAV})::int nav,
         count(DISTINCT session) FILTER (WHERE session<>'')::int sessions,
         count(*) FILTER (WHERE ${CLICK})::int clicks,
@@ -107,7 +107,7 @@ export async function summary({ days = 7 } = {}) {
         count(*) FILTER (WHERE ${CLICK} AND ${IS_NAV})::int cat_clicks,
         count(*) FILTER (WHERE ${CLICK} AND ${IS_REC})::int rec_clicks
       FROM search_events WHERE ts >= ${sql}`),
-    pool.query(`SELECT query, count(*)::int n, count(*) FILTER (WHERE ${SUBMITTED} AND result_count=0)::int zero
+    pool.query(`SELECT query, count(*)::int n, count(*) FILTER (WHERE result_count=0)::int zero
       FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql}
       GROUP BY query ORDER BY n DESC, query LIMIT 50`),
     pool.query(`SELECT query, count(*)::int n, count(*) FILTER (WHERE result_count=0)::int zero
