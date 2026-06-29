@@ -60,9 +60,9 @@ const I18N = {
     'apply.onlineWarn': '这是线上主题!确定要直接写入线上吗?建议改用草稿主题。仍要继续?',
     'init.embedErr': '此 app 是嵌入式的,需在 Shopify 后台 → Apps → Search Panel Dev 里打开,不要直接开 Railway 网址。',
     'tab.insights': '数据洞察', 'ins.range': '时间范围', 'ins.7': '近 7 天', 'ins.30': '近 30 天', 'ins.90': '近 90 天',
-    'ins.overview': '概览', 'ins.searchHistory': '搜索历史', 'ins.topSearches': '热门搜索', 'ins.clickHistory': '点击历史', 'ins.topClicks': '最常点击',
+    'ins.overview': '概览', 'ins.searchHistory': '搜索历史', 'ins.topSearches': '热门搜索', 'ins.nav': '分类导航', 'ins.clickHistory': '点击历史', 'ins.topClicks': '最常点击',
     'ins.searches': '搜索次数', 'ins.zero': '零结果', 'ins.zeroRate': '零结果率', 'ins.clicks': '点击数', 'ins.searchClicks': '搜索点击', 'ins.recClicks': '推荐位点击', 'ins.sessions': '独立访客', 'ins.ctr': '搜索点击率',
-    'ins.colTime': '时间', 'ins.colQuery': '搜索词', 'ins.colResults': '结果数', 'ins.colSource': '来源', 'ins.colType': '类型', 'ins.colTarget': '目标', 'ins.colFromQuery': '来源搜索词', 'ins.colCount': '次数', 'ins.colZero': '其中零结果', 'ins.colSearchN': '搜索点击', 'ins.colRecN': '推荐位', 'ins.colTotal': '合计',
+    'ins.colTime': '时间', 'ins.colQuery': '搜索词', 'ins.colResults': '结果数', 'ins.colSource': '来源', 'ins.colType': '类型', 'ins.colTarget': '目标', 'ins.colFromQuery': '来源搜索词', 'ins.colCount': '次数', 'ins.colZero': '其中零结果', 'ins.colSearchN': '搜索', 'ins.colNavN': '分类', 'ins.colRecN': '推荐位', 'ins.colTotal': '合计', 'ins.navTotal': '分类导航',
     'ins.srcDrawer': '弹窗', 'ins.srcResults': '结果页', 'ins.srcRecommendation': '推荐位', 'ins.tProduct': '产品', 'ins.tCollection': '集合',
     'ins.prev': '上一页', 'ins.next': '下一页', 'ins.pageOf': '第 %n 页', 'ins.total': '共 %n 条', 'ins.none': '—',
     'ins.empty': '这个时间段还没有数据。确认主题埋点已推送、且前台未拒绝分析 cookie。',
@@ -122,9 +122,9 @@ const I18N = {
     'apply.onlineWarn': 'This is the LIVE theme! Write directly to live? A draft theme is recommended. Continue anyway?',
     'init.embedErr': 'This app is embedded — open it from Shopify admin → Apps → Search Panel Dev, not the Railway URL directly.',
     'tab.insights': 'Insights', 'ins.range': 'Range', 'ins.7': 'Last 7 days', 'ins.30': 'Last 30 days', 'ins.90': 'Last 90 days',
-    'ins.overview': 'Overview', 'ins.searchHistory': 'Search history', 'ins.topSearches': 'Top searches', 'ins.clickHistory': 'Click history', 'ins.topClicks': 'Most clicked',
+    'ins.overview': 'Overview', 'ins.searchHistory': 'Search history', 'ins.topSearches': 'Top searches', 'ins.nav': 'Category nav', 'ins.clickHistory': 'Click history', 'ins.topClicks': 'Most clicked',
     'ins.searches': 'Searches', 'ins.zero': 'Zero-result', 'ins.zeroRate': 'Zero-result rate', 'ins.clicks': 'Clicks', 'ins.searchClicks': 'Search clicks', 'ins.recClicks': 'Recommendation clicks', 'ins.sessions': 'Unique visitors', 'ins.ctr': 'Search CTR',
-    'ins.colTime': 'Time', 'ins.colQuery': 'Query', 'ins.colResults': 'Results', 'ins.colSource': 'Source', 'ins.colType': 'Type', 'ins.colTarget': 'Target', 'ins.colFromQuery': 'From query', 'ins.colCount': 'Count', 'ins.colZero': 'Of which zero', 'ins.colSearchN': 'Search', 'ins.colRecN': 'Recommendation', 'ins.colTotal': 'Total',
+    'ins.colTime': 'Time', 'ins.colQuery': 'Query', 'ins.colResults': 'Results', 'ins.colSource': 'Source', 'ins.colType': 'Type', 'ins.colTarget': 'Target', 'ins.colFromQuery': 'From query', 'ins.colCount': 'Count', 'ins.colZero': 'Of which zero', 'ins.colSearchN': 'Search', 'ins.colNavN': 'Category', 'ins.colRecN': 'Recommendation', 'ins.colTotal': 'Total', 'ins.navTotal': 'Category nav',
     'ins.srcDrawer': 'Drawer', 'ins.srcResults': 'Results', 'ins.srcRecommendation': 'Recommendation', 'ins.tProduct': 'Product', 'ins.tCollection': 'Collection',
     'ins.prev': 'Prev', 'ins.next': 'Next', 'ins.pageOf': 'Page %n', 'ins.total': '%n total', 'ins.none': '—',
     'ins.empty': 'No data for this range yet. Make sure the theme instrumentation is pushed and visitors have not declined analytics cookies.',
@@ -875,6 +875,7 @@ async function loadInsights() {
     const s = await api('GET', '/api/insights/summary?days=' + INS_DAYS);
     if (!s.enabled) { body.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
     if (INS_SUB === 'topSearches') return renderInsTopSearches(body, s);
+    if (INS_SUB === 'nav') return renderInsNav(body, s);
     if (INS_SUB === 'topClicks') return renderInsTopClicks(body, s);
     return renderInsOverview(body, s);
   } catch (e) { body.innerHTML = '<p class="err">' + esc(e.message) + '</p>'; }
@@ -890,6 +891,7 @@ function renderInsOverview(body, s) {
   let h = '<div class="ins-stats">';
   h += insStat(t('ins.searches'), tt.searches || 0);
   h += insStat(t('ins.zeroRate'), zr + '%', (tt.zero || 0) + ' / ' + (tt.searches || 0));
+  h += insStat(t('ins.navTotal'), tt.nav || 0);
   h += insStat(t('ins.sessions'), tt.sessions || 0);
   h += insStat(t('ins.searchClicks'), tt.search_clicks || 0);
   h += insStat(t('ins.recClicks'), tt.rec_clicks || 0);
@@ -904,11 +906,17 @@ function renderInsTopSearches(body, s) {
   const h = rows.map((r) => '<tr><td>' + esc(r.query) + '</td><td class="num">' + r.n + '</td><td class="num">' + (r.zero ? '<span class="ins-zero">' + r.zero + '</span>' : 0) + '</td></tr>').join('');
   body.innerHTML = insTable('<th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colCount') + '</th><th class="num">' + t('ins.colZero') + '</th>', h);
 }
+function renderInsNav(body, s) {
+  const rows = s.nav || [];
+  if (!rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
+  const h = rows.map((r) => '<tr><td>' + esc(r.query) + '</td><td class="num">' + r.n + '</td><td class="num">' + (r.zero ? '<span class="ins-zero">' + r.zero + '</span>' : 0) + '</td></tr>').join('');
+  body.innerHTML = insTable('<th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colCount') + '</th><th class="num">' + t('ins.colZero') + '</th>', h);
+}
 function renderInsTopClicks(body, s) {
   const rows = s.clicks || [];
   if (!rows.length) { body.innerHTML = '<p class="muted">' + t('ins.empty') + '</p>'; return; }
-  const h = rows.map((r) => '<tr><td>' + esc(r.title || r.target_id) + '</td><td>' + insType(r.target_type) + '</td><td class="num">' + (r.search_n || 0) + '</td><td class="num">' + (r.rec_n || 0) + '</td><td class="num">' + r.n + '</td></tr>').join('');
-  body.innerHTML = insTable('<th>' + t('ins.colTarget') + '</th><th>' + t('ins.colType') + '</th><th class="num">' + t('ins.colSearchN') + '</th><th class="num">' + t('ins.colRecN') + '</th><th class="num">' + t('ins.colTotal') + '</th>', h);
+  const h = rows.map((r) => '<tr><td>' + esc(r.title || r.target_id) + '</td><td>' + insType(r.target_type) + '</td><td class="num">' + (r.search_n || 0) + '</td><td class="num">' + (r.cat_n || 0) + '</td><td class="num">' + (r.rec_n || 0) + '</td><td class="num">' + r.n + '</td></tr>').join('');
+  body.innerHTML = insTable('<th>' + t('ins.colTarget') + '</th><th>' + t('ins.colType') + '</th><th class="num">' + t('ins.colSearchN') + '</th><th class="num">' + t('ins.colNavN') + '</th><th class="num">' + t('ins.colRecN') + '</th><th class="num">' + t('ins.colTotal') + '</th>', h);
 }
 async function renderInsHistory(body) {
   const kind = INS_SUB === 'clickHistory' ? 'clicks' : 'searches';
