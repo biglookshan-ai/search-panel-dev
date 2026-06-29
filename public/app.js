@@ -886,7 +886,6 @@ async function loadInsights() {
     const s = await api('GET', '/api/insights/summary?days=' + INS_DAYS);
     if (!s.enabled) { body.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
     if (INS_SUB === 'topSearches') return renderInsTopSearches(body, s);
-    if (INS_SUB === 'nav') return renderInsNav(body, s);
     if (INS_SUB === 'topClicks') return renderInsTopClicks(body, s);
     return renderInsOverview(body, s);
   } catch (e) { body.innerHTML = '<p class="err">' + esc(e.message) + '</p>'; }
@@ -901,7 +900,6 @@ function renderInsOverview(body, s) {
   h += insStat(t('ins.searches'), tt.searches || 0);
   h += insStat(t('ins.zeroKeywords'), tt.zero_keywords || 0);
   h += insStat(t('ins.sessions'), tt.sessions || 0);
-  h += insStat(t('ins.navTotal'), tt.nav || 0);
   h += insStat(t('ins.drawerClicks'), tt.drawer_clicks || 0);
   h += insStat(t('ins.resultsClicks'), tt.results_clicks || 0);
   h += insStat(t('ins.recClicks'), tt.rec_clicks || 0);
@@ -996,15 +994,6 @@ function renderInsTopSearches(body, s) {
       { key: 'result', allLabel: t('ins.allResult'), options: [{ v: 'zero', label: t('ins.fZero') }, { v: 'has', label: t('ins.fHas') }], test: (r, v) => v === 'zero' ? r.results === 0 : r.results > 0 },
       { key: 'min', allLabel: t('ins.allCount'), options: INS_MIN, test: (r, v) => (r.searches || 0) >= +v },
     ],
-  });
-}
-function renderInsNav(body, s) {
-  renderInsStats(body, s.nav || [], {
-    cols: [{ key: 'query', label: t('ins.colQuery') }, { key: 'searches', label: t('ins.colSearches'), num: true }],
-    searchKeys: ['query'],
-    sortFields: [{ key: 'query', label: t('ins.colQuery') }, { key: 'searches', label: t('ins.colSearches') }],
-    defaultSort: 'searches:desc',
-    filters: [{ key: 'min', allLabel: t('ins.allCount'), options: INS_MIN, test: (r, v) => (r.searches || 0) >= +v }],
   });
 }
 function renderInsTopClicks(body, s) {

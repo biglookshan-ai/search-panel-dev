@@ -105,13 +105,11 @@ export async function summary({ days = 7 } = {}) {
   // Action-level base sets: each row = one search action (drawer+results pair
   // collapsed to the results row; standalone drawer = its own action).
   const TA = `SELECT query, session, source, result_count FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql} AND ${ACTION}`;
-  const NA = `SELECT query, session, source, result_count FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql} AND ${ACTION}`;
-  const [totals, top, nav, clicks] = await Promise.all([
-    pool.query(`WITH ta AS (${TA}), na AS (${NA}) SELECT
+  const [totals, top, clicks] = await Promise.all([
+    pool.query(`WITH ta AS (${TA}) SELECT
         (SELECT count(*) FROM ta)::int searches,
         (SELECT count(*) FILTER (WHERE source='results') FROM ta)::int reached,
         (SELECT count(*) FROM (SELECT query FROM ta GROUP BY query HAVING max(result_count)=0) z)::int zero_keywords,
-        (SELECT count(*) FROM na)::int nav,
         (SELECT count(DISTINCT session) FROM search_events WHERE ts >= ${sql} AND session<>'')::int sessions,
         (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='drawer' AND ts >= ${sql})::int drawer_clicks,
         (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='results' AND ts >= ${sql})::int results_clicks,
@@ -121,7 +119,6 @@ export async function summary({ days = 7 } = {}) {
         count(*) FILTER (WHERE source='results')::int reached,
         max(result_count)::int results
       FROM (${TA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 1000`),
-    pool.query(`SELECT query, count(*)::int searches FROM (${NA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 1000`),
     pool.query(`SELECT target_type, target_id,
         count(*) FILTER (WHERE source='drawer')::int drawer_n,
         count(*) FILTER (WHERE source='results')::int results_n,
@@ -130,7 +127,7 @@ export async function summary({ days = 7 } = {}) {
       FROM search_events WHERE ${CLICK} AND target_id<>'' AND ts >= ${sql}
       GROUP BY 1,2 ORDER BY n DESC LIMIT 1000`),
   ]);
-  return { enabled: true, days: d, totals: totals.rows[0], top: top.rows, nav: nav.rows, clicks: clicks.rows };
+  return { enabled: true, days: d, totals: totals.rows[0], top: top.rows, clicks: clicks.rows };
 }
 
 // Wipe all analytics (events + rollups) — for a clean start after fixes.
@@ -154,7 +151,6 @@ export async function events({ days = 7, kind = 'searches', page = 1, size = 50,
   // Search history collapses one action to a single row (hide a drawer event that
   // a results event superseded), so "结果页" rows already imply the drawer step.
   let cond = kind === 'clicks' ? CLICK
-    : kind === 'nav' ? `type='search' AND ${IS_NAV} AND ${ACTION}`
     : `type='search' AND ${IS_TYPED} AND ${ACTION}`;
   const args = [];
   const term = String(q || '').trim().slice(0, 80);

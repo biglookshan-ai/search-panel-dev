@@ -77,6 +77,9 @@ app.post('/collect', (req, res) => {
   if (!rateOk(ip)) return res.status(429).end();
   const b = req.body || {};
   if (!['search', 'product_click', 'collection_click'].includes(b.type)) return res.status(400).end();
+  // Drop category navigation (structured queries like product_type:"X", tag:, vendor:)
+  // — those are collection-form browsing, not real searches; we don't store them.
+  if (b.type === 'search' && typeof b.query === 'string' && /(product_type|tag|vendor|variants\.|inventory_quantity|sku|barcode|handle|title)\s*:/i.test(b.query)) return res.status(204).end();
   const DEV = ['mobile', 'tablet', 'desktop'];
   const SRC = ['drawer', 'results', 'recommendation'];
   const ev = {
