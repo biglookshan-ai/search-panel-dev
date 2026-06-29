@@ -15,10 +15,17 @@ const STRUCT_RE = `'(product_type|tag|vendor|variants\\.|inventory_quantity|sku|
 const IS_NAV = `(query ~* ${STRUCT_RE})`;                       // category navigation
 const IS_TYPED = `(query <> '' AND NOT (query ~* ${STRUCT_RE}))`; // real typed search
 const IS_REC = `(query IS NULL OR query = '')`;                // recommendation (no query)
-// Zero-result is judged ONLY on a submitted search (Enter → results page), where
-// the user actually sees an empty page. The drawer always shows ~10 (results or
-// fallback recommendations), so it never represents a true zero.
 const SUBMITTED = `submitted IS TRUE`;
+// One search ACTION = one row. A "results" event always implies the drawer step
+// (you type in the drawer, then Enter) — so it represents the whole action. A
+// "drawer" event only counts as its own action when it was NOT followed by a
+// results event for the same visitor+query within 10s (i.e. they stopped at the
+// drawer). This collapses the drawer+results pair of one action into one, while
+// keeping separate searches (further apart) distinct.
+const ACTION = `(source='results' OR NOT EXISTS (
+    SELECT 1 FROM search_events r WHERE r.type='search' AND r.source='results'
+      AND r.session = search_events.session AND r.query = search_events.query
+      AND r.ts > search_events.ts AND r.ts <= search_events.ts + interval '10 seconds'))`;
 
 export async function initDb() {
   const url = process.env.DATABASE_URL;
@@ -95,29 +102,26 @@ function sinceSql(days) { const d = Math.max(1, Math.min(90, Number(days) || 7))
 export async function summary({ days = 7 } = {}) {
   if (!ready) return { enabled: false };
   const { d, sql } = sinceSql(days);
-  // STATS = one row per keyword. A keyword has a definitive result count, so a
-  // zero-result keyword is binary (results = 0). searches = distinct visitors who
-  // searched it; reached = how many of them progressed to the results page.
+  // Action-level base sets: each row = one search action (drawer+results pair
+  // collapsed to the results row; standalone drawer = its own action).
+  const TA = `SELECT query, session, source, result_count FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql} AND ${ACTION}`;
+  const NA = `SELECT query, session, source, result_count FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql} AND ${ACTION}`;
   const [totals, top, nav, clicks] = await Promise.all([
-    pool.query(`SELECT
-        (SELECT count(*) FROM (SELECT 1 FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql} GROUP BY session, query) s)::int searches,
-        (SELECT count(*) FROM (SELECT query FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql} GROUP BY query HAVING max(result_count) = 0) z)::int zero_keywords,
-        (SELECT count(DISTINCT query) FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql})::int keywords,
-        (SELECT count(*) FROM (SELECT 1 FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql} GROUP BY session, query) n)::int nav,
-        count(DISTINCT session) FILTER (WHERE session<>'')::int sessions,
-        count(*) FILTER (WHERE ${CLICK} AND source='drawer')::int drawer_clicks,
-        count(*) FILTER (WHERE ${CLICK} AND source='results')::int results_clicks,
-        count(*) FILTER (WHERE ${CLICK} AND source='recommendation')::int rec_clicks
-      FROM search_events WHERE ts >= ${sql}`),
+    pool.query(`WITH ta AS (${TA}), na AS (${NA}) SELECT
+        (SELECT count(*) FROM ta)::int searches,
+        (SELECT count(*) FILTER (WHERE source='results') FROM ta)::int reached,
+        (SELECT count(*) FROM (SELECT query FROM ta GROUP BY query HAVING max(result_count)=0) z)::int zero_keywords,
+        (SELECT count(*) FROM na)::int nav,
+        (SELECT count(DISTINCT session) FROM search_events WHERE ts >= ${sql} AND session<>'')::int sessions,
+        (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='drawer' AND ts >= ${sql})::int drawer_clicks,
+        (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='results' AND ts >= ${sql})::int results_clicks,
+        (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='recommendation' AND ts >= ${sql})::int rec_clicks`),
     pool.query(`SELECT query,
-        count(DISTINCT session)::int searches,
-        count(DISTINCT session) FILTER (WHERE source='results')::int reached,
+        count(*)::int searches,
+        count(*) FILTER (WHERE source='results')::int reached,
         max(result_count)::int results
-      FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql}
-      GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
-    pool.query(`SELECT query, count(DISTINCT session)::int searches
-      FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql}
-      GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
+      FROM (${TA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
+    pool.query(`SELECT query, count(*)::int searches FROM (${NA}) a GROUP BY query ORDER BY searches DESC, query LIMIT 100`),
     pool.query(`SELECT target_type, target_id,
         count(*) FILTER (WHERE source='drawer')::int drawer_n,
         count(*) FILTER (WHERE source='results')::int results_n,
@@ -144,9 +148,11 @@ export async function events({ days = 7, kind = 'searches', page = 1, size = 50 
   const sz = Math.max(1, Math.min(200, Number(size) || 50));
   const pg = Math.max(1, Number(page) || 1);
   const off = (pg - 1) * sz;
+  // Search history collapses one action to a single row (hide a drawer event that
+  // a results event superseded), so "结果页" rows already imply the drawer step.
   const cond = kind === 'clicks' ? CLICK
-    : kind === 'nav' ? `type='search' AND ${IS_NAV}`
-    : `type='search' AND ${IS_TYPED}`;
+    : kind === 'nav' ? `type='search' AND ${IS_NAV} AND ${ACTION}`
+    : `type='search' AND ${IS_TYPED} AND ${ACTION}`;
   const [rows, cnt] = await Promise.all([
     pool.query(`SELECT ts, type, query, result_count, target_type, target_id, source, device, submitted
       FROM search_events WHERE ${cond} AND ts >= ${sql} ORDER BY ts DESC LIMIT ${sz} OFFSET ${off}`),
