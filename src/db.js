@@ -142,10 +142,10 @@ export async function resetEvents() {
 }
 
 // Paginated raw history (chronological, newest first). kind: searches | clicks | nav.
-// Supports server-side search (q matches query OR target id) and a whitelisted
-// filter (clicks: product|collection|drawer|results|recommendation; searches/nav:
-// zero|drawer|results).
-export async function events({ days = 7, kind = 'searches', page = 1, size = 50, q = '', filter = '' } = {}) {
+// Server-side: search (q matches query OR target id), separate whitelisted filters
+// (source, type, result), and sort (whitelisted column + direction).
+const SORT_COLS = { ts: 'ts', query: 'query', results: 'result_count', source: 'source', type: 'target_type', target: 'target_id' };
+export async function events({ days = 7, kind = 'searches', page = 1, size = 50, q = '', source = '', type = '', result = '', sort = '' } = {}) {
   if (!ready) return { enabled: false };
   const { sql } = sinceSql(days);
   const sz = Math.max(1, Math.min(200, Number(size) || 50));
@@ -159,17 +159,21 @@ export async function events({ days = 7, kind = 'searches', page = 1, size = 50,
   const args = [];
   const term = String(q || '').trim().slice(0, 80);
   if (term) { args.push('%' + term + '%'); cond += ` AND (query ILIKE $${args.length} OR COALESCE(target_id,'') ILIKE $${args.length})`; }
-  const f = String(filter || '');
+  const src = String(source || '');
+  if (src === 'drawer' || src === 'results' || src === 'recommendation') cond += ` AND source = '${src}'`;
   if (kind === 'clicks') {
-    if (f === 'product' || f === 'collection') cond += ` AND target_type = '${f}'`;
-    else if (f === 'drawer' || f === 'results' || f === 'recommendation') cond += ` AND source = '${f}'`;
+    if (type === 'product' || type === 'collection') cond += ` AND target_type = '${type}'`;
   } else {
-    if (f === 'zero') cond += ` AND result_count = 0`;
-    else if (f === 'drawer' || f === 'results') cond += ` AND source = '${f}'`;
+    if (result === 'zero') cond += ` AND result_count = 0`;
+    else if (result === 'has') cond += ` AND result_count > 0`;
   }
+  const sp = String(sort || '').split(':');
+  const col = SORT_COLS[sp[0]] || 'ts';
+  const dir = sp[1] === 'asc' ? 'ASC' : 'DESC';
+  const order = col === 'ts' ? `ts ${dir}` : `${col} ${dir} NULLS LAST, ts DESC`;
   const [rows, cnt] = await Promise.all([
     pool.query(`SELECT ts, type, query, result_count, target_type, target_id, source, device, submitted
-      FROM search_events WHERE ${cond} AND ts >= ${sql} ORDER BY ts DESC LIMIT ${sz} OFFSET ${off}`, args),
+      FROM search_events WHERE ${cond} AND ts >= ${sql} ORDER BY ${order} LIMIT ${sz} OFFSET ${off}`, args),
     pool.query(`SELECT count(*)::int n FROM search_events WHERE ${cond} AND ts >= ${sql}`, args),
   ]);
   return { enabled: true, kind, page: pg, size: sz, total: cnt.rows[0].n, rows: rows.rows };

@@ -67,6 +67,7 @@ const I18N = {
     'ins.srcDrawer': '弹窗', 'ins.srcResults': '结果页', 'ins.srcRecommendation': '推荐位', 'ins.tProduct': '产品', 'ins.tCollection': '集合',
     'ins.prev': '上一页', 'ins.next': '下一页', 'ins.pageOf': '第 %n 页', 'ins.total': '共 %n 条', 'ins.none': '—',
     'ins.search': '搜索关键词 / 产品…', 'ins.filterAll': '全部', 'ins.fZero': '仅零结果', 'ins.shown': '显示 %n 条', 'ins.noMatch': '没有匹配的结果。',
+    'ins.sortBy': '排序:', 'ins.allResult': '全部结果', 'ins.fHas': '仅有结果', 'ins.allCount': '全部次数', 'ins.minN': '≥%n 次', 'ins.allType': '全部类型', 'ins.allSource': '全部来源', 'ins.hasDrawer': '有弹窗点击', 'ins.hasResults': '有结果页点击', 'ins.hasRec': '有推荐点击',
     'ins.empty': '这个时间段还没有数据。确认主题埋点已推送、且前台未拒绝分析 cookie。',
     'ins.disabled': '分析未启用(后端未连数据库)。',
     'ins.reset': '清空数据', 'ins.resetConfirm': '确定清空所有搜索分析数据?此操作不可恢复,用于在修复埋点后从干净的数据重新开始。', 'ins.resetDone': '已清空 ✓',
@@ -132,6 +133,7 @@ const I18N = {
     'ins.srcDrawer': 'Drawer', 'ins.srcResults': 'Results', 'ins.srcRecommendation': 'Recommendation', 'ins.tProduct': 'Product', 'ins.tCollection': 'Collection',
     'ins.prev': 'Prev', 'ins.next': 'Next', 'ins.pageOf': 'Page %n', 'ins.total': '%n total', 'ins.none': '—',
     'ins.search': 'Search keyword / product…', 'ins.filterAll': 'All', 'ins.fZero': 'Zero-result only', 'ins.shown': '%n shown', 'ins.noMatch': 'No matching rows.',
+    'ins.sortBy': 'Sort: ', 'ins.allResult': 'All results', 'ins.fHas': 'Has results', 'ins.allCount': 'All counts', 'ins.minN': '≥%n', 'ins.allType': 'All types', 'ins.allSource': 'All sources', 'ins.hasDrawer': 'Has drawer', 'ins.hasResults': 'Has results-page', 'ins.hasRec': 'Has recommendation',
     'ins.empty': 'No data for this range yet. Make sure the theme instrumentation is pushed and visitors have not declined analytics cookies.',
     'ins.disabled': 'Analytics not enabled (backend has no database).',
     'ins.reset': 'Clear data', 'ins.resetConfirm': 'Clear ALL search analytics data? This cannot be undone — use it to start fresh after fixing instrumentation.', 'ins.resetDone': 'Cleared ✓',
@@ -867,9 +869,10 @@ $('#btn-apply').addEventListener('click', () => runApply(false));
 
 // ---- search insights ----
 let INS_DAYS = 7, INS_SUB = 'overview', INS_PAGE = 1;
-let INS_Q = '', INS_FILTER = '', INS_SORT = null; // search text, filter value, {key,dir}
+let INS_Q = '', INS_SORT = '', INS_FILTERS = {}; // search text, sort 'key:dir', filters {fkey:value}
+function insParseSort(s) { if (!s) return null; const i = s.indexOf(':'); return { key: i < 0 ? s : s.slice(0, i), dir: s.slice(i + 1) === 'asc' ? 'asc' : 'desc' }; }
 function insSub(sub) {
-  INS_SUB = sub; INS_PAGE = 1; INS_Q = ''; INS_FILTER = ''; INS_SORT = null;
+  INS_SUB = sub; INS_PAGE = 1; INS_Q = ''; INS_SORT = ''; INS_FILTERS = {};
   document.querySelectorAll('#tab-insights [data-ins]').forEach((b) => b.classList.toggle('is-active', b.dataset.ins === sub));
   loadInsights();
 }
@@ -906,46 +909,65 @@ function renderInsOverview(body, s) {
   body.innerHTML = h;
 }
 function insTable(head, rowsHtml) { return '<table class="ins-table"><thead><tr>' + head + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>'; }
-// Toolbar (search box + optional filter select). Rendered once, OUTSIDE the table
-// wrap, so typing never loses focus when only the table re-renders.
-function insToolbar(filters) {
+// Toolbar = search box + sort selector + N separate filter selects. Rendered once,
+// OUTSIDE the table wrap, so typing/selecting never loses focus on table re-render.
+function insToolbar(cfg) {
   let h = '<div class="ins-toolbar"><input type="search" class="ins-search" placeholder="' + esc(t('ins.search')) + '" value="' + esc(INS_Q) + '">';
-  if (filters && filters.length) {
-    h += '<select class="ins-filter"><option value="">' + esc(t('ins.filterAll')) + '</option>'
-      + filters.map((f) => '<option value="' + esc(f.v) + '"' + (INS_FILTER === f.v ? ' selected' : '') + '>' + esc(f.label) + '</option>').join('')
-      + '</select>';
+  if (cfg.sortFields && cfg.sortFields.length) {
+    h += '<select class="ins-sort" aria-label="' + esc(t('ins.sortBy')) + '">';
+    cfg.sortFields.forEach((f) => ['desc', 'asc'].forEach((d) => {
+      const v = f.key + ':' + d;
+      h += '<option value="' + v + '"' + (INS_SORT === v ? ' selected' : '') + '>' + esc(t('ins.sortBy') + f.label + (d === 'asc' ? ' ↑' : ' ↓')) + '</option>';
+    }));
+    h += '</select>';
   }
+  (cfg.filters || []).forEach((f) => {
+    h += '<select class="ins-filter" data-fkey="' + esc(f.key) + '"><option value="">' + esc(f.allLabel) + '</option>'
+      + f.options.map((o) => '<option value="' + esc(o.v) + '"' + ((INS_FILTERS[f.key] || '') === o.v ? ' selected' : '') + '>' + esc(o.label) + '</option>').join('')
+      + '</select>';
+  });
   return h + '</div>';
 }
 function insSortHead(cols) {
+  const sp = insParseSort(INS_SORT);
   return cols.map((c) => {
     if (c.sortable === false) return '<th' + (c.num ? ' class="num"' : '') + '>' + esc(c.label) + '</th>';
-    const on = INS_SORT && INS_SORT.key === c.key;
-    const arrow = on ? (INS_SORT.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    const on = sp && sp.key === c.key;
+    const arrow = on ? (sp.dir === 'asc' ? ' ▲' : ' ▼') : '';
     return '<th class="' + (c.num ? 'num ' : '') + 'ins-sortable' + (on ? ' is-sorted' : '') + '" data-sort="' + esc(c.key) + '">' + esc(c.label) + arrow + '</th>';
   }).join('');
 }
 function insWireSort(wrap, draw) {
   wrap.querySelectorAll('th[data-sort]').forEach((th) => th.addEventListener('click', () => {
-    const k = th.dataset.sort;
-    INS_SORT = (INS_SORT && INS_SORT.key === k) ? { key: k, dir: INS_SORT.dir === 'asc' ? 'desc' : 'asc' } : { key: k, dir: 'desc' };
+    const k = th.dataset.sort, cur = insParseSort(INS_SORT);
+    INS_SORT = k + ':' + ((cur && cur.key === k && cur.dir === 'desc') ? 'asc' : 'desc');
     draw();
   }));
 }
-// Stats tables are fully loaded → search + sort + filter run client-side, instantly.
+// Wire the persistent toolbar controls. resetPage: history (server) resets to page 1.
+function insWireToolbar(body, onChange, resetPage) {
+  const si = body.querySelector('.ins-search');
+  if (si) si.addEventListener('input', insDebounce(() => { INS_Q = si.value; if (resetPage) INS_PAGE = 1; onChange(); }, resetPage ? 300 : 180));
+  const so = body.querySelector('.ins-sort');
+  if (so) so.addEventListener('change', () => { INS_SORT = so.value; if (resetPage) INS_PAGE = 1; onChange(); });
+  body.querySelectorAll('.ins-filter').forEach((sel) => sel.addEventListener('change', () => { INS_FILTERS[sel.dataset.fkey] = sel.value; if (resetPage) INS_PAGE = 1; onChange(); }));
+}
+// Stats tables are fully loaded → search + sort + filters run client-side, instantly.
 function renderInsStats(body, allRows, cfg) {
-  body.innerHTML = insToolbar(cfg.filters) + '<div class="ins-tablewrap"></div>';
+  if (!INS_SORT) INS_SORT = cfg.defaultSort;
+  body.innerHTML = insToolbar(cfg) + '<div class="ins-tablewrap"></div>';
   const wrap = body.querySelector('.ins-tablewrap');
   const draw = () => {
+    const so = body.querySelector('.ins-sort'); if (so && so.value !== INS_SORT) so.value = INS_SORT; // keep dropdown synced with header clicks
     let rows = (allRows || []).slice();
     const q = INS_Q.trim().toLowerCase();
     if (q) rows = rows.filter((r) => cfg.searchKeys.some((k) => String(r[k] == null ? '' : r[k]).toLowerCase().indexOf(q) !== -1));
-    if (INS_FILTER && cfg.filterFn) rows = rows.filter((r) => cfg.filterFn(r, INS_FILTER));
-    const sort = INS_SORT || cfg.defaultSort;
-    if (sort) {
-      const dir = sort.dir === 'asc' ? 1 : -1;
+    (cfg.filters || []).forEach((f) => { const v = INS_FILTERS[f.key]; if (v && f.test) rows = rows.filter((r) => f.test(r, v)); });
+    const sp = insParseSort(INS_SORT);
+    if (sp) {
+      const dir = sp.dir === 'asc' ? 1 : -1;
       rows.sort((a, b) => {
-        const x = a[sort.key], y = b[sort.key];
+        const x = a[sp.key], y = b[sp.key];
         if (typeof x === 'number' || typeof y === 'number') return ((+x || 0) - (+y || 0)) * dir;
         return String(x == null ? '' : x).localeCompare(String(y == null ? '' : y)) * dir;
       });
@@ -955,12 +977,10 @@ function renderInsStats(body, allRows, cfg) {
     wrap.innerHTML = insTable(insSortHead(cfg.cols), rh) + '<p class="muted ins-count">' + t('ins.shown', rows.length) + '</p>';
     insWireSort(wrap, draw);
   };
-  const si = body.querySelector('.ins-search');
-  if (si) si.addEventListener('input', insDebounce(() => { INS_Q = si.value; draw(); }, 180));
-  const fi = body.querySelector('.ins-filter');
-  if (fi) fi.addEventListener('change', () => { INS_FILTER = fi.value; draw(); });
+  insWireToolbar(body, draw, false);
   draw();
 }
+const INS_MIN = [{ v: '2', label: t('ins.minN', 2) }, { v: '5', label: t('ins.minN', 5) }, { v: '10', label: t('ins.minN', 10) }];
 function renderInsTopSearches(body, s) {
   renderInsStats(body, s.top || [], {
     cols: [
@@ -970,17 +990,21 @@ function renderInsTopSearches(body, s) {
       { key: 'results', label: t('ins.colResults'), num: true, fmt: (r) => r.results === 0 ? '<span class="ins-zero">0</span>' : (r.results == null ? '—' : r.results) },
     ],
     searchKeys: ['query'],
-    filters: [{ v: 'zero', label: t('ins.fZero') }],
-    filterFn: (r, v) => v === 'zero' ? r.results === 0 : true,
-    defaultSort: { key: 'searches', dir: 'desc' },
+    sortFields: [{ key: 'query', label: t('ins.colQuery') }, { key: 'searches', label: t('ins.colSearches') }, { key: 'reached', label: t('ins.colReached') }, { key: 'results', label: t('ins.colResults') }],
+    defaultSort: 'searches:desc',
+    filters: [
+      { key: 'result', allLabel: t('ins.allResult'), options: [{ v: 'zero', label: t('ins.fZero') }, { v: 'has', label: t('ins.fHas') }], test: (r, v) => v === 'zero' ? r.results === 0 : r.results > 0 },
+      { key: 'min', allLabel: t('ins.allCount'), options: INS_MIN, test: (r, v) => (r.searches || 0) >= +v },
+    ],
   });
 }
 function renderInsNav(body, s) {
   renderInsStats(body, s.nav || [], {
     cols: [{ key: 'query', label: t('ins.colQuery') }, { key: 'searches', label: t('ins.colSearches'), num: true }],
     searchKeys: ['query'],
-    filters: null,
-    defaultSort: { key: 'searches', dir: 'desc' },
+    sortFields: [{ key: 'query', label: t('ins.colQuery') }, { key: 'searches', label: t('ins.colSearches') }],
+    defaultSort: 'searches:desc',
+    filters: [{ key: 'min', allLabel: t('ins.allCount'), options: INS_MIN, test: (r, v) => (r.searches || 0) >= +v }],
   });
 }
 function renderInsTopClicks(body, s) {
@@ -994,25 +1018,45 @@ function renderInsTopClicks(body, s) {
       { key: 'n', label: t('ins.colTotal'), num: true },
     ],
     searchKeys: ['title', 'target_id'],
-    filters: [{ v: 'product', label: t('ins.tProduct') }, { v: 'collection', label: t('ins.tCollection') }],
-    filterFn: (r, v) => r.target_type === v,
-    defaultSort: { key: 'n', dir: 'desc' },
+    sortFields: [{ key: 'title', label: t('ins.colTarget') }, { key: 'drawer_n', label: t('ins.colDrawerN') }, { key: 'results_n', label: t('ins.colResultsN') }, { key: 'rec_n', label: t('ins.colRecN') }, { key: 'n', label: t('ins.colTotal') }],
+    defaultSort: 'n:desc',
+    filters: [
+      { key: 'type', allLabel: t('ins.allType'), options: [{ v: 'product', label: t('ins.tProduct') }, { v: 'collection', label: t('ins.tCollection') }], test: (r, v) => r.target_type === v },
+      { key: 'source', allLabel: t('ins.allSource'), options: [{ v: 'drawer', label: t('ins.hasDrawer') }, { v: 'results', label: t('ins.hasResults') }, { v: 'recommendation', label: t('ins.hasRec') }], test: (r, v) => ({ drawer: r.drawer_n, results: r.results_n, recommendation: r.rec_n }[v] || 0) > 0 },
+    ],
   });
 }
-// History tables are server-paginated → search + filter run server-side; page resets.
+// History tables are server-paginated → search + sort + filters run server-side.
 function renderInsHistory(body) {
   const kind = INS_SUB === 'clickHistory' ? 'clicks' : 'searches';
-  const filters = kind === 'clicks'
-    ? [{ v: 'product', label: t('ins.tProduct') }, { v: 'collection', label: t('ins.tCollection') }, { v: 'drawer', label: t('ins.srcDrawer') }, { v: 'results', label: t('ins.srcResults') }, { v: 'recommendation', label: t('ins.srcRecommendation') }]
-    : [{ v: 'zero', label: t('ins.fZero') }, { v: 'drawer', label: t('ins.srcDrawer') }, { v: 'results', label: t('ins.srcResults') }];
-  body.innerHTML = insToolbar(filters) + '<div class="ins-tablewrap"><p class="muted">' + t('loading') + '</p></div>';
+  const cfg = kind === 'clicks' ? {
+    sortFields: [{ key: 'ts', label: t('ins.colTime') }, { key: 'type', label: t('ins.colType') }, { key: 'target', label: t('ins.colTarget') }, { key: 'source', label: t('ins.colSource') }],
+    defaultSort: 'ts:desc',
+    filters: [
+      { key: 'type', allLabel: t('ins.allType'), options: [{ v: 'product', label: t('ins.tProduct') }, { v: 'collection', label: t('ins.tCollection') }] },
+      { key: 'source', allLabel: t('ins.allSource'), options: [{ v: 'drawer', label: t('ins.srcDrawer') }, { v: 'results', label: t('ins.srcResults') }, { v: 'recommendation', label: t('ins.srcRecommendation') }] },
+    ],
+  } : {
+    sortFields: [{ key: 'ts', label: t('ins.colTime') }, { key: 'query', label: t('ins.colQuery') }, { key: 'results', label: t('ins.colResults') }, { key: 'source', label: t('ins.colSource') }],
+    defaultSort: 'ts:desc',
+    filters: [
+      { key: 'source', allLabel: t('ins.allSource'), options: [{ v: 'drawer', label: t('ins.srcDrawer') }, { v: 'results', label: t('ins.srcResults') }] },
+      { key: 'result', allLabel: t('ins.allResult'), options: [{ v: 'zero', label: t('ins.fZero') }, { v: 'has', label: t('ins.fHas') }] },
+    ],
+  };
+  if (!INS_SORT) INS_SORT = cfg.defaultSort;
+  body.innerHTML = insToolbar(cfg) + '<div class="ins-tablewrap"><p class="muted">' + t('loading') + '</p></div>';
   const wrap = body.querySelector('.ins-tablewrap');
   const draw = async () => {
+    const qs = '?kind=' + kind + '&days=' + INS_DAYS + '&page=' + INS_PAGE + '&size=50&q=' + encodeURIComponent(INS_Q)
+      + '&sort=' + encodeURIComponent(INS_SORT) + '&source=' + encodeURIComponent(INS_FILTERS.source || '')
+      + '&type=' + encodeURIComponent(INS_FILTERS.type || '') + '&result=' + encodeURIComponent(INS_FILTERS.result || '');
     let e;
-    try { e = await api('GET', '/api/insights/events?kind=' + kind + '&days=' + INS_DAYS + '&page=' + INS_PAGE + '&size=50&q=' + encodeURIComponent(INS_Q) + '&filter=' + encodeURIComponent(INS_FILTER)); }
+    try { e = await api('GET', '/api/insights/events' + qs); }
     catch (err) { wrap.innerHTML = '<p class="err">' + esc(err.message) + '</p>'; return; }
     if (!e.enabled) { wrap.innerHTML = '<p class="muted">' + t('ins.disabled') + '</p>'; return; }
-    if (!e.rows.length) { wrap.innerHTML = '<p class="muted">' + t((INS_Q || INS_FILTER) ? 'ins.noMatch' : 'ins.empty') + '</p>'; return; }
+    const hasFilter = INS_Q || INS_FILTERS.source || INS_FILTERS.type || INS_FILTERS.result;
+    if (!e.rows.length) { wrap.innerHTML = '<p class="muted">' + t(hasFilter ? 'ins.noMatch' : 'ins.empty') + '</p>'; return; }
     let head, rh;
     if (kind === 'searches') {
       head = '<th>' + t('ins.colTime') + '</th><th>' + t('ins.colQuery') + '</th><th class="num">' + t('ins.colResults') + '</th><th>' + t('ins.colSource') + '</th>';
@@ -1029,10 +1073,7 @@ function renderInsHistory(body) {
     const pv = wrap.querySelector('[data-ins-prev]'); if (pv && INS_PAGE > 1) pv.addEventListener('click', () => { INS_PAGE--; draw(); });
     const nx = wrap.querySelector('[data-ins-next]'); if (nx && INS_PAGE < pages) nx.addEventListener('click', () => { INS_PAGE++; draw(); });
   };
-  const si = body.querySelector('.ins-search');
-  if (si) si.addEventListener('input', insDebounce(() => { INS_Q = si.value; INS_PAGE = 1; draw(); }, 300));
-  const fi = body.querySelector('.ins-filter');
-  if (fi) fi.addEventListener('change', () => { INS_FILTER = fi.value; INS_PAGE = 1; draw(); });
+  insWireToolbar(body, draw, true);
   draw();
 }
 function insTime(ts) { try { return new Date(ts).toLocaleString(LANG === 'zh' ? 'zh-CN' : 'en-GB', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return esc(String(ts)); } }

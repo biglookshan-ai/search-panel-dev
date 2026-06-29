@@ -172,7 +172,7 @@ api.get('/insights/summary', wrap(async (req) => {
 }));
 api.post('/insights/reset', wrap(async () => resetEvents()));
 api.get('/insights/events', wrap(async (req) => {
-  const e = await events({ days: +req.query.days || 7, kind: req.query.kind, page: +req.query.page || 1, size: +req.query.size || 50, q: req.query.q || '', filter: req.query.filter || '' });
+  const e = await events({ days: +req.query.days || 7, kind: req.query.kind, page: +req.query.page || 1, size: +req.query.size || 50, q: req.query.q || '', source: req.query.source || '', type: req.query.type || '', result: req.query.result || '', sort: req.query.sort || '' });
   if (e.enabled && req.query.kind === 'clicks') await resolveTitles(req.ctx, e.rows);
   return e;
 }));
