@@ -95,26 +95,29 @@ function sinceSql(days) { const d = Math.max(1, Math.min(90, Number(days) || 7))
 export async function summary({ days = 7 } = {}) {
   if (!ready) return { enabled: false };
   const { d, sql } = sinceSql(days);
-  // De-dupe ONE search action: typing in the drawer AND submitting to the results
-  // page (same session + query within the same minute) = one search. mx = best
-  // result count in that bucket (so a bucket is "zero" only if nothing was found).
-  const TB = `SELECT session, query, date_trunc('minute', ts) m, max(result_count) mx, bool_or(${SUBMITTED}) sub
-    FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql} GROUP BY session, query, m`;
-  const NB = `SELECT session, query, date_trunc('minute', ts) m
-    FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql} GROUP BY session, query, m`;
+  // Keep every input — no merging. Just classify each search event by source
+  // (drawer input vs results-page/Enter), and zero-result by its own count.
   const [totals, top, nav, clicks] = await Promise.all([
-    pool.query(`WITH tb AS (${TB}), nb AS (${NB}) SELECT
-        (SELECT count(*) FROM tb)::int searches,
-        (SELECT count(*) FROM tb WHERE sub)::int submitted,
-        (SELECT count(*) FROM tb WHERE mx=0)::int zero,
-        (SELECT count(*) FROM nb)::int nav,
-        (SELECT count(DISTINCT session) FROM search_events WHERE ts >= ${sql} AND session<>'')::int sessions,
-        (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='drawer' AND ts >= ${sql})::int drawer_clicks,
-        (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='results' AND ts >= ${sql})::int results_clicks,
-        (SELECT count(*) FROM search_events WHERE ${CLICK} AND source='recommendation' AND ts >= ${sql})::int rec_clicks`),
-    pool.query(`SELECT query, count(*)::int n, count(*) FILTER (WHERE mx=0)::int zero
-      FROM (${TB}) t GROUP BY query ORDER BY n DESC, query LIMIT 50`),
-    pool.query(`SELECT query, count(*)::int n FROM (${NB}) t GROUP BY query ORDER BY n DESC, query LIMIT 50`),
+    pool.query(`SELECT
+        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND source='drawer')::int drawer_searches,
+        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND source='results')::int results_searches,
+        count(*) FILTER (WHERE type='search' AND ${IS_TYPED} AND result_count=0)::int zero,
+        count(*) FILTER (WHERE type='search' AND ${IS_NAV})::int nav,
+        count(DISTINCT session) FILTER (WHERE session<>'')::int sessions,
+        count(*) FILTER (WHERE ${CLICK} AND source='drawer')::int drawer_clicks,
+        count(*) FILTER (WHERE ${CLICK} AND source='results')::int results_clicks,
+        count(*) FILTER (WHERE ${CLICK} AND source='recommendation')::int rec_clicks
+      FROM search_events WHERE ts >= ${sql}`),
+    pool.query(`SELECT query,
+        count(*) FILTER (WHERE source='drawer')::int drawer_n,
+        count(*) FILTER (WHERE source='results')::int results_n,
+        count(*) FILTER (WHERE result_count=0)::int zero,
+        count(*)::int n
+      FROM search_events WHERE type='search' AND ${IS_TYPED} AND ts >= ${sql}
+      GROUP BY query ORDER BY n DESC, query LIMIT 50`),
+    pool.query(`SELECT query, count(*)::int n
+      FROM search_events WHERE type='search' AND ${IS_NAV} AND ts >= ${sql}
+      GROUP BY query ORDER BY n DESC, query LIMIT 50`),
     pool.query(`SELECT target_type, target_id,
         count(*) FILTER (WHERE source='drawer')::int drawer_n,
         count(*) FILTER (WHERE source='results')::int results_n,
