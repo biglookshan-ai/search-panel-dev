@@ -52,7 +52,7 @@ const I18N = {
     'sp.refresh': '随机刷新间隔:', 'sp.now': '立即(每次打开都换)', 'sp.min': '分钟', 'sp.hour': '小时', 'sp.day': '天',
     'sp.pinHint': '置顶项不参与随机,始终排在最前', 'sp.emptyAdd': '还没有添加。用上面搜索框添加。', 'pin': '置顶',
     'sp.tabName': '弹窗 tab 名', 'sp.tabNameHint': '弹窗推荐区该合集的 tab 显示名,留空=用合集名',
-    'sp.collDisplay': '显示位置', 'sp.dispBoth': '两处都显示(左列表+右tab)', 'sp.dispList': '只左侧列表', 'sp.dispTabs': '只右侧 tab', 'sp.dispNone': '都不显示', 'sp.tabQty': '右侧 tab 数量', 'sp.listQty': '左侧列表数量', 'sp.tab1Label': '首 tab 名',
+    'sp.collDisplay': '显示位置', 'sp.dispBoth': '两处都显示(左列表+右tab)', 'sp.dispList': '只左侧列表', 'sp.dispTabs': '只右侧 tab', 'sp.dispNone': '都不显示', 'sp.tabQty': '右侧 tab 数量', 'sp.listQty': '左侧列表数量', 'sp.tab1Label': '首 tab 名', 'sp.tabShuffle': 'tab 随机(每次打开不同,置顶固定)',
     'sp.savedNoCfg': '已保存(刷新间隔/置顶未存:metaobject 缺 %s 字段)',
     'items': '个',
     'bulk.sel': '已选 %n 项', 'bulk.up': '↑ 上移', 'bulk.down': '↓ 下移', 'bulk.del': '删除选中', 'bulk.clr': '取消选择',
@@ -120,7 +120,7 @@ const I18N = {
     'sp.refresh': 'Random refresh interval:', 'sp.now': 'Instant (reshuffle every open)', 'sp.min': 'minutes', 'sp.hour': 'hours', 'sp.day': 'days',
     'sp.pinHint': 'Pinned items skip the shuffle and always stay first', 'sp.emptyAdd': 'Nothing added yet. Use the search box above.', 'pin': 'Pin',
     'sp.tabName': 'Drawer tab name', 'sp.tabNameHint': 'Custom tab name for this collection in the drawer; blank = collection name',
-    'sp.collDisplay': 'Display', 'sp.dispBoth': 'Both (left list + right tabs)', 'sp.dispList': 'Left list only', 'sp.dispTabs': 'Right tabs only', 'sp.dispNone': 'Hide both', 'sp.tabQty': 'Right tab count', 'sp.listQty': 'Left list count', 'sp.tab1Label': 'First tab name',
+    'sp.collDisplay': 'Display', 'sp.dispBoth': 'Both (left list + right tabs)', 'sp.dispList': 'Left list only', 'sp.dispTabs': 'Right tabs only', 'sp.dispNone': 'Hide both', 'sp.tabQty': 'Right tab count', 'sp.listQty': 'Left list count', 'sp.tab1Label': 'First tab name', 'sp.tabShuffle': 'Shuffle tabs (differ each open, pinned stay)',
     'sp.savedNoCfg': 'Saved (refresh interval / pin not stored: metaobject is missing the %s field)',
     'items': '',
     'bulk.sel': '%n selected', 'bulk.up': '↑ Up', 'bulk.down': '↓ Down', 'bulk.del': 'Remove selected', 'bulk.clr': 'Clear selection',
@@ -685,7 +685,7 @@ function simpleModuleEl(entryId, title, preview, detailHtml) {
 
 // Picker module for list-of-references (products / collections): chips with
 // image+name, reorder, remove, and a search-to-add box (Shopify-native style).
-function parseCfg(v) { try { const c = JSON.parse(v || '{}'); return { refreshSec: +c.refreshSec || 0, pin: +c.pin || 0, labels: (c.labels && typeof c.labels === 'object') ? c.labels : {}, display: c.display || 'both', tabQty: (c.tabQty != null && c.tabQty !== '') ? +c.tabQty : 5, listQty: (c.listQty != null && c.listQty !== '') ? +c.listQty : 5, tab1Label: c.tab1Label || '' }; } catch { return { refreshSec: 0, pin: 0, labels: {}, display: 'both', tabQty: 5, listQty: 5, tab1Label: '' }; } }
+function parseCfg(v) { try { const c = JSON.parse(v || '{}'); return { refreshSec: +c.refreshSec || 0, pin: +c.pin || 0, labels: (c.labels && typeof c.labels === 'object') ? c.labels : {}, display: c.display || 'both', tabQty: (c.tabQty != null && c.tabQty !== '') ? +c.tabQty : 5, listQty: (c.listQty != null && c.listQty !== '') ? +c.listQty : 5, tab1Label: c.tab1Label || '', tabShuffle: !!c.tabShuffle }; } catch { return { refreshSec: 0, pin: 0, labels: {}, display: 'both', tabQty: 5, listQty: 5, tab1Label: '', tabShuffle: false }; } }
 const gidNum = (g) => String(g).split('/').pop();
 function refreshUnit(s) { if (!s) return 0; if (s % 86400 === 0) return 86400; if (s % 3600 === 0) return 3600; return 60; }
 function refreshNum(s) { const u = refreshUnit(s); return u ? Math.round(s / u) : 0; }
@@ -735,6 +735,7 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
         <input type="number" min="1" max="10" data-listqty class="disp-qty"/>
         <span>${t('sp.tab1Label')}</span>
         <input type="text" data-tab1label class="disp-label" placeholder="Featured"/>
+        <label class="disp-check"><input type="checkbox" data-tabshuffle/> ${t('sp.tabShuffle')}</label>
       </div>` : ''}
       <div class="bulkbar" data-bulk hidden></div>
       <div class="chips" data-chips></div>
@@ -752,6 +753,7 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
     const tq = card.querySelector('[data-tabqty]'); if (tq) tq.value = String(cfg.tabQty != null ? cfg.tabQty : 5);
     const lq = card.querySelector('[data-listqty]'); if (lq) lq.value = String(cfg.listQty != null ? cfg.listQty : 5);
     const t1 = card.querySelector('[data-tab1label]'); if (t1) t1.value = cfg.tab1Label || '';
+    const sh = card.querySelector('[data-tabshuffle]'); if (sh) sh.checked = !!cfg.tabShuffle;
   }
 
   // Move the whole selected group up/down by one relative to unselected items.
@@ -859,6 +861,7 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
           const tq = card.querySelector('[data-tabqty]'); cfgObj.tabQty = Math.max(0, Math.min(8, parseInt(tq && tq.value, 10) || 0));
           const lq = card.querySelector('[data-listqty]'); cfgObj.listQty = Math.max(1, Math.min(10, parseInt(lq && lq.value, 10) || 5));
           const t1 = card.querySelector('[data-tab1label]'); cfgObj.tab1Label = (t1 && t1.value.trim()) || '';
+          const sh = card.querySelector('[data-tabshuffle]'); cfgObj.tabShuffle = !!(sh && sh.checked);
         }
         fields[cfgField] = JSON.stringify(cfgObj);
       }

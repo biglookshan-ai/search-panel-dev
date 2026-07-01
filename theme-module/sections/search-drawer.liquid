@@ -247,7 +247,7 @@
                 (display + tabQty + custom labels) to control display mode and the visible count. {%- endcomment -%}
               <div class="sd-rec-tabs" role="tablist" data-sd-rectabs data-sd-tab-cfg="{{ featured_collections_cfg | escape }}">
                 <button type="button" class="sd-rec-tab is-active" role="tab" data-sd-rectab="rec">Featured</button>
-                {%- for collection in featured_collections limit: 8 -%}
+                {%- for collection in featured_collections limit: 30 -%}
                   <button type="button" class="sd-rec-tab" role="tab" data-sd-rectab="col"
                           data-handle="{{ collection.handle }}"
                           data-url="{{ collection.url | split: '?' | first }}"

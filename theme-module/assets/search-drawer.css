@@ -195,8 +195,8 @@ body.search-drawer-open { overflow: hidden; }
   padding: 6px 14px;
   border: 0;
   border-radius: 999px;
-  background: var(--sd-hover-bg, #f6f6f6);
-  color: var(--sd-text, #333);
+  background: color-mix(in srgb, var(--sd-hover-bg, #eee) 45%, transparent);
+  color: var(--sd-card-desc, #888);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
@@ -204,11 +204,13 @@ body.search-drawer-open { overflow: hidden; }
   cursor: pointer;
   transition: background .15s, color .15s;
 }
-.sd-rec-tab:hover { background: var(--sd-hover-bg, #ececec); filter: brightness(.96); }
+.sd-rec-tab:hover {
+  background: color-mix(in srgb, var(--sd-hover-bg, #e6e6e6) 80%, transparent);
+  color: var(--sd-text, #333);
+}
 .sd-rec-tab.is-active {
   background: var(--sd-heading, #333);
   color: #fff;
-  filter: none;
 }
 .sd-rec-panel[hidden] { display: none; }
 .sd-rec-loading {

@@ -356,11 +356,13 @@
 
     /* ---------- Recommendation tabs (default panel) ---------- */
     // Apply the admin app's collection config (featured_collections_config):
-    //   display   — 'both' | 'list' | 'tabs' | 'none' (where collections show)
-    //   tabQty    — how many collection tabs on the right (default 5)
-    //   listQty   — how many items the left list shuffles to (default 5)
-    //   tab1Label — first tab (recommended products) label (default 'Featured')
-    //   labels    — custom tab name per collection (keyed by numeric id)
+    //   display    — 'both' | 'list' | 'tabs' | 'none' (where collections show)
+    //   tabQty     — how many collection tabs on the right (default 5)
+    //   listQty    — how many items the left list shuffles to (default 5)
+    //   tab1Label  — first tab (recommended products) label (default 'Featured')
+    //   tabShuffle — reshuffle which collection tabs show each open (pinned stay)
+    //   pin        — number of pinned collections (always shown first)
+    //   labels     — custom tab name per collection (keyed by numeric id)
     // Called before snapshotting defaultPanelHTML, so restores keep the result.
     applyCollectionDisplay() {
       const bar = this.panel.querySelector('.sd-rec-tabs[data-sd-tab-cfg]');
@@ -370,31 +372,59 @@
       const raw = (bar && bar.dataset.sdTabCfg) || (listUl && listUl.dataset.cgpCfg) || '{}';
       try { cfg = JSON.parse(raw) || {}; } catch (_) { cfg = {}; }
       const display = cfg.display || 'both';
+      this._recCfg = {
+        showTabs: display === 'both' || display === 'tabs',
+        qty: (cfg.tabQty != null && cfg.tabQty !== '') ? Math.max(0, +cfg.tabQty) : 5,
+        pin: Math.max(0, +cfg.pin || 0),
+        shuffle: !!cfg.tabShuffle,
+        labels: (cfg.labels && typeof cfg.labels === 'object') ? cfg.labels : {},
+      };
       const showLeft = display === 'both' || display === 'list';
-      const showTabs = display === 'both' || display === 'tabs';
-      const qty = (cfg.tabQty != null && cfg.tabQty !== '') ? Math.max(0, +cfg.tabQty) : 5;
-      const labels = (cfg.labels && typeof cfg.labels === 'object') ? cfg.labels : {};
 
       if (leftBlock) leftBlock.hidden = !showLeft;
       if (listUl && cfg.listQty != null && cfg.listQty !== '') listUl.dataset.cgpShuffle = String(Math.max(1, +cfg.listQty)); // left list count
       if (bar) {
-        bar.hidden = !(showTabs && qty > 0);
         if (cfg.tab1Label) { const t1 = bar.querySelector('[data-sd-rectab="rec"]'); if (t1) t1.textContent = cfg.tab1Label; }
-        const colTabs = bar.querySelectorAll('[data-sd-rectab="col"]');
-        colTabs.forEach((tab, i) => {
-          tab.hidden = i >= qty;                               // limit to tabQty
-          const name = labels[tab.dataset.collectionId];       // custom name
-          if (name) tab.textContent = name;
+        bar.querySelectorAll('[data-sd-rectab="col"]').forEach((tab) => {           // custom names
+          const name = this._recCfg.labels[tab.dataset.collectionId]; if (name) tab.textContent = name;
         });
       }
-      // When tabs are off, hide the collection panels and keep the recommended
-      // products panel active (so the right side is just "Recommended For You").
-      if (!(showTabs && qty > 0)) {
-        this.panel.querySelectorAll('[data-sd-recpanel="col"]').forEach((p) => { p.hidden = true; p.classList.remove('is-active'); });
-        const rec = this.panel.querySelector('[data-sd-recpanel="rec"]');
-        if (rec) { rec.hidden = false; rec.classList.add('is-active'); }
-        const t1 = bar && bar.querySelector('[data-sd-rectab="rec"]'); if (t1) t1.classList.add('is-active');
+      this.layoutRecTabs();
+    }
+
+    // Decide which collection tabs are visible. No shuffle → first `qty` (pinned
+    // are already first). Shuffle → pinned always show, the rest are randomly
+    // picked to fill `qty` (Featured stays first). Re-runnable on every open.
+    layoutRecTabs() {
+      const bar = this.panel.querySelector('.sd-rec-tabs[data-sd-tab-cfg]');
+      const c = this._recCfg || { showTabs: true, qty: 5, pin: 0, shuffle: false };
+      const on = c.showTabs && c.qty > 0;
+      if (bar) {
+        bar.hidden = !on;
+        const colTabs = Array.from(bar.querySelectorAll('[data-sd-rectab="col"]'));
+        if (on) {
+          let show;
+          if (c.shuffle) {
+            const pinned = colTabs.slice(0, c.pin);
+            const rest = colTabs.slice(c.pin).slice();
+            for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = rest[i]; rest[i] = rest[j]; rest[j] = t; }
+            const need = Math.max(0, c.qty - pinned.length);
+            show = pinned.slice(0, c.qty).concat(rest.slice(0, need));
+            colTabs.forEach((t) => { t.hidden = true; });
+            show.forEach((t) => { t.hidden = false; bar.appendChild(t); }); // reorder visible after Featured
+          } else {
+            colTabs.forEach((t, i) => { t.hidden = i >= c.qty; });
+            show = colTabs.slice(0, c.qty);
+          }
+          // Reset active state to Featured when the visible set changes.
+          bar.querySelectorAll('.sd-rec-tab').forEach((t) => t.classList.remove('is-active'));
+          const t1 = bar.querySelector('[data-sd-rectab="rec"]'); if (t1) t1.classList.add('is-active');
+        }
       }
+      // Tabs off, or reshuffled → show the recommended-products panel, hide collection panels.
+      this.panel.querySelectorAll('[data-sd-recpanel="col"]').forEach((p) => { p.hidden = true; p.classList.remove('is-active'); });
+      const rec = this.panel.querySelector('[data-sd-recpanel="rec"]');
+      if (rec) { rec.hidden = false; rec.classList.add('is-active'); }
     }
 
     activateRecTab(tab) {
@@ -498,7 +528,6 @@
 
     open() {
       this.hidden = false;
-      this.prefetchRecTabs(); // warm collection tabs (covers mobile, where there's no hover)
       // Compensate for the scrollbar the body lock removes — otherwise the page
       // (and the search box) shift right when the drawer opens, the layout
       // "jumps", and the drawer detaches from the box. Pad the body by the
@@ -522,8 +551,13 @@
       // cause (header/theme), instead of snapping into place once at the end.
       this.startTracking();
       this.refreshOptions();
-      // Fresh random subset of the popular lists each time the default panel opens.
-      if (this.input && this.input.value.trim() === '') this.shufflePopular();
+      // Fresh random subset of the popular lists (and, if enabled, the collection
+      // tabs) each time the default panel opens; then warm the visible tabs.
+      if (this.input && this.input.value.trim() === '') {
+        this.shufflePopular();
+        this.layoutRecTabs();
+        this.prefetchRecTabs();
+      }
     }
 
     startTracking() {
