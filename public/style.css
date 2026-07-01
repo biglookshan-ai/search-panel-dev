@@ -373,8 +373,9 @@ body {
 .disp-field--wide { flex: 1 1 220px; min-width: 200px; }
 .disp-field--wide select, .disp-field--wide input { width: 100%; box-sizing: border-box; }
 .disp-field .disp-qty { width: 88px; }
-.disp-check { display: flex; align-items: center; gap: 8px; flex: 1 1 100%; font-size: 13px; color: var(--text-sub); cursor: pointer; }
-.disp-check input { margin: 0; flex: 0 0 auto; }
+.disp-check { display: inline-flex; align-items: center; gap: 7px; align-self: flex-end; padding-bottom: 8px; font-size: 13px; color: var(--text-sub); cursor: pointer; white-space: nowrap; }
+.disp-check input { margin: 0; flex: 0 0 auto; width: auto; }
+.disp-check > span { white-space: nowrap; }
 .disp-field select:focus, .disp-field input:focus { outline: none; border-color: var(--brand); }
 .chip-pin { color: #b0b6bf; }
 .chip-pin.on { color: #b8860b; background: #fffbe6; border-color: #f0e3a0; }
