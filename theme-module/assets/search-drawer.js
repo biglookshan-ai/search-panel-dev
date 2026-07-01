@@ -356,15 +356,18 @@
 
     /* ---------- Recommendation tabs (default panel) ---------- */
     // Apply the admin app's collection config (featured_collections_config):
-    //   display  — 'both' | 'list' | 'tabs' | 'none' (where collections show)
-    //   tabQty   — how many collection tabs on the right (default 5)
-    //   labels   — custom tab name per collection (keyed by numeric id)
+    //   display   — 'both' | 'list' | 'tabs' | 'none' (where collections show)
+    //   tabQty    — how many collection tabs on the right (default 5)
+    //   listQty   — how many items the left list shuffles to (default 5)
+    //   tab1Label — first tab (recommended products) label (default 'Featured')
+    //   labels    — custom tab name per collection (keyed by numeric id)
     // Called before snapshotting defaultPanelHTML, so restores keep the result.
     applyCollectionDisplay() {
       const bar = this.panel.querySelector('.sd-rec-tabs[data-sd-tab-cfg]');
       const leftBlock = this.panel.querySelector('[data-sd-left-collections]');
+      const listUl = leftBlock && leftBlock.querySelector('[data-cgp-cfg]');
       let cfg = {};
-      const raw = (bar && bar.dataset.sdTabCfg) || (leftBlock && leftBlock.querySelector('[data-cgp-cfg]') && leftBlock.querySelector('[data-cgp-cfg]').dataset.cgpCfg) || '{}';
+      const raw = (bar && bar.dataset.sdTabCfg) || (listUl && listUl.dataset.cgpCfg) || '{}';
       try { cfg = JSON.parse(raw) || {}; } catch (_) { cfg = {}; }
       const display = cfg.display || 'both';
       const showLeft = display === 'both' || display === 'list';
@@ -373,8 +376,10 @@
       const labels = (cfg.labels && typeof cfg.labels === 'object') ? cfg.labels : {};
 
       if (leftBlock) leftBlock.hidden = !showLeft;
+      if (listUl && cfg.listQty != null && cfg.listQty !== '') listUl.dataset.cgpShuffle = String(Math.max(1, +cfg.listQty)); // left list count
       if (bar) {
         bar.hidden = !(showTabs && qty > 0);
+        if (cfg.tab1Label) { const t1 = bar.querySelector('[data-sd-rectab="rec"]'); if (t1) t1.textContent = cfg.tab1Label; }
         const colTabs = bar.querySelectorAll('[data-sd-rectab="col"]');
         colTabs.forEach((tab, i) => {
           tab.hidden = i >= qty;                               // limit to tabQty
@@ -418,12 +423,36 @@
       }
     }
 
+    // Warm the cache for a collection tab (on hover / drawer open) so the click
+    // renders instantly instead of showing a ~1s loading state.
+    prefetchRecCollection(handle) {
+      if (!handle) return;
+      this._recCache = this._recCache || {};
+      this._recPending = this._recPending || {};
+      if (this._recCache[handle] || this._recPending[handle]) return;
+      this._recPending[handle] = this.fetchCollectionProducts(handle)
+        .then((p) => { if (p) this._recCache[handle] = p; return p; })
+        .finally(() => { delete this._recPending[handle]; });
+    }
+
+    // Prefetch all visible collection tabs shortly after the drawer opens (staggered
+    // so it doesn't hammer the network), covering touch where there's no hover.
+    prefetchRecTabs() {
+      const bar = this.panel.querySelector('.sd-rec-tabs');
+      if (!bar || bar.hidden) return;
+      const tabs = Array.from(bar.querySelectorAll('[data-sd-rectab="col"]')).filter((t) => !t.hidden);
+      const run = (i) => { if (i >= tabs.length) return; this.prefetchRecCollection(tabs[i].dataset.handle); setTimeout(() => run(i + 1), 250); };
+      const start = () => run(0);
+      if (window.requestIdleCallback) requestIdleCallback(start, { timeout: 1500 }); else setTimeout(start, 300);
+    }
+
     async loadRecCollection(panel, handle, url, collectionId) {
       panel.dataset.loaded = 'true'; // optimistic — block duplicate loads while fetching
-      panel.innerHTML = '<div class="sd-rec-loading">' + esc(this._recLoadingLabel()) + '</div>';
       this._recCache = this._recCache || {};
-      let products = this._recCache[handle];
+      this._recPending = this._recPending || {};
+      let products = this._recCache[handle] || (this._recPending[handle] ? await this._recPending[handle] : null);
       if (!products) {
+        panel.innerHTML = '<div class="sd-rec-loading">' + esc(this._recLoadingLabel()) + '</div>';
         products = await this.fetchCollectionProducts(handle);
         if (products) this._recCache[handle] = products;
       }
@@ -452,6 +481,10 @@
     _recViewAllLabel() { return (window.CGP_CONFIG && CGP_CONFIG.labels && CGP_CONFIG.labels.viewAll) || 'View all'; }
 
     onPointerover(event) {
+      // Hover a collection tab → warm its cache so the click is instant.
+      const recTab = event.target.closest('[data-sd-rectab="col"]');
+      if (recTab) this.prefetchRecCollection(recTab.dataset.handle);
+
       const option = event.target.closest(OPTION_SELECTOR);
       if (!option || !this.panel.contains(option)) return;
 
@@ -465,6 +498,7 @@
 
     open() {
       this.hidden = false;
+      this.prefetchRecTabs(); // warm collection tabs (covers mobile, where there's no hover)
       // Compensate for the scrollbar the body lock removes — otherwise the page
       // (and the search box) shift right when the drawer opens, the layout
       // "jumps", and the drawer detaches from the box. Pad the body by the

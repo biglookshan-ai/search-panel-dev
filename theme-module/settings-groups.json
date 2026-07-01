@@ -1082,16 +1082,6 @@
         "info": "Shopify predictive search caps this at 10."
       },
       {
-        "type": "range",
-        "id": "cgp_sd_featured_collection_qty",
-        "label": "左侧列表数量",
-        "info": "左侧「Collections」文字链接每次随机显示的数量。显示位置与右侧 tab 数量在 Search Admin app 的「热门合集」里设。",
-        "min": 1,
-        "max": 10,
-        "step": 1,
-        "default": 5
-      },
-      {
         "type": "text",
         "id": "cgp_sd_rec_tab1_label",
         "label": "第一个 tab 标题(精选)",
