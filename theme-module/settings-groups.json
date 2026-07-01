@@ -1082,31 +1082,33 @@
         "info": "Shopify predictive search caps this at 10."
       },
       {
-        "type": "checkbox",
-        "id": "cgp_sd_show_featured_collections",
-        "label": "默认面板显示推荐分类",
-        "default": true
+        "type": "select",
+        "id": "cgp_sd_collection_display",
+        "label": "Collection 显示位置",
+        "info": "控制推荐分类显示在哪:两处都显示 / 只左侧列表 / 只右侧 tab / 都不显示。",
+        "options": [
+          { "value": "both", "label": "两处都显示(左侧列表 + 右侧 tab)" },
+          { "value": "list", "label": "只显示左侧列表" },
+          { "value": "tabs", "label": "只显示右侧 tab" },
+          { "value": "none", "label": "都不显示" }
+        ],
+        "default": "both"
       },
       {
         "type": "range",
         "id": "cgp_sd_featured_collection_qty",
-        "label": "推荐分类数量",
+        "label": "左侧列表数量",
+        "info": "左侧「Collections」文字链接每次随机显示的数量。",
         "min": 1,
         "max": 10,
         "step": 1,
         "default": 5
       },
       {
-        "type": "checkbox",
-        "id": "cgp_sd_show_rec_tabs",
-        "label": "推荐区显示 Collection tabs",
-        "info": "开启后,右侧推荐区变为多 tab:第一个是推荐产品,后面每个 tab 是一个推荐分类(点击懒加载该分类产品 + View all)。",
-        "default": true
-      },
-      {
         "type": "range",
         "id": "cgp_sd_rec_tab_qty",
-        "label": "Collection tab 数量",
+        "label": "右侧 Collection tab 数量",
+        "info": "右侧推荐区固定显示的 Collection tab 个数(取列表前 N 个,置顶的排最前)。",
         "min": 0,
         "max": 8,
         "step": 1,

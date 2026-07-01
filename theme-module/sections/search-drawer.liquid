@@ -18,6 +18,23 @@
   assign featured_products_cfg = panel.featured_products_config.value | default: '{}'
   assign featured_collections_cfg = panel.featured_collections_config.value | default: '{}'
   assign s = settings
+  comment
+    Collection 显示位置:both=左侧 list + 右侧 tabs / list=只左侧 / tabs=只右侧 / none=都不显示
+  endcomment
+  assign cd = s.cgp_sd_collection_display | default: 'both'
+  assign rec_tab_qty = s.cgp_sd_rec_tab_qty | default: 5
+  assign show_left_list = false
+  assign show_rec_tabs = false
+  if featured_collections.size > 0
+    if cd == 'both' or cd == 'list'
+      assign show_left_list = true
+    endif
+    if cd == 'both' or cd == 'tabs'
+      if rec_tab_qty > 0
+        assign show_rec_tabs = true
+      endif
+    endif
+  endif
   assign sd_products_class = 'search-drawer__products'
   if s.cgp_sd_layout == 'list'
     assign sd_products_class = 'search-drawer__products search-drawer__products--list'
@@ -218,7 +235,7 @@
             </ul>
           {%- endif -%}
 
-          {%- if s.cgp_sd_show_featured_collections and featured_collections.size > 0 -%}
+          {%- if show_left_list -%}
             <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_collections | default: 'Collections' }}</h3>
             <ul class="search-drawer__collections" data-cgp-shuffle="{{ s.cgp_sd_featured_collection_qty }}" data-cgp-key="featured_collections" data-cgp-cfg="{{ featured_collections_cfg | escape }}">
               {%- for collection in featured_collections -%}
@@ -231,13 +248,9 @@
         <div class="search-drawer__col search-drawer__col--right">
           {%- if featured_products.size > 0 -%}
             {%- comment -%} Recommendation tabs: tab 1 = auto recommended products,
-              tabs 2…N = featured collections (products lazy-loaded by JS on click). {%- endcomment -%}
-            {%- assign rec_tab_qty = s.cgp_sd_rec_tab_qty | default: 5 -%}
-            {%- assign show_rec_tabs = false -%}
-            {%- if s.cgp_sd_show_rec_tabs and featured_collections.size > 0 and rec_tab_qty > 0 -%}
-              {%- assign show_rec_tabs = true -%}
-            {%- endif -%}
-
+              tabs 2…N = featured collections (products lazy-loaded by JS on click).
+              show_rec_tabs / rec_tab_qty are computed at the top from
+              cgp_sd_collection_display + cgp_sd_rec_tab_qty. {%- endcomment -%}
             <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_featured | default: 'Recommended For You' }}</h3>
             {%- if show_rec_tabs -%}
               <div class="sd-rec-tabs" role="tablist" data-sd-rectabs data-sd-tab-cfg="{{ featured_collections_cfg | escape }}">
