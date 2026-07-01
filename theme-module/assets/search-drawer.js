@@ -373,6 +373,14 @@
       const kind = tab.dataset.sdRectab;
       const handle = tab.dataset.handle || '';
       this.panel.querySelectorAll('[data-sd-rectab]').forEach((t) => t.classList.toggle('is-active', t === tab));
+      // Mobile: keep the tapped tab in view within the horizontally-scrolling bar
+      // (no page scroll — only the bar moves).
+      const bar = tab.parentElement;
+      if (bar && bar.scrollWidth > bar.clientWidth) {
+        const l = tab.offsetLeft, r = l + tab.offsetWidth;
+        if (l < bar.scrollLeft) bar.scrollLeft = l - 8;
+        else if (r > bar.scrollLeft + bar.clientWidth) bar.scrollLeft = r - bar.clientWidth + 8;
+      }
       const panels = this.panel.querySelectorAll('[data-sd-recpanel]');
       let target = null;
       panels.forEach((p) => {
