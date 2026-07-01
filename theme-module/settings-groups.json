@@ -1229,7 +1229,7 @@
         "id": "cgp_sd_max_height",
         "label": "弹窗最大高度 (px)",
         "min": 320,
-        "max": 800,
+        "max": 1000,
         "step": 20,
         "default": 720
       },
