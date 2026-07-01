@@ -195,7 +195,7 @@ body.search-drawer-open { overflow: hidden; }
   padding: 6px 14px;
   border: 0;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--sd-hover-bg, #e6e6e6) 90%, #000 10%);
+  background: var(--sd-hover-bg, #eee);
   color: color-mix(in srgb, var(--sd-text, #333) 50%, #fff 50%);
   font-size: 13px;
   font-weight: 600;
@@ -205,7 +205,7 @@ body.search-drawer-open { overflow: hidden; }
   transition: background .15s, color .15s;
 }
 .sd-rec-tab:hover {
-  background: color-mix(in srgb, var(--sd-hover-bg, #e6e6e6) 78%, #000 22%);
+  background: color-mix(in srgb, var(--sd-hover-bg, #e6e6e6) 90%, #000 10%);
   color: var(--sd-text, #333);
 }
 .sd-rec-tab.is-active {
