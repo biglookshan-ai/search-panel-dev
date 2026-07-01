@@ -336,12 +336,72 @@
         return;
       }
 
+      // Recommendation tabs: switch panel (and lazy-load a collection's products).
+      const recTab = event.target.closest('[data-sd-rectab]');
+      if (recTab && this.contains(recTab)) {
+        event.preventDefault();
+        this.activateRecTab(recTab);
+        return;
+      }
+
       const trackTarget = event.target.closest('[data-track]');
       if (!trackTarget || !this.contains(trackTarget)) return;
 
       this.saveTermFromTrack(trackTarget);
       this.dispatchTrackEvent(trackTarget);
     }
+
+    /* ---------- Recommendation tabs (default panel) ---------- */
+    activateRecTab(tab) {
+      const kind = tab.dataset.sdRectab;
+      const handle = tab.dataset.handle || '';
+      this.panel.querySelectorAll('[data-sd-rectab]').forEach((t) => t.classList.toggle('is-active', t === tab));
+      const panels = this.panel.querySelectorAll('[data-sd-recpanel]');
+      let target = null;
+      panels.forEach((p) => {
+        const match = (kind === 'rec') ? (p.dataset.sdRecpanel === 'rec')
+          : (p.dataset.sdRecpanel === 'col' && p.dataset.handle === handle);
+        p.classList.toggle('is-active', match);
+        p.hidden = !match;
+        if (match) target = p;
+      });
+      if (kind === 'col' && target && target.dataset.loaded !== 'true') {
+        this.loadRecCollection(target, handle, tab.dataset.url || '', tab.dataset.collectionId || '');
+      }
+    }
+
+    async loadRecCollection(panel, handle, url, collectionId) {
+      panel.dataset.loaded = 'true'; // optimistic — block duplicate loads while fetching
+      panel.innerHTML = '<div class="sd-rec-loading">' + esc(this._recLoadingLabel()) + '</div>';
+      this._recCache = this._recCache || {};
+      let products = this._recCache[handle];
+      if (!products) {
+        products = await this.fetchCollectionProducts(handle);
+        if (products) this._recCache[handle] = products;
+      }
+      if (!products) { panel.dataset.loaded = 'false'; panel.innerHTML = '<p class="search-drawer__empty">Unable to load. Tap to retry.</p>'; return; }
+      const cls = this._recListClass();
+      const cards = products.slice(0, this.productQty).map((p) => '<li>' + this.sdCard(p) + '</li>').join('');
+      let html = '<ul class="' + cls + '">' + cards + '</ul>';
+      if (url) html += '<a class="sd-viewall" href="' + esc(url) + '" data-track="collection" data-collection-id="' + esc(collectionId) + '">' + esc(this._recViewAllLabel()) + ' &rarr;</a>';
+      panel.innerHTML = html;
+    }
+
+    async fetchCollectionProducts(handle) {
+      try {
+        const root = (window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || '';
+        const base = root ? (root.replace(/\/+$/, '') + '/collections/' + handle) : ('/collections/' + handle);
+        const res = await fetch(`${base}?view=cgp-json&_cgp=${Date.now()}`, { credentials: 'same-origin' });
+        if (!res.ok) return null;
+        const txt = await res.text();
+        let data; try { data = JSON.parse(txt); } catch (_) { return null; }
+        return (data && data.products) || [];
+      } catch (_) { return null; }
+    }
+
+    _recListClass() { const ex = this.panel.querySelector('[data-sd-recpanel="rec"] ul'); return ex ? ex.className : 'search-drawer__products'; }
+    _recLoadingLabel() { return (window.CGP_CONFIG && CGP_CONFIG.labels && CGP_CONFIG.labels.loading) || 'Loading…'; }
+    _recViewAllLabel() { return (window.CGP_CONFIG && CGP_CONFIG.labels && CGP_CONFIG.labels.viewAll) || 'View all'; }
 
     onPointerover(event) {
       const option = event.target.closest(OPTION_SELECTOR);

@@ -1097,6 +1097,28 @@
         "default": 5
       },
       {
+        "type": "checkbox",
+        "id": "cgp_sd_show_rec_tabs",
+        "label": "推荐区显示 Collection tabs",
+        "info": "开启后,右侧推荐区变为多 tab:第一个是推荐产品,后面每个 tab 是一个推荐分类(点击懒加载该分类产品 + View all)。",
+        "default": true
+      },
+      {
+        "type": "range",
+        "id": "cgp_sd_rec_tab_qty",
+        "label": "Collection tab 数量",
+        "min": 0,
+        "max": 8,
+        "step": 1,
+        "default": 5
+      },
+      {
+        "type": "text",
+        "id": "cgp_sd_rec_tab1_label",
+        "label": "第一个 tab 标题(推荐)",
+        "default": "Recommended"
+      },
+      {
         "type": "range",
         "id": "cgp_sd_suggestion_qty",
         "label": "联想词数量",

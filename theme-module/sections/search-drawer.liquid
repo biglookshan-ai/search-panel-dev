@@ -230,20 +230,53 @@
 
         <div class="search-drawer__col search-drawer__col--right">
           {%- if featured_products.size > 0 -%}
-            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_featured | default: 'Recommended For You' }}</h3>
-            <ul class="{{ sd_products_class }}" data-cgp-shuffle="{{ s.cgp_sd_product_qty }}" data-cgp-key="featured_products" data-cgp-cfg="{{ featured_products_cfg | escape }}">
-              {%- for product in featured_products -%}
-                <li>
-                  {%- render 'search-drawer-product-card',
-                    product: product,
-                    show_vendor: s.cgp_sd_show_vendor,
-                    show_compare_at: s.cgp_sd_show_compare_at,
-                    show_desc_lines: s.cgp_sd_desc_lines,
-                    show_vat_note: s.cgp_sd_show_vat_note
-                  -%}
-                </li>
+            {%- comment -%} Recommendation tabs: tab 1 = auto recommended products,
+              tabs 2…N = featured collections (products lazy-loaded by JS on click). {%- endcomment -%}
+            {%- assign rec_tab_qty = s.cgp_sd_rec_tab_qty | default: 5 -%}
+            {%- assign show_rec_tabs = false -%}
+            {%- if s.cgp_sd_show_rec_tabs and featured_collections.size > 0 and rec_tab_qty > 0 -%}
+              {%- assign show_rec_tabs = true -%}
+            {%- endif -%}
+
+            {%- if show_rec_tabs -%}
+              <div class="sd-rec-tabs" role="tablist" data-sd-rectabs>
+                <button type="button" class="sd-rec-tab is-active" role="tab" data-sd-rectab="rec">{{ s.cgp_sd_rec_tab1_label | default: 'Recommended' }}</button>
+                {%- for collection in featured_collections limit: rec_tab_qty -%}
+                  <button type="button" class="sd-rec-tab" role="tab" data-sd-rectab="col"
+                          data-handle="{{ collection.handle }}"
+                          data-url="{{ collection.url | split: '?' | first }}"
+                          data-collection-id="{{ collection.id }}">{{ collection.title }}</button>
+                {%- endfor -%}
+              </div>
+            {%- else -%}
+              <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_featured | default: 'Recommended For You' }}</h3>
+            {%- endif -%}
+
+            <div class="sd-rec-panel is-active" data-sd-recpanel="rec">
+              <ul class="{{ sd_products_class }}" data-cgp-shuffle="{{ s.cgp_sd_product_qty }}" data-cgp-key="featured_products" data-cgp-cfg="{{ featured_products_cfg | escape }}">
+                {%- for product in featured_products -%}
+                  <li>
+                    {%- render 'search-drawer-product-card',
+                      product: product,
+                      show_vendor: s.cgp_sd_show_vendor,
+                      show_compare_at: s.cgp_sd_show_compare_at,
+                      show_desc_lines: s.cgp_sd_desc_lines,
+                      show_vat_note: s.cgp_sd_show_vat_note
+                    -%}
+                  </li>
+                {%- endfor -%}
+              </ul>
+            </div>
+
+            {%- if show_rec_tabs -%}
+              {%- for collection in featured_collections limit: rec_tab_qty -%}
+                <div class="sd-rec-panel" data-sd-recpanel="col"
+                     data-handle="{{ collection.handle }}"
+                     data-url="{{ collection.url | split: '?' | first }}"
+                     data-collection-id="{{ collection.id }}"
+                     data-loaded="false" hidden></div>
               {%- endfor -%}
-            </ul>
+            {%- endif -%}
           {%- endif -%}
 
           {%- if panel.banner_image.value and s.cgp_sd_show_banner -%}
