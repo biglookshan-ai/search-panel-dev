@@ -51,6 +51,7 @@ const I18N = {
     'sp.searchProduct': '搜索产品添加…', 'sp.searchCollection': '搜索集合添加…',
     'sp.refresh': '随机刷新间隔:', 'sp.now': '立即(每次打开都换)', 'sp.min': '分钟', 'sp.hour': '小时', 'sp.day': '天',
     'sp.pinHint': '置顶项不参与随机,始终排在最前', 'sp.emptyAdd': '还没有添加。用上面搜索框添加。', 'pin': '置顶',
+    'sp.tabName': '弹窗 tab 名', 'sp.tabNameHint': '弹窗推荐区该合集的 tab 显示名,留空=用合集名',
     'sp.savedNoCfg': '已保存(刷新间隔/置顶未存:metaobject 缺 %s 字段)',
     'items': '个',
     'bulk.sel': '已选 %n 项', 'bulk.up': '↑ 上移', 'bulk.down': '↓ 下移', 'bulk.del': '删除选中', 'bulk.clr': '取消选择',
@@ -117,6 +118,7 @@ const I18N = {
     'sp.searchProduct': 'Search products to add…', 'sp.searchCollection': 'Search collections to add…',
     'sp.refresh': 'Random refresh interval:', 'sp.now': 'Instant (reshuffle every open)', 'sp.min': 'minutes', 'sp.hour': 'hours', 'sp.day': 'days',
     'sp.pinHint': 'Pinned items skip the shuffle and always stay first', 'sp.emptyAdd': 'Nothing added yet. Use the search box above.', 'pin': 'Pin',
+    'sp.tabName': 'Drawer tab name', 'sp.tabNameHint': 'Custom tab name for this collection in the drawer; blank = collection name',
     'sp.savedNoCfg': 'Saved (refresh interval / pin not stored: metaobject is missing the %s field)',
     'items': '',
     'bulk.sel': '%n selected', 'bulk.up': '↑ Up', 'bulk.down': '↓ Down', 'bulk.del': 'Remove selected', 'bulk.clr': 'Clear selection',
@@ -681,7 +683,8 @@ function simpleModuleEl(entryId, title, preview, detailHtml) {
 
 // Picker module for list-of-references (products / collections): chips with
 // image+name, reorder, remove, and a search-to-add box (Shopify-native style).
-function parseCfg(v) { try { const c = JSON.parse(v || '{}'); return { refreshSec: +c.refreshSec || 0, pin: +c.pin || 0 }; } catch { return { refreshSec: 0, pin: 0 }; } }
+function parseCfg(v) { try { const c = JSON.parse(v || '{}'); return { refreshSec: +c.refreshSec || 0, pin: +c.pin || 0, labels: (c.labels && typeof c.labels === 'object') ? c.labels : {} }; } catch { return { refreshSec: 0, pin: 0, labels: {} }; } }
+const gidNum = (g) => String(g).split('/').pop();
 function refreshUnit(s) { if (!s) return 0; if (s % 86400 === 0) return 86400; if (s % 3600 === 0) return 3600; return 60; }
 function refreshNum(s) { const u = refreshUnit(s); return u ? Math.round(s / u) : 0; }
 
@@ -692,6 +695,8 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
   let dragGid = null;
   const cfg = parseCfg(cfgValue);
   const pinned = new Set(gids.slice(0, cfg.pin)); // first `pin` items are pinned
+  const labels = { ...(cfg.labels || {}) }; // custom tab name per collection (keyed by numeric id)
+  const canLabel = kind === 'collection'; // only collections become drawer tabs
   const itemsSuffix = t('items') ? (' ' + t('items')) : '';
   const card = document.createElement('div');
   card.className = 'card';
@@ -762,6 +767,7 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
         <input type="checkbox" class="chip-sel" data-sel ${selected.has(g) ? 'checked' : ''}/>
         <span class="drag">⠿</span>
         ${img}<span class="chip-name" title="${esc(g)}">${esc(m.title || g)}</span>
+        ${canLabel ? `<input type="text" class="chip-label" data-label placeholder="${esc(m.title || t('sp.tabName'))}" value="${esc(labels[gidNum(g)] || '')}" title="${esc(t('sp.tabNameHint'))}"/>` : ''}
         <button type="button" class="chip-btn chip-pin${pinned.has(g) ? ' on' : ''}" data-pin title="${t('pin')}">${PIN_SVG}</button>
         <button type="button" class="chip-btn" data-up ${i === 0 ? 'disabled' : ''}>↑</button>
         <button type="button" class="chip-btn" data-down ${i === gids.length - 1 ? 'disabled' : ''}>↓</button>
@@ -772,6 +778,8 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
       chip.querySelector('[data-sel]').addEventListener('change', (e) => { if (e.target.checked) selected.add(g); else selected.delete(g); paintBulk(); });
       chip.querySelector('[data-remove]').addEventListener('click', () => { gids = gids.filter((x) => x !== g); selected.delete(g); pinned.delete(g); paint(); });
       chip.querySelector('[data-pin]').addEventListener('click', () => { if (pinned.has(g)) pinned.delete(g); else pinned.add(g); paint(); });
+      const lbl = chip.querySelector('[data-label]'); // update label without repaint (keep focus)
+      if (lbl) lbl.addEventListener('input', (e) => { const v = e.target.value.trim(); if (v) labels[gidNum(g)] = v; else delete labels[gidNum(g)]; });
       const up = chip.querySelector('[data-up]'); if (up && !up.disabled) up.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i - 1], gids[i]] = [gids[i], gids[i - 1]]; paint(); });
       const dn = chip.querySelector('[data-down]'); if (dn && !dn.disabled) dn.addEventListener('click', () => { const i = gids.indexOf(g); [gids[i + 1], gids[i]] = [gids[i], gids[i + 1]]; paint(); });
       chip.addEventListener('dragstart', (e) => { dragGid = g; chip.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
@@ -820,7 +828,11 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
       const rn = parseInt(card.querySelector('[data-rn]').value, 10) || 0;
       const refreshSec = runit === 0 ? 0 : Math.max(0, rn) * runit;
       const fields = { [key]: JSON.stringify(gids) };
-      if (cfgField) fields[cfgField] = JSON.stringify({ refreshSec, pin: gids.filter((g) => pinned.has(g)).length });
+      if (cfgField) {
+        const cfgObj = { refreshSec, pin: gids.filter((g) => pinned.has(g)).length };
+        if (canLabel) { const keep = {}; gids.forEach((g) => { const n = labels[gidNum(g)]; if (n) keep[gidNum(g)] = n; }); cfgObj.labels = keep; }
+        fields[cfgField] = JSON.stringify(cfgObj);
+      }
       try {
         await api('PUT', '/api/metaobjects/search_panel', { id: entryId, fields });
         toast(t('saved'));

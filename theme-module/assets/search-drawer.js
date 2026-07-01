@@ -55,6 +55,9 @@
 
       if (!this.sectionId || !this.panel || !this.input) return;
 
+      // Apply admin-configured custom tab names BEFORE snapshotting the default
+      // panel, so every restore (after a search) keeps them without re-applying.
+      this.applyRecTabLabels();
       this.defaultPanelHTML = this.panel.innerHTML;
       this.abortController = null;
       this.timer = null;
@@ -352,6 +355,20 @@
     }
 
     /* ---------- Recommendation tabs (default panel) ---------- */
+    // Override collection tab names with the admin app's custom labels
+    // (featured_collections_config.labels, keyed by numeric collection id).
+    applyRecTabLabels() {
+      const bar = this.panel.querySelector('.sd-rec-tabs[data-sd-tab-cfg]');
+      if (!bar) return;
+      let labels;
+      try { labels = (JSON.parse(bar.dataset.sdTabCfg || '{}') || {}).labels; } catch (_) { return; }
+      if (!labels || typeof labels !== 'object') return;
+      bar.querySelectorAll('[data-sd-rectab="col"]').forEach((tab) => {
+        const name = labels[tab.dataset.collectionId];
+        if (name) tab.textContent = name;
+      });
+    }
+
     activateRecTab(tab) {
       const kind = tab.dataset.sdRectab;
       const handle = tab.dataset.handle || '';
