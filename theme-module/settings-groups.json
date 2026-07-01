@@ -1082,35 +1082,12 @@
         "info": "Shopify predictive search caps this at 10."
       },
       {
-        "type": "select",
-        "id": "cgp_sd_collection_display",
-        "label": "Collection 显示位置",
-        "info": "控制推荐分类显示在哪:两处都显示 / 只左侧列表 / 只右侧 tab / 都不显示。",
-        "options": [
-          { "value": "both", "label": "两处都显示(左侧列表 + 右侧 tab)" },
-          { "value": "list", "label": "只显示左侧列表" },
-          { "value": "tabs", "label": "只显示右侧 tab" },
-          { "value": "none", "label": "都不显示" }
-        ],
-        "default": "both"
-      },
-      {
         "type": "range",
         "id": "cgp_sd_featured_collection_qty",
         "label": "左侧列表数量",
-        "info": "左侧「Collections」文字链接每次随机显示的数量。",
+        "info": "左侧「Collections」文字链接每次随机显示的数量。显示位置与右侧 tab 数量在 Search Admin app 的「热门合集」里设。",
         "min": 1,
         "max": 10,
-        "step": 1,
-        "default": 5
-      },
-      {
-        "type": "range",
-        "id": "cgp_sd_rec_tab_qty",
-        "label": "右侧 Collection tab 数量",
-        "info": "右侧推荐区固定显示的 Collection tab 个数(取列表前 N 个,置顶的排最前)。",
-        "min": 0,
-        "max": 8,
         "step": 1,
         "default": 5
       },

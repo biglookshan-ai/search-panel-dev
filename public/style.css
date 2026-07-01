@@ -360,6 +360,13 @@ body {
 .refresh-row input[type=number] { width: 72px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; }
 .refresh-row select { flex: 0 0 auto; min-width: 150px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; background: var(--surface); }
 .refresh-row .hint { margin-left: auto; }
+.disp-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 12px; font-size: 13px; color: var(--text-sub);
+}
+.disp-row select { flex: 0 0 auto; min-width: 190px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; background: var(--surface); }
+.disp-row .disp-qty { width: 72px; border: 1px solid var(--border-strong); border-radius: 7px; padding: 7px 9px; font: inherit; }
+.disp-row select:focus, .disp-row input:focus { outline: none; border-color: var(--brand); }
 .chip-pin { color: #b0b6bf; }
 .chip-pin.on { color: #b8860b; background: #fffbe6; border-color: #f0e3a0; }
 .chip.is-pinned { border-color: #f0c000; box-shadow: 0 0 0 1px var(--brand) inset; background: #fffdf2; }

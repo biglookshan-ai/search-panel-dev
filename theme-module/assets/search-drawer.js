@@ -55,9 +55,9 @@
 
       if (!this.sectionId || !this.panel || !this.input) return;
 
-      // Apply admin-configured custom tab names BEFORE snapshotting the default
-      // panel, so every restore (after a search) keeps them without re-applying.
-      this.applyRecTabLabels();
+      // Apply admin-configured collection display (position / tab count / labels)
+      // BEFORE snapshotting the default panel, so every restore keeps it.
+      this.applyCollectionDisplay();
       this.defaultPanelHTML = this.panel.innerHTML;
       this.abortController = null;
       this.timer = null;
@@ -355,18 +355,41 @@
     }
 
     /* ---------- Recommendation tabs (default panel) ---------- */
-    // Override collection tab names with the admin app's custom labels
-    // (featured_collections_config.labels, keyed by numeric collection id).
-    applyRecTabLabels() {
+    // Apply the admin app's collection config (featured_collections_config):
+    //   display  — 'both' | 'list' | 'tabs' | 'none' (where collections show)
+    //   tabQty   — how many collection tabs on the right (default 5)
+    //   labels   — custom tab name per collection (keyed by numeric id)
+    // Called before snapshotting defaultPanelHTML, so restores keep the result.
+    applyCollectionDisplay() {
       const bar = this.panel.querySelector('.sd-rec-tabs[data-sd-tab-cfg]');
-      if (!bar) return;
-      let labels;
-      try { labels = (JSON.parse(bar.dataset.sdTabCfg || '{}') || {}).labels; } catch (_) { return; }
-      if (!labels || typeof labels !== 'object') return;
-      bar.querySelectorAll('[data-sd-rectab="col"]').forEach((tab) => {
-        const name = labels[tab.dataset.collectionId];
-        if (name) tab.textContent = name;
-      });
+      const leftBlock = this.panel.querySelector('[data-sd-left-collections]');
+      let cfg = {};
+      const raw = (bar && bar.dataset.sdTabCfg) || (leftBlock && leftBlock.querySelector('[data-cgp-cfg]') && leftBlock.querySelector('[data-cgp-cfg]').dataset.cgpCfg) || '{}';
+      try { cfg = JSON.parse(raw) || {}; } catch (_) { cfg = {}; }
+      const display = cfg.display || 'both';
+      const showLeft = display === 'both' || display === 'list';
+      const showTabs = display === 'both' || display === 'tabs';
+      const qty = (cfg.tabQty != null && cfg.tabQty !== '') ? Math.max(0, +cfg.tabQty) : 5;
+      const labels = (cfg.labels && typeof cfg.labels === 'object') ? cfg.labels : {};
+
+      if (leftBlock) leftBlock.hidden = !showLeft;
+      if (bar) {
+        bar.hidden = !(showTabs && qty > 0);
+        const colTabs = bar.querySelectorAll('[data-sd-rectab="col"]');
+        colTabs.forEach((tab, i) => {
+          tab.hidden = i >= qty;                               // limit to tabQty
+          const name = labels[tab.dataset.collectionId];       // custom name
+          if (name) tab.textContent = name;
+        });
+      }
+      // When tabs are off, hide the collection panels and keep the recommended
+      // products panel active (so the right side is just "Recommended For You").
+      if (!(showTabs && qty > 0)) {
+        this.panel.querySelectorAll('[data-sd-recpanel="col"]').forEach((p) => { p.hidden = true; p.classList.remove('is-active'); });
+        const rec = this.panel.querySelector('[data-sd-recpanel="rec"]');
+        if (rec) { rec.hidden = false; rec.classList.add('is-active'); }
+        const t1 = bar && bar.querySelector('[data-sd-rectab="rec"]'); if (t1) t1.classList.add('is-active');
+      }
     }
 
     activateRecTab(tab) {
