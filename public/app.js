@@ -7,7 +7,8 @@ const PIN_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentCo
 // ---- i18n (per-user language, persisted in localStorage) ----
 const I18N = {
   zh: {
-    'tab.custom': '自定义', 'tab.boosts': 'Boosts / 同义词', 'tab.system': '系统设置',
+    'tab.custom': '自定义', 'tab.boosts': 'Boosts / 同义词', 'tab.system': '系统设置', 'tab.tags': '标签审计',
+    'ta.title': '标签审计', 'ta.desc': '只读:扫描全店产品,统计每个 tag 的商品数与出现的品类,用来规划筛选器分组。', 'ta.scanning': '正在扫描全店产品(可能要几秒)…', 'ta.products': '扫描产品数', 'ta.tagsN': '不同 tag', 'ta.typesN': '不同品类', 'ta.search': '搜索 tag…', 'ta.tag': '标签 (tag)', 'ta.count': '商品数', 'ta.inTypes': '出现在品类(product_type)',
     'sub.promo': '促销活动标签', 'sub.attr': '产品属性标签', 'sub.sort': '产品排序规则',
     'sub.featured': '热门推荐', 'sub.banner': '促销 Banner',
     'loading': '加载中…',
@@ -75,7 +76,8 @@ const I18N = {
     'ins.reset': '清空数据', 'ins.resetConfirm': '确定清空所有搜索分析数据?此操作不可恢复,用于在修复埋点后从干净的数据重新开始。', 'ins.resetDone': '已清空 ✓',
   },
   en: {
-    'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Synonyms', 'tab.system': 'System',
+    'tab.custom': 'Customization', 'tab.boosts': 'Boosts / Synonyms', 'tab.system': 'System', 'tab.tags': 'Tag audit',
+    'ta.title': 'Tag audit', 'ta.desc': 'Read-only: scans all products and counts each tag by product count and the product types it appears on — to plan filter groups.', 'ta.scanning': 'Scanning all products (may take a few seconds)…', 'ta.products': 'Products scanned', 'ta.tagsN': 'Distinct tags', 'ta.typesN': 'Distinct types', 'ta.search': 'Search tags…', 'ta.tag': 'Tag', 'ta.count': 'Products', 'ta.inTypes': 'In product types',
     'sub.promo': 'Promotion Labels', 'sub.attr': 'Product Attribute Labels', 'sub.sort': 'Product Sort Rules',
     'sub.featured': 'Recommendations', 'sub.banner': 'Promo Banner',
     'loading': 'Loading…',
@@ -208,6 +210,7 @@ const ROUTES = {
   '/attributes': { tab: 'meta', sub: 'cgp_status_badge' },
   '/banner': { tab: 'meta', sub: 'search_panel_banner' },
   '/insights': { tab: 'insights', sub: null },
+  '/tags': { tab: 'tags', sub: null },
   '/boosts': { tab: 'links', sub: null },
   '/system': { tab: 'system', sub: null },
 };
@@ -216,6 +219,7 @@ function currentPath() {
   const tabEl = document.querySelector('.tab.is-active');
   const tab = tabEl && tabEl.dataset.tab;
   if (tab === 'insights') return '/insights';
+  if (tab === 'tags') return '/tags';
   if (tab === 'links') return '/boosts';
   if (tab === 'system') return '/system';
   const subEl = document.querySelector('.subtab.is-active');
@@ -230,6 +234,7 @@ function applyRoute(pathname) {
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + r.tab));
   if (r.tab === 'system') { loadThemes(); return; }
   if (r.tab === 'insights') { loadInsights(); return; }
+  if (r.tab === 'tags') { loadTagAudit(); return; }
   if (r.tab === 'links') return;
   const sub = r.sub || 'search_panel_featured';
   document.querySelectorAll('.subtab').forEach((x) => x.classList.toggle('is-active', x.dataset.type === sub));
@@ -242,6 +247,7 @@ document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () 
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.id === 'tab-' + b.dataset.tab));
   if (b.dataset.tab === 'system') loadThemes();
   if (b.dataset.tab === 'insights') loadInsights();
+  if (b.dataset.tab === 'tags') loadTagAudit();
   syncUrl();
 }));
 document.querySelectorAll('#tab-meta .subtab').forEach((b) => b.addEventListener('click', () => {
@@ -1111,6 +1117,39 @@ function renderInsHistory(body) {
 function insTime(ts) { try { return new Date(ts).toLocaleString(LANG === 'zh' ? 'zh-CN' : 'en-GB', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return esc(String(ts)); } }
 function insType(tp) { return tp === 'collection' ? t('ins.tCollection') : t('ins.tProduct'); }
 function insSrc(s) { return s === 'results' ? t('ins.srcResults') : (s === 'recommendation' ? t('ins.srcRecommendation') : (s === 'drawer' ? t('ins.srcDrawer') : t('ins.none'))); }
+
+// ---- Tag audit (read-only, filter-feature planning) ----
+let TAG_AUDIT = null;
+async function loadTagAudit() {
+  const body = $('#tags-body');
+  if (!body) return;
+  body.innerHTML = '<p class="muted">' + t('ta.scanning') + '</p>';
+  try {
+    if (!TAG_AUDIT) TAG_AUDIT = await api('GET', '/api/tag-audit');
+    renderTagAudit(body, TAG_AUDIT);
+  } catch (e) { body.innerHTML = '<p class="err">' + esc(e.message) + '</p>'; }
+}
+function renderTagAudit(body, d) {
+  const n = (d.products || 0) + (d.truncated ? '+' : '');
+  body.innerHTML = '<div class="ins-stats">'
+    + insStat(t('ta.products'), n) + insStat(t('ta.tagsN'), (d.tags || []).length) + insStat(t('ta.typesN'), (d.types || []).length)
+    + '</div>'
+    + '<div class="ins-toolbar"><input type="search" class="ins-search" id="ta-search" placeholder="' + esc(t('ta.search')) + '"></div>'
+    + '<div id="ta-table"></div>';
+  const table = $('#ta-table'), search = $('#ta-search');
+  const draw = () => {
+    const q = (search.value || '').trim().toLowerCase();
+    let rows = d.tags || [];
+    if (q) rows = rows.filter((r) => r.tag.toLowerCase().indexOf(q) !== -1);
+    const shown = rows.slice(0, 800);
+    const head = '<th>' + t('ta.tag') + '</th><th class="num">' + t('ta.count') + '</th><th>' + t('ta.inTypes') + '</th>';
+    const rh = shown.map((r) => '<tr><td>' + esc(r.tag) + '</td><td class="num">' + r.count + '</td><td class="muted">'
+      + (r.types || []).map((x) => esc(x.type) + ' (' + x.count + ')').join(', ') + '</td></tr>').join('');
+    table.innerHTML = insTable(head, rh) + '<p class="muted ins-count">' + t('ins.shown', shown.length) + '</p>';
+  };
+  search.addEventListener('input', insDebounce(draw, 150));
+  draw();
+}
 
 // ---- init ----
 (async () => {

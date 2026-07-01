@@ -18,6 +18,7 @@
     <a href="/attributes" data-i18n="sub.attr">产品属性标签</a>
     <a href="/banner" data-i18n="sub.banner">促销 Banner</a>
     <a href="/insights" data-i18n="tab.insights">数据洞察</a>
+    <a href="/tags" data-i18n="tab.tags">标签审计</a>
     <a href="/boosts" data-i18n="tab.boosts">Boosts / 同义词</a>
     <a href="/system" data-i18n="tab.system">系统设置</a>
   </ui-nav-menu>
@@ -37,6 +38,10 @@
         <button class="tab" data-tab="insights" type="button">
           <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h14"/><rect x="4" y="9" width="3" height="6" rx="1"/><rect x="9" y="5" width="3" height="10" rx="1"/><rect x="14" y="11" width="3" height="4" rx="1"/></svg>
           <span class="navtxt" data-i18n="tab.insights">数据洞察</span>
+        </button>
+        <button class="tab" data-tab="tags" type="button">
+          <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l6 6-6 6-6-6V4z"/><circle cx="7" cy="7" r="1"/></svg>
+          <span class="navtxt" data-i18n="tab.tags">标签审计</span>
         </button>
         <button class="tab" data-tab="links" type="button">
           <svg class="navicon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l4-4 3 3 6-6"/><path d="M12 6h4v4"/></svg>
@@ -85,6 +90,13 @@
           </div>
         </div>
         <div id="insights-body"><p class="muted" data-i18n="loading">加载中…</p></div>
+      </section>
+
+      <!-- Tag audit (filter-feature planning) -->
+      <section id="tab-tags" class="panel">
+        <h3 class="panel-title" data-i18n="ta.title">标签审计</h3>
+        <p class="muted" data-i18n="ta.desc">只读:扫描全店产品,统计每个 tag 的商品数与出现的品类,用来规划筛选器分组。</p>
+        <div id="tags-body"><p class="muted" data-i18n="loading">加载中…</p></div>
       </section>
 
       <!-- Boosts / Synonyms -->
