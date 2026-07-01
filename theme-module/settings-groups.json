@@ -1115,8 +1115,8 @@
       {
         "type": "text",
         "id": "cgp_sd_rec_tab1_label",
-        "label": "第一个 tab 标题(推荐)",
-        "default": "Recommended"
+        "label": "第一个 tab 标题(精选)",
+        "default": "Featured"
       },
       {
         "type": "range",

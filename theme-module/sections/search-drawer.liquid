@@ -238,18 +238,19 @@
               {%- assign show_rec_tabs = true -%}
             {%- endif -%}
 
+            <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_featured | default: 'Recommended For You' }}</h3>
             {%- if show_rec_tabs -%}
               <div class="sd-rec-tabs" role="tablist" data-sd-rectabs>
-                <button type="button" class="sd-rec-tab is-active" role="tab" data-sd-rectab="rec">{{ s.cgp_sd_rec_tab1_label | default: 'Recommended' }}</button>
+                <button type="button" class="sd-rec-tab is-active" role="tab" data-sd-rectab="rec">{{ s.cgp_sd_rec_tab1_label | default: 'Featured' }}</button>
                 {%- for collection in featured_collections limit: rec_tab_qty -%}
+                  {%- comment -%} Tab label: collection metafield custom.search_tab_label overrides the collection name. {%- endcomment -%}
+                  {%- assign tab_label = collection.metafields.custom.search_tab_label.value | default: collection.title -%}
                   <button type="button" class="sd-rec-tab" role="tab" data-sd-rectab="col"
                           data-handle="{{ collection.handle }}"
                           data-url="{{ collection.url | split: '?' | first }}"
-                          data-collection-id="{{ collection.id }}">{{ collection.title }}</button>
+                          data-collection-id="{{ collection.id }}">{{ tab_label }}</button>
                 {%- endfor -%}
               </div>
-            {%- else -%}
-              <h3 class="search-drawer__heading">{{ s.cgp_sd_heading_featured | default: 'Recommended For You' }}</h3>
             {%- endif -%}
 
             <div class="sd-rec-panel is-active" data-sd-recpanel="rec">
