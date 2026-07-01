@@ -722,20 +722,19 @@ function refModuleEl(entryId, key, title, initialGids, kind, cfgField, cfgValue)
         <span class="hint">${t('sp.pinHint')}</span>
       </div>
       ${canLabel ? `<div class="disp-row">
-        <span>${t('sp.collDisplay')}</span>
-        <select data-display>
-          <option value="both">${t('sp.dispBoth')}</option>
-          <option value="list">${t('sp.dispList')}</option>
-          <option value="tabs">${t('sp.dispTabs')}</option>
-          <option value="none">${t('sp.dispNone')}</option>
-        </select>
-        <span>${t('sp.tabQty')}</span>
-        <input type="number" min="0" max="8" data-tabqty class="disp-qty"/>
-        <span>${t('sp.listQty')}</span>
-        <input type="number" min="1" max="10" data-listqty class="disp-qty"/>
-        <span>${t('sp.tab1Label')}</span>
-        <input type="text" data-tab1label class="disp-label" placeholder="Featured"/>
-        <label class="disp-check"><input type="checkbox" data-tabshuffle/> ${t('sp.tabShuffle')}</label>
+        <label class="disp-field disp-field--wide">
+          <span>${t('sp.collDisplay')}</span>
+          <select data-display>
+            <option value="both">${t('sp.dispBoth')}</option>
+            <option value="list">${t('sp.dispList')}</option>
+            <option value="tabs">${t('sp.dispTabs')}</option>
+            <option value="none">${t('sp.dispNone')}</option>
+          </select>
+        </label>
+        <label class="disp-field"><span>${t('sp.tabQty')}</span><input type="number" min="0" max="8" data-tabqty class="disp-qty"/></label>
+        <label class="disp-field"><span>${t('sp.listQty')}</span><input type="number" min="1" max="10" data-listqty class="disp-qty"/></label>
+        <label class="disp-field disp-field--wide"><span>${t('sp.tab1Label')}</span><input type="text" data-tab1label placeholder="Featured"/></label>
+        <label class="disp-check"><input type="checkbox" data-tabshuffle/><span>${t('sp.tabShuffle')}</span></label>
       </div>` : ''}
       <div class="bulkbar" data-bulk hidden></div>
       <div class="chips" data-chips></div>
